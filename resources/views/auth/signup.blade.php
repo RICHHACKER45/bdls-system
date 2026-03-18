@@ -106,74 +106,92 @@
 
             <form action="#" method="POST" enctype="multipart/form-data">
                 @csrf
-                <!-- STEP 1: Personal Info -->
-                <div id="step-1" class="form-step">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">
-                        1. Personal na Impormasyon
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- STEP 1: Personal Information -->
+                <div id="step1">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- First Name (Required) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >First Name <span class="text-red-500">*</span></label
                             >
                             <input
                                 type="text"
+                                id="first_name"
+                                name="first_name"
                                 required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
-
-                            <!-- Eto yung custom error message na nakatago by default -->
                             <p id="error-first_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
+
+                        <!-- Middle Name (Nullable, No Error Tag) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Middle Name</label
                             >
                             <input
                                 type="text"
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                id="middle_name"
+                                name="middle_name"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
                         </div>
+
+                        <!-- Last Name (Required) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Last Name <span class="text-red-500">*</span></label
                             >
                             <input
                                 type="text"
+                                id="last_name"
+                                name="last_name"
                                 required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Suffix</label
-                                >
-                                <input
-                                    type="text"
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Birthdate <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="date"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
+                            <p id="error-last_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
                     </div>
-                    <!-- Step 1 Button -->
-                    <div class="mt-8 flex justify-end">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Suffix (Nullable, No Error Tag) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Suffix (e.g., Jr., Sr.)</label
+                            >
+                            <input
+                                type="text"
+                                id="suffix"
+                                name="suffix"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                            />
+                        </div>
+
+                        <!-- Date of Birth (Required) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Date of Birth <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="date"
+                                id="date_of_birth"
+                                name="date_of_birth"
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                            />
+                            <p id="error-date_of_birth" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6">
                         <button
                             type="button"
-                            onclick="validateAndGo(1, 2)"
-                            class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+                            onclick="validateAndGo('step1', 'step2')"
+                            class="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 px-6 rounded-md transition duration-200"
                         >
-                            Next Step &rarr;
+                            Next
                         </button>
                     </div>
                 </div>
