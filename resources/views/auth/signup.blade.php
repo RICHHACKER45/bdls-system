@@ -293,10 +293,7 @@
                         <!-- BACK BUTTON -->
                         <button
                             type="button"
-                            onclick="
-                                document.getElementById('step2').classList.add('hidden');
-                                document.getElementById('step1').classList.remove('hidden');
-                            "
+                            onclick="goBack('step2', 'step1')"
                             class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Back
@@ -521,34 +518,76 @@
             });
         });
 
-        function goToStep(stepNumber) {
-            // 1. Itago lahat ng steps
-            document.querySelectorAll('.form-step').forEach(function (step) {
-                step.classList.add('hidden');
-            });
-
-            // 2. Ipakita yung target step
-            document.getElementById('step-' + stepNumber).classList.remove('hidden');
-
-            // 3. I-update ang kulay ng 1-2-3-4 indicators
+        // 1. Tagapag-alaga ng Progress Bar at Indicators
+        function updateProgressBar(stepNumber) {
             for (let i = 1; i <= 4; i++) {
                 let indicator = document.getElementById('ind-' + i);
-                if (i <= stepNumber) {
-                    // Tapos na o kasalukuyang step -> Kulay Pula
-                    indicator.classList.remove('bg-slate-200', 'text-slate-500');
-                    indicator.classList.add('bg-red-600', 'text-white', 'shadow-md');
-                } else {
-                    // Hindi pa nararating -> Kulay Gray
-                    indicator.classList.add('bg-slate-200', 'text-slate-500');
-                    indicator.classList.remove('bg-red-600', 'text-white', 'shadow-md');
+                if (indicator) {
+                    if (i <= stepNumber) {
+                        indicator.classList.remove('bg-slate-200', 'text-slate-500');
+                        indicator.classList.add('bg-red-600', 'text-white', 'shadow-md');
+                    } else {
+                        indicator.classList.add('bg-slate-200', 'text-slate-500');
+                        indicator.classList.remove('bg-red-600', 'text-white', 'shadow-md');
+                    }
                 }
             }
-
-            // 4. I-animate ang Red Progress Line (BAGONG DAGDAG ITO)
-            // Computation: (Step 1 = 0%), (Step 2 = 33.3%), (Step 3 = 66.6%), (Step 4 = 100%)
-            let progressPercentage = ((stepNumber - 1) / 3) * 100;
-            document.getElementById('progress-line').style.width = progressPercentage + '%';
+            let progressLine = document.getElementById('progress-line');
+            if (progressLine) {
+                let progressPercentage = ((stepNumber - 1) / 3) * 100;
+                progressLine.style.width = progressPercentage + '%';
+            }
         }
+
+        // 2. Ang "Next" Button Function (May kasama nang Progress Bar Update)
+        function validateAndGo(currentStepId, nextStepId) {
+            let currentStepElement = document.getElementById(currentStepId);
+            let isValid = true;
+            let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+
+            inputs.forEach((input) => {
+                let errorMessage = document.getElementById('error-' + input.id);
+                if (input.value.trim() === '') {
+                    isValid = false;
+                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+                    if (errorMessage) errorMessage.classList.remove('hidden');
+                } else {
+                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+                    if (errorMessage) errorMessage.classList.add('hidden');
+                }
+            });
+
+            if (isValid) {
+                currentStepElement.classList.add('hidden');
+                document.getElementById(nextStepId).classList.remove('hidden');
+
+                // Kunin ang numero ng next step (Halimbawa: 'step2' -> nagiging 2)
+                let stepNum = parseInt(nextStepId.replace('step', ''));
+                updateProgressBar(stepNum); // Pagalawin ang progress bar!
+            }
+        }
+
+        // 3. Ang "Back" Button Function (BAGO)
+        function goBack(currentStepId, prevStepId) {
+            document.getElementById(currentStepId).classList.add('hidden');
+            document.getElementById(prevStepId).classList.remove('hidden');
+
+            // Kunin ang numero ng previous step at i-atras ang progress bar
+            let stepNum = parseInt(prevStepId.replace('step', ''));
+            updateProgressBar(stepNum);
+        }
+
+        // 4. Real-Time Error Removal
+        document.addEventListener('DOMContentLoaded', function () {
+            let requiredInputs = document.querySelectorAll('input[required], select[required]');
+            requiredInputs.forEach((input) => {
+                input.addEventListener('input', function () {
+                    let errorMessage = document.getElementById('error-' + this.id);
+                    this.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+                    if (errorMessage) errorMessage.classList.add('hidden');
+                });
+            });
+        });
     </script>
 </body>
 </html>
