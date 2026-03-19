@@ -106,7 +106,9 @@
 
             <form action="#" method="POST" enctype="multipart/form-data">
                 @csrf
-                <!-- STEP 1: Personal Information -->
+                <!-- ========================================================-->
+                <!-- STEP 1: Personal Na Impormasyon (Personal Information) -->
+                <!-- ========================================================-->
                 <div id="step1">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
 
@@ -310,30 +312,46 @@
                     </div>
                 </div>
 
-                <!-- STEP 3: Account -->
-                <div id="step-3" class="form-step hidden">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">3. Account Login Details</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- ========================================== -->
+                <!-- STEP 3: ACCOUNT DETAILS                    -->
+                <!-- ========================================== -->
+                <div id="step3" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Account Details</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Mobile Number (Required - Primary Channel) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Contact Number <span class="text-red-500">*</span></label
+                                >Mobile Number <span class="text-red-500">*</span></label
                             >
                             <input
-                                type="text"
+                                type="tel"
+                                id="contact_number"
+                                name="contact_number"
                                 required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                placeholder="09XXXXXXXXX"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
+                            <p id="error-contact_number" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
+
+                        <!-- Email (Optional Fallback based on Chapter 1) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Email
-                                <span class="text-slate-400 font-normal">(Optional)</span></label
+                                >Email Address (Optional)</label
                             >
                             <input
                                 type="email"
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                id="email"
+                                name="email"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
+                            <!-- Walang error paragraph dahil hindi ito required -->
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Password (Required) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Password <span class="text-red-500">*</span></label
@@ -341,10 +359,15 @@
                             <input
                                 type="password"
                                 id="password"
+                                name="password"
+                                placeholder="********"
                                 required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
+                            <p id="error-password" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
+
+                        <!-- Confirm Password (Required) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Confirm Password <span class="text-red-500">*</span></label
@@ -352,29 +375,34 @@
                             <input
                                 type="password"
                                 id="password_confirmation"
+                                name="password_confirmation"
+                                placeholder="********"
                                 required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
+                            <p id="error-password_confirmation" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
                     </div>
-                    <!-- Step 3 Buttons -->
-                    <div class="mt-8 flex justify-between">
+
+                    <!-- BUTTON CONTAINER (Back at Next) -->
+                    <div class="w-full flex justify-between mt-8">
                         <button
                             type="button"
-                            onclick="goToStep(2)"
-                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                            onclick="goBack('step3', 'step2')"
+                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
-                            &larr; Back
+                            Back
                         </button>
                         <button
                             type="button"
-                            onclick="validateAndGo(3, 4)"
-                            class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+                            onclick="validateAndGo('step3', 'step4')"
+                            class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
-                            Next Step &rarr;
+                            Next Step
                         </button>
                     </div>
                 </div>
+                <!-- CLOSING NG STEP 3 -->
 
                 <!-- STEP 4: Verification -->
                 <div id="step-4" class="form-step hidden">
