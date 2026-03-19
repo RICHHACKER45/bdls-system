@@ -236,7 +236,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                     <!-- Flex justify-end ang magtutulak sa button papunta sa kanan -->
                     <div class="flex justify-end mt-8">
@@ -248,194 +247,207 @@
                             Next Step
                         </button>
                     </div>
+                </div>
+                <!-- ITO YUNG IDINAGDAG MO NA CLOSING NG STEP 1 -->
 
-                    <!-- STEP 2: Tirahan (Naka-hide by default) -->
-                    <div id="step-2" class="form-step hidden">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">
-                            2. Tirahan sa Doña Lucia
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >House / Unit Number <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Purok / Street <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                        </div>
-                        <!-- Step 2 Buttons -->
-                        <div class="mt-8 flex justify-between">
-                            <button
-                                type="button"
-                                onclick="goToStep(1)"
-                                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
-                            >
-                                &larr; Back
-                            </button>
-                            <button
-                                type="button"
-                                onclick="validateAndGo(2, 3)"
-                                class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-colors"
-                            >
-                                Next Step &rarr;
-                            </button>
-                        </div>
-                    </div>
+                <!-- ========================================== -->
+                <!-- STEP 2: TIRAHAN (Address)                  -->
+                <!-- ========================================== -->
+                <div id="step2" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Tirahan (Address)</h2>
 
-                    <!-- STEP 3: Account -->
-                    <div id="step-3" class="form-step hidden">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">
-                            3. Account Login Details
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Contact Number <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Email
-                                    <span class="text-slate-400 font-normal"
-                                        >(Optional)</span
-                                    ></label
-                                >
-                                <input
-                                    type="email"
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Password <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="password"
-                                    id="password"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                    >Confirm Password <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="password"
-                                    id="password_confirmation"
-                                    required
-                                    class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
-                                />
-                            </div>
-                        </div>
-                        <!-- Step 3 Buttons -->
-                        <div class="mt-8 flex justify-between">
-                            <button
-                                type="button"
-                                onclick="goToStep(2)"
-                                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- House Number (Required) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >House / Block / Lot No. <span class="text-red-500">*</span></label
                             >
-                                &larr; Back
-                            </button>
-                            <button
-                                type="button"
-                                onclick="validateAndGo(3, 4)"
-                                class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-colors"
-                            >
-                                Next Step &rarr;
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- STEP 4: Verification -->
-                    <div id="step-4" class="form-step hidden">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4">
-                            4. Pagpapatunay (ID & Selfie)
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div
-                                class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
-                            >
-                                <label class="block text-sm font-bold text-slate-700 mb-2"
-                                    >Upload Valid ID <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    class="w-full text-sm text-slate-500"
-                                />
-                            </div>
-                            <div
-                                class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
-                            >
-                                <label class="block text-sm font-bold text-slate-700 mb-2"
-                                    >Upload Selfie kasama ang ID
-                                    <span class="text-red-500">*</span></label
-                                >
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    class="w-full text-sm text-slate-500"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Poka-yoke Defensive Design mo kanina -->
-                        <div
-                            class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8"
-                        >
                             <input
-                                type="checkbox"
-                                id="privacy"
+                                type="text"
+                                id="house_number"
+                                name="house_number"
                                 required
-                                onchange="
-                                    document.getElementById('submitBtn').disabled = !this.checked
-                                "
-                                class="mt-1 w-5 h-5 text-red-600 border-slate-300 rounded cursor-pointer"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
-                            <label for="privacy" class="text-sm text-slate-700 cursor-pointer">
-                                Sumasang-ayon ako sa Data Privacy Terms.
-                            </label>
+                            <p id="error-house_number" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
 
-                        <!-- Step 4 Buttons -->
-                        <div class="flex justify-between items-center mt-4">
-                            <button
-                                type="button"
-                                onclick="goToStep(3)"
-                                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                        <!-- Purok / Street (Required) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Purok / Street <span class="text-red-500">*</span></label
                             >
-                                &larr; Back
-                            </button>
-
-                            <button
-                                type="submit"
-                                id="submitBtn"
-                                disabled
-                                class="bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors text-lg"
-                            >
-                                I-submit Account
-                            </button>
+                            <input
+                                type="text"
+                                id="purok_street"
+                                name="purok_street"
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                            />
+                            <p id="error-purok_street" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
                     </div>
+
+                    <!-- BUTTON CONTAINER (Back at Next) -->
+                    <div class="w-full flex justify-between mt-8">
+                        <!-- BACK BUTTON -->
+                        <button
+                            type="button"
+                            onclick="
+                                document.getElementById('step2').classList.add('hidden');
+                                document.getElementById('step1').classList.remove('hidden');
+                            "
+                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                        >
+                            Back
+                        </button>
+
+                        <!-- NEXT BUTTON -->
+                        <button
+                            type="button"
+                            onclick="validateAndGo('step2', 'step3')"
+                            class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                        >
+                            Next Step
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Account -->
+                <div id="step-3" class="form-step hidden">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">3. Account Login Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Contact Number <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="text"
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Email
+                                <span class="text-slate-400 font-normal">(Optional)</span></label
+                            >
+                            <input
+                                type="email"
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Password <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="password"
+                                id="password"
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"
+                                >Confirm Password <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="password"
+                                id="password_confirmation"
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-600 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <!-- Step 3 Buttons -->
+                    <div class="mt-8 flex justify-between">
+                        <button
+                            type="button"
+                            onclick="goToStep(2)"
+                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                        >
+                            &larr; Back
+                        </button>
+                        <button
+                            type="button"
+                            onclick="validateAndGo(3, 4)"
+                            class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+                        >
+                            Next Step &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Verification -->
+                <div id="step-4" class="form-step hidden">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">
+                        4. Pagpapatunay (ID & Selfie)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div
+                            class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
+                        >
+                            <label class="block text-sm font-bold text-slate-700 mb-2"
+                                >Upload Valid ID <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="file"
+                                accept="image/*"
+                                class="w-full text-sm text-slate-500"
+                            />
+                        </div>
+                        <div
+                            class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
+                        >
+                            <label class="block text-sm font-bold text-slate-700 mb-2"
+                                >Upload Selfie kasama ang ID
+                                <span class="text-red-500">*</span></label
+                            >
+                            <input
+                                type="file"
+                                accept="image/*"
+                                class="w-full text-sm text-slate-500"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Poka-yoke Defensive Design mo kanina -->
+                    <div
+                        class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8"
+                    >
+                        <input
+                            type="checkbox"
+                            id="privacy"
+                            required
+                            onchange="document.getElementById('submitBtn').disabled = !this.checked"
+                            class="mt-1 w-5 h-5 text-red-600 border-slate-300 rounded cursor-pointer"
+                        />
+                        <label for="privacy" class="text-sm text-slate-700 cursor-pointer">
+                            Sumasang-ayon ako sa Data Privacy Terms.
+                        </label>
+                    </div>
+
+                    <!-- Step 4 Buttons -->
+                    <div class="flex justify-between items-center mt-4">
+                        <button
+                            type="button"
+                            onclick="goToStep(3)"
+                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                        >
+                            &larr; Back
+                        </button>
+
+                        <button
+                            type="submit"
+                            id="submitBtn"
+                            disabled
+                            class="bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors text-lg"
+                        >
+                            I-submit Account
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -444,75 +456,48 @@
     <script>
         /// BAGONG FUNCTION PARA I-CHECK KUNG MAY LAMAN AT TAMA BAGO UMABANTE
         function validateAndGo(currentStepId, nextStepId) {
-            let currentStepElement = document.getElementById(currentStepId);
+            console.log('1. BUTTON PININDOT! Galing sa:', currentStepId, 'Pupunta sa:', nextStepId);
 
-            // SAFETY NET: Kapag mali o nabura ang ID sa HTML, magsasabi siya sa F12 Console
+            let currentStepElement = document.getElementById(currentStepId);
             if (!currentStepElement) {
-                console.error(
-                    "CRITICAL ERROR: Cannot find the section that has id='" + currentStepId + "'",
-                );
+                console.error('CRITICAL ERROR: Hindi mahanap ang ' + currentStepId);
                 return;
             }
 
             let isValid = true;
             let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
 
-            inputs.forEach((input) => {
-                let errorMessage = document.getElementById('error-' + input.id);
-
-                if (input.value.trim() === '') {
-                    // Walang laman: Palabasin ang error at kulayan ng pula ang textbox
-                    isValid = false;
-                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.remove('hidden');
-                } else {
-                    // May laman: Itago ang error at ibalik sa normal
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                }
-            });
-
-            // Kung walang problema, lipat sa next step
-            if (isValid) {
-                currentStepElement.classList.add('hidden');
-                document.getElementById(nextStepId).classList.remove('hidden');
-            }
-        } // 1. Function para sa pagpindot ng "Next"
-        function validateAndGo(currentStepId, nextStepId) {
-            let currentStepElement = document.getElementById(currentStepId);
-
-            if (!currentStepElement) {
-                console.error(
-                    "CRITICAL ERROR: Hindi ko mahanap ang section na may id='" +
-                        currentStepId +
-                        "'",
-                );
-                return;
-            }
-
-            let isValid = true;
-
-            // UPDATE: Hinahanap na ngayon ang parehong input AT select (dropdowns)
-            let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+            console.log('2. BILANG NG REQUIRED FIELDS NA NAKITA:', inputs.length);
 
             inputs.forEach((input) => {
                 let errorMessage = document.getElementById('error-' + input.id);
 
                 if (input.value.trim() === '') {
-                    // Walang laman
+                    console.log('3. MAY BLANGKO NA FIELD! ID nito ay:', input.id); // CCTV natin ito!
                     isValid = false;
                     input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
                     if (errorMessage) errorMessage.classList.remove('hidden');
                 } else {
-                    // May laman
                     input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
                     if (errorMessage) errorMessage.classList.add('hidden');
                 }
             });
 
+            console.log('4. PUMASA BA SA VALIDATION? (True/False):', isValid);
+
             if (isValid) {
+                console.log('5. LILIPAT NA SA NEXT STEP!');
                 currentStepElement.classList.add('hidden');
-                document.getElementById(nextStepId).classList.remove('hidden');
+
+                let nextElement = document.getElementById(nextStepId);
+                if (nextElement) {
+                    nextElement.classList.remove('hidden');
+                    console.log('6. SUCCESS NA NAKALIPAT!');
+                } else {
+                    console.error(
+                        'CRITICAL ERROR: Hindi ko mahanap ang susunod na step: ' + nextStepId,
+                    );
+                }
             }
         }
 
