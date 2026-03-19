@@ -536,9 +536,13 @@
                             Sumasang-ayon ako na ang aking mga personal na impormasyon, kalakip ang
                             aking ID at selfie, ay kokolektahin at ipoproseso lamang para sa account
                             verification at serbisyo ng system, alinsunod sa
-                            <a href="#" class="text-red-600 font-semibold hover:underline"
-                                >Data Privacy Terms</a
+                            <button
+                                type="button"
+                                onclick="openPrivacyModal()"
+                                class="text-red-600 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
                             >
+                                Data Privacy Terms
+                            </button>
                             ng Barangay Doña Lucia.
                         </label>
                     </div>
@@ -713,6 +717,59 @@
                 button.innerText = 'SHOW';
             }
         }
+
+        // 7. Modal Functions
+        function openPrivacyModal() {
+            document.getElementById('privacyModal').classList.remove('hidden');
+        }
+
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').classList.add('hidden');
+        }
     </script>
+
+    <!-- DATA PRIVACY MODAL -->
+    <div
+        id="privacyModal"
+        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+        <!-- Modal Card -->
+        <div
+            class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
+        >
+            <!-- Header -->
+            <div
+                class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50"
+            >
+                <h3 class="text-lg font-bold text-slate-800">Data Privacy Terms</h3>
+                <button
+                    type="button"
+                    onclick="closePrivacyModal()"
+                    class="text-slate-400 hover:text-slate-700 focus:outline-none text-2xl font-bold"
+                >
+                    &times;
+                </button>
+            </div>
+
+            <!-- Body (Scrollable kung mahaba) -->
+            <div class="px-6 py-4 overflow-y-auto text-sm text-slate-600 space-y-4">
+                <p>Alinsunod sa <strong>Data Privacy Act of 2012</strong>, ang Barangay Doña Lucia ay nangangakong poprotektahan ang iyong personal na impormasyon.</p>
+                <p><strong>1. Pangongolekta ng Data:</strong> Kinokolekta namin ang iyong pangalan, contact number, valid ID, at selfie upang ma-verify ang iyong pagkakakilanlan.</p>
+                <p><strong>2. Paggamit ng Data:</strong> Gagamitin lamang ang iyong impormasyon para sa pagproseso ng iyong mga service requests at pagpapadala ng SMS/Email notifications.</p>
+                <p><strong>3. Pag-iingat:</strong> Ang iyong mga dokumento ay ligtas na iimbakin sa aming system at tanging mga awtorisadong barangay admin lamang ang makakakita nito.</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+                <button
+                    type="button"
+                    onclick="closePrivacyModal()"
+                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg transition-all active:scale-95"
+                >
+                    I Understand
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
