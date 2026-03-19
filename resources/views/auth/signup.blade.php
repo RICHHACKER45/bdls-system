@@ -404,81 +404,177 @@
                 </div>
                 <!-- CLOSING NG STEP 3 -->
 
-                <!-- STEP 4: Verification -->
-                <div id="step-4" class="form-step hidden">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">
-                        4. Pagpapatunay (ID & Selfie)
-                    </h3>
+                <!-- ========================================== -->
+                <!-- STEP 4: ACCOUNT VERIFICATION (Uploads)     -->
+                <!-- ========================================== -->
+                <div id="step4" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Account Verification</h2>
+                    <p class="text-sm text-slate-500 mb-6">Para sa seguridad ng iyong account, kailangan itong i-verify ng Barangay Administrator. Paki-upload ang mga sumusunod.</p>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div
-                            class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
-                        >
-                            <label class="block text-sm font-bold text-slate-700 mb-2"
+                        <!-- Valid ID Upload -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2"
                                 >Upload Valid ID <span class="text-red-500">*</span></label
                             >
+
+                            <!-- Nakatagong File Input (sr-only) -->
                             <input
                                 type="file"
-                                accept="image/*"
-                                class="w-full text-sm text-slate-500"
+                                id="id_photo_path"
+                                name="id_photo_path"
+                                accept="image/jpeg, image/png, image/jpg"
+                                required
+                                class="sr-only"
+                                onchange="previewImage(event, 'preview-id')"
                             />
-                        </div>
-                        <div
-                            class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50"
-                        >
-                            <label class="block text-sm font-bold text-slate-700 mb-2"
-                                >Upload Selfie kasama ang ID
-                                <span class="text-red-500">*</span></label
+
+                            <!-- Ang Tactile Button -->
+                            <button
+                                type="button"
+                                onclick="document.getElementById('id_photo_path').click()"
+                                class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-medium py-2 px-6 rounded-md transition-all duration-200 mb-4 w-full"
                             >
+                                Choose ID Image
+                            </button>
+
+                            <!-- Preview Box -->
+                            <div
+                                class="w-full h-48 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden bg-white"
+                            >
+                                <span id="placeholder-id" class="text-slate-400 text-sm"
+                                    >No image selected</span
+                                >
+                                <img
+                                    id="preview-id"
+                                    src=""
+                                    alt="ID Preview"
+                                    class="hidden object-cover w-full h-full"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Selfie with ID Upload -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2"
+                                >Upload Selfie with ID <span class="text-red-500">*</span></label
+                            >
+
+                            <!-- Nakatagong File Input (sr-only) -->
                             <input
                                 type="file"
-                                accept="image/*"
-                                class="w-full text-sm text-slate-500"
+                                id="selfie_photo_path"
+                                name="selfie_photo_path"
+                                accept="image/jpeg, image/png, image/jpg"
+                                required
+                                class="sr-only"
+                                onchange="previewImage(event, 'preview-selfie')"
                             />
+
+                            <!-- Ang Tactile Button -->
+                            <button
+                                type="button"
+                                onclick="document.getElementById('selfie_photo_path').click()"
+                                class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-medium py-2 px-6 rounded-md transition-all duration-200 mb-4 w-full"
+                            >
+                                Choose Selfie Image
+                            </button>
+
+                            <!-- Preview Box -->
+                            <div
+                                class="w-full h-48 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center overflow-hidden bg-white"
+                            >
+                                <span id="placeholder-selfie" class="text-slate-400 text-sm"
+                                    >No image selected</span
+                                >
+                                <img
+                                    id="preview-selfie"
+                                    src=""
+                                    alt="Selfie Preview"
+                                    class="hidden object-cover w-full h-full"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Poka-yoke Defensive Design mo kanina -->
+                    <!-- Poka-yoke Defensive Design: Data Privacy Consent -->
                     <div
                         class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8"
                     >
                         <input
                             type="checkbox"
                             id="privacy"
+                            name="privacy"
                             required
                             onchange="document.getElementById('submitBtn').disabled = !this.checked"
-                            class="mt-1 w-5 h-5 text-red-600 border-slate-300 rounded cursor-pointer"
+                            class="mt-1 w-5 h-5 text-slate-900 border-slate-300 rounded cursor-pointer focus:ring-slate-900"
                         />
                         <label for="privacy" class="text-sm text-slate-700 cursor-pointer">
-                            Sumasang-ayon ako sa Data Privacy Terms.
+                            Sumasang-ayon ako na ang aking mga personal na impormasyon, kalakip ang
+                            aking ID at selfie, ay kokolektahin at ipoproseso lamang para sa account
+                            verification at serbisyo ng system, alinsunod sa
+                            <a href="#" class="text-red-600 font-semibold hover:underline"
+                                >Data Privacy Terms</a
+                            >
+                            ng Barangay Doña Lucia.
                         </label>
                     </div>
 
-                    <!-- Step 4 Buttons -->
-                    <div class="flex justify-between items-center mt-4">
+                    <!-- BUTTON CONTAINER (Back at Submit) -->
+                    <div class="w-full flex justify-between mt-8">
+                        <!-- BACK BUTTON -->
                         <button
                             type="button"
-                            onclick="goToStep(3)"
-                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                            onclick="goBack('step4', 'step3')"
+                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
-                            &larr; Back
+                            Back
                         </button>
 
+                        <!-- SUBMIT BUTTON (Naka-disable sa simula, may id="submitBtn") -->
                         <button
                             type="submit"
                             id="submitBtn"
                             disabled
-                            class="bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors text-lg"
+                            class="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
-                            I-submit Account
+                            Submit Registration
                         </button>
                     </div>
                 </div>
+                <!-- CLOSING NG STEP 4 -->
             </form>
         </div>
     </div>
 
     <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
     <script>
+        // Custom function para sa live image preview
+        function previewImage(event, previewId) {
+            let input = event.target;
+            let previewImg = document.getElementById(previewId);
+            let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
+
+            // Tinitingnan kung may laman ang index zero (unang litrato)
+            if (input.files && input.files) {
+                // CCTV natin: Ipapakita nito sa console kung anong file ang nakuha
+                console.log('File na nakuha:', input.files.name);
+
+                let reader = new FileReader();
+
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                };
+
+                // Ipasa ang mismong file sa index zero
+                reader.readAsDataURL(input.files);
+            } else {
+                console.log('Walang nakitang file sa input.files');
+            }
+        }
+
         /// BAGONG FUNCTION PARA I-CHECK KUNG MAY LAMAN AT TAMA BAGO UMABANTE
         function validateAndGo(currentStepId, nextStepId) {
             console.log('1. BUTTON PININDOT! Galing sa:', currentStepId, 'Pupunta sa:', nextStepId);
