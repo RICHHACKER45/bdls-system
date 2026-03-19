@@ -350,20 +350,32 @@
                         </div>
                     </div>
 
+                    <!-- PASSSWORD SECURITY GRID -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <!-- Password (Required) -->
+                        <!-- Password (Required, Min 8) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Password <span class="text-red-500">*</span></label
                             >
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                placeholder="********"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <div class="relative">
+                                <!-- Dinagdagan ang pr-20 para may espasyo ang button -->
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    required
+                                    class="w-full px-4 py-3 pr-20 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                                />
+
+                                <!-- Ang Bagong Tactile Show/Hide Button na Naka-Gitna -->
+                                <button
+                                    type="button"
+                                    onclick="togglePassword('password')"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-md text-xs font-bold text-slate-400 hover:text-slate-900 active:text-slate-900 active:bg-slate-200 active:scale-95 select-none transition-all duration-100 focus:outline-none"
+                                >
+                                    SHOW
+                                </button>
+                            </div>
                             <p id="error-password" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
 
@@ -372,14 +384,25 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Confirm Password <span class="text-red-500">*</span></label
                             >
-                            <input
-                                type="password"
-                                id="password_confirmation"
-                                name="password_confirmation"
-                                placeholder="********"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <div class="relative">
+                                <!-- Dinagdagan ang pr-20 para may espasyo ang button -->
+                                <input
+                                    type="password"
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    required
+                                    class="w-full px-4 py-3 pr-20 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                                />
+
+                                <!-- Ang Bagong Tactile Show/Hide Button na Naka-Gitna -->
+                                <button
+                                    type="button"
+                                    onclick="togglePassword('password_confirmation')"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-md text-xs font-bold text-slate-400 hover:text-slate-900 active:text-slate-900 active:bg-slate-200 active:scale-95 select-none transition-all duration-100 focus:outline-none"
+                                >
+                                    SHOW
+                                </button>
+                            </div>
                             <p id="error-password_confirmation" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
                     </div>
@@ -610,7 +633,33 @@
 
             inputs.forEach((input) => {
                 let errorMessage = document.getElementById('error-' + input.id);
+                let hasError = false;
+
+                // 1. Check kung blangko
                 if (input.value.trim() === '') {
+                    hasError = true;
+                    if (errorMessage) errorMessage.textContent = 'This field is required.';
+                }
+                // 2. SPECIAL RULE: Kung password field at less than 8 chars
+                else if (
+                    (input.id === 'password' || input.id === 'password_confirmation') &&
+                    input.value.length < 8
+                ) {
+                    hasError = true;
+                    if (errorMessage)
+                        errorMessage.textContent = 'Password must be at least 8 characters.';
+                }
+                // 3. SPECIAL RULE: Kung confirm password at hindi match sa password
+                else if (
+                    input.id === 'password_confirmation' &&
+                    input.value !== document.getElementById('password').value
+                ) {
+                    hasError = true;
+                    if (errorMessage) errorMessage.textContent = 'Passwords do not match.';
+                }
+
+                // Ipakita o itago ang error base sa mga rules sa itaas
+                if (hasError) {
                     isValid = false;
                     input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
                     if (errorMessage) errorMessage.classList.remove('hidden');
@@ -650,6 +699,20 @@
                 });
             });
         });
+
+        // 6. Function para sa Show/Hide Password
+        function togglePassword(inputId) {
+            let input = document.getElementById(inputId);
+            let button = input.nextElementSibling; // Kukunin yung mismong SHOW button
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.innerText = 'HIDE';
+            } else {
+                input.type = 'password';
+                button.innerText = 'SHOW';
+            }
+        }
     </script>
 </body>
 </html>
