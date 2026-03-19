@@ -549,100 +549,37 @@
 
     <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
     <script>
-        // Custom function para sa live image preview
+        // 1. Custom function para sa live image preview
         function previewImage(event, previewId) {
             let input = event.target;
             let previewImg = document.getElementById(previewId);
             let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
 
-            // Tinitingnan kung may laman ang index zero (unang litrato)
-            if (input.files && input.files) {
-                // CCTV natin: Ipapakita nito sa console kung anong file ang nakuha
-                console.log('File na nakuha:', input.files.name);
+            // Kunin ang unang file gamit ang .item(0)
+            let file = input.files.item(0);
 
-                let reader = new FileReader();
-
-                reader.onload = function (e) {
-                    previewImg.src = e.target.result;
-                    previewImg.classList.remove('hidden');
-                    placeholder.classList.add('hidden');
-                };
-
-                // Ipasa ang mismong file sa index zero
-                reader.readAsDataURL(input.files);
-            } else {
-                console.log('Walang nakitang file sa input.files');
-            }
-        }
-
-        /// BAGONG FUNCTION PARA I-CHECK KUNG MAY LAMAN AT TAMA BAGO UMABANTE
-        function validateAndGo(currentStepId, nextStepId) {
-            console.log('1. BUTTON PININDOT! Galing sa:', currentStepId, 'Pupunta sa:', nextStepId);
-
-            let currentStepElement = document.getElementById(currentStepId);
-            if (!currentStepElement) {
-                console.error('CRITICAL ERROR: Hindi mahanap ang ' + currentStepId);
+            // DEFENSIVE DESIGN (Galing sa Stack Overflow):
+            // Kung nag-cancel ang user at walang file (undefined/null), tapusin agad ang function
+            if (!file) {
+                console.log('Nag-cancel ang user, walang file na napili.');
                 return;
             }
 
-            let isValid = true;
-            let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+            console.log('File na nakuha:', file.name);
 
-            console.log('2. BILANG NG REQUIRED FIELDS NA NAKITA:', inputs.length);
+            let reader = new FileReader();
 
-            inputs.forEach((input) => {
-                let errorMessage = document.getElementById('error-' + input.id);
+            reader.onload = function (e) {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
 
-                if (input.value.trim() === '') {
-                    console.log('3. MAY BLANGKO NA FIELD! ID nito ay:', input.id); // CCTV natin ito!
-                    isValid = false;
-                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.remove('hidden');
-                } else {
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                }
-            });
-
-            console.log('4. PUMASA BA SA VALIDATION? (True/False):', isValid);
-
-            if (isValid) {
-                console.log('5. LILIPAT NA SA NEXT STEP!');
-                currentStepElement.classList.add('hidden');
-
-                let nextElement = document.getElementById(nextStepId);
-                if (nextElement) {
-                    nextElement.classList.remove('hidden');
-                    console.log('6. SUCCESS NA NAKALIPAT!');
-                } else {
-                    console.error(
-                        'CRITICAL ERROR: Hindi ko mahanap ang susunod na step: ' + nextStepId,
-                    );
-                }
-            }
+            // IPASA ANG FILE BLOB NANG LIGTAS
+            reader.readAsDataURL(file);
         }
 
-        // 2. Event Listener para sa Real-Time UI (Ito yung nawawala sa iyo)
-        document.addEventListener('DOMContentLoaded', function () {
-            // UPDATE: Hinahanap na ngayon ang parehong input AT select
-            let requiredInputs = document.querySelectorAll('input[required], select[required]');
-
-            requiredInputs.forEach((input) => {
-                // 'input' event ay gumagana kapag nag-type sa textbox O namili sa dropdown
-                input.addEventListener('input', function () {
-                    let errorMessage = document.getElementById('error-' + this.id);
-
-                    // Tanggalin agad ang pulang kulay kapag may ginawa ang user
-                    this.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-
-                    if (errorMessage) {
-                        errorMessage.classList.add('hidden');
-                    }
-                });
-            });
-        });
-
-        // 1. Tagapag-alaga ng Progress Bar at Indicators
+        // 2. Tagapag-alaga ng Progress Bar at Indicators
         function updateProgressBar(stepNumber) {
             for (let i = 1; i <= 4; i++) {
                 let indicator = document.getElementById('ind-' + i);
@@ -663,9 +600,11 @@
             }
         }
 
-        // 2. Ang "Next" Button Function (May kasama nang Progress Bar Update)
+        // 3. Ang "Next" Button Function
         function validateAndGo(currentStepId, nextStepId) {
             let currentStepElement = document.getElementById(currentStepId);
+            if (!currentStepElement) return;
+
             let isValid = true;
             let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
 
@@ -683,25 +622,24 @@
 
             if (isValid) {
                 currentStepElement.classList.add('hidden');
-                document.getElementById(nextStepId).classList.remove('hidden');
-
-                // Kunin ang numero ng next step (Halimbawa: 'step2' -> nagiging 2)
-                let stepNum = parseInt(nextStepId.replace('step', ''));
-                updateProgressBar(stepNum); // Pagalawin ang progress bar!
+                let nextElement = document.getElementById(nextStepId);
+                if (nextElement) {
+                    nextElement.classList.remove('hidden');
+                    let stepNum = parseInt(nextStepId.replace('step', ''));
+                    updateProgressBar(stepNum);
+                }
             }
         }
 
-        // 3. Ang "Back" Button Function (BAGO)
+        // 4. Ang "Back" Button Function
         function goBack(currentStepId, prevStepId) {
             document.getElementById(currentStepId).classList.add('hidden');
             document.getElementById(prevStepId).classList.remove('hidden');
-
-            // Kunin ang numero ng previous step at i-atras ang progress bar
             let stepNum = parseInt(prevStepId.replace('step', ''));
             updateProgressBar(stepNum);
         }
 
-        // 4. Real-Time Error Removal
+        // 5. Real-Time Error Removal
         document.addEventListener('DOMContentLoaded', function () {
             let requiredInputs = document.querySelectorAll('input[required], select[required]');
             requiredInputs.forEach((input) => {
