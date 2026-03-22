@@ -9,24 +9,25 @@
 <body
     class="bg-slate-50 font-sans text-slate-900 antialiased min-h-screen flex flex-col justify-center py-10"
 >
-    <!-- Back Button -->
-    <div class="absolute top-4 left-4 md:top-8 md:left-8">
-        <a
-            href="/"
-            class="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Bumalik sa Home
-        </a>
-    </div>
-
     <div class="max-w-3xl mx-auto w-full px-4">
+        <!-- BUMALIK SA HOME BUTTON (Nasa loob ng container para pantay) -->
+        <div class="flex justify-start mb-2">
+            <a
+                href="/"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 py-2 px-4 rounded-xl transition-all duration-200"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Bumalik sa Home
+            </a>
+        </div>
         <div class="text-center mb-8">
-            <div
+            {{-- <div
                 class="w-16 h-16 bg-red-600 rounded-full mx-auto flex items-center justify-center shadow-lg mb-4"
             >
                 <span class="text-white font-bold text-xl">BDLS</span>
-            </div>
+            </div> --}}
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Gumawa ng Account</h1>
             <p class="text-slate-600 mt-2">Kumpletuhin ang 4 steps upang magkaroon ng account.</p>
         </div>
@@ -122,6 +123,7 @@
                                 type="text"
                                 id="first_name"
                                 name="first_name"
+                                maxlength="255"
                                 required
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
@@ -137,6 +139,7 @@
                                 type="text"
                                 id="middle_name"
                                 name="middle_name"
+                                maxlength="255"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
                         </div>
@@ -150,6 +153,7 @@
                                 type="text"
                                 id="last_name"
                                 name="last_name"
+                                maxlength="255"
                                 required
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
@@ -167,6 +171,7 @@
                                 type="text"
                                 id="suffix"
                                 name="suffix"
+                                maxlength="5"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
                         </div>
@@ -239,18 +244,19 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Flex justify-end ang magtutulak sa button papunta sa kanan -->
-                    <div class="flex justify-end mt-8">
+                    <!-- BUTTON CONTAINER (Step 1 - Next Only) -->
+                    <div class="w-full flex justify-end mt-8">
+                        <!-- NEXT BUTTON (Responsive Width) -->
                         <button
                             type="button"
                             onclick="validateAndGo('step1', 'step2')"
-                            class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Next Step
                         </button>
                     </div>
                 </div>
-                <!-- ITO YUNG IDINAGDAG MO NA CLOSING NG STEP 1 -->
+                <!-- CLOSING NG STEP 1 -->
 
                 <!-- ========================================== -->
                 <!-- STEP 2: TIRAHAN (Address)                  -->
@@ -262,12 +268,13 @@
                         <!-- House Number (Required) -->
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >House / Block / Lot No. <span class="text-red-500">*</span></label
+                                >House No. <span class="text-red-500">*</span></label
                             >
                             <input
                                 type="text"
                                 id="house_number"
                                 name="house_number"
+                                maxlength="50"
                                 required
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
@@ -283,6 +290,7 @@
                                 type="text"
                                 id="purok_street"
                                 name="purok_street"
+                                maxlength="255"
                                 required
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
@@ -290,22 +298,24 @@
                         </div>
                     </div>
 
-                    <!-- BUTTON CONTAINER (Back at Next) -->
-                    <div class="w-full flex justify-between mt-8">
-                        <!-- BACK BUTTON -->
+                    <!-- BUTTON CONTAINER (Consistent with Step 4) -->
+                    <div
+                        class="w-full flex flex-col-reverse md:flex-row justify-between items-stretch gap-4 mt-8"
+                    >
+                        <!-- BACK BUTTON (Ghost Style with Mobile Tap Feedback) -->
                         <button
                             type="button"
                             onclick="goBack('step2', 'step1')"
-                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto border-2 border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Back
                         </button>
 
-                        <!-- NEXT BUTTON -->
+                        <!-- NEXT BUTTON (Solid Style) -->
                         <button
                             type="button"
                             onclick="validateAndGo('step2', 'step3')"
-                            class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Next Step
                         </button>
@@ -329,6 +339,8 @@
                                 id="contact_number"
                                 name="contact_number"
                                 required
+                                maxlength="11"
+                                attern="09{9}"
                                 placeholder="09XXXXXXXXX"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
@@ -344,6 +356,7 @@
                                 type="email"
                                 id="email"
                                 name="email"
+                                maxlength="255"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
                             <!-- Walang error paragraph dahil hindi ito required -->
@@ -363,6 +376,8 @@
                                     type="password"
                                     id="password"
                                     name="password"
+                                    minlength="8"
+                                    maxlength="64"
                                     required
                                     class="w-full px-4 py-3 pr-20 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                                 />
@@ -390,6 +405,8 @@
                                     type="password"
                                     id="password_confirmation"
                                     name="password_confirmation"
+                                    minlength="8"
+                                    maxlength="64"
                                     required
                                     class="w-full px-4 py-3 pr-20 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                                 />
@@ -407,19 +424,24 @@
                         </div>
                     </div>
 
-                    <!-- BUTTON CONTAINER (Back at Next) -->
-                    <div class="w-full flex justify-between mt-8">
+                    <!-- BUTTON CONTAINER (Consistent with Step 4) -->
+                    <div
+                        class="w-full flex flex-col-reverse md:flex-row justify-between items-stretch gap-4 mt-8"
+                    >
+                        <!-- BACK BUTTON (Ghost Style with Mobile Tap Feedback) -->
                         <button
                             type="button"
                             onclick="goBack('step3', 'step2')"
-                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto border-2 border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Back
                         </button>
+
+                        <!-- NEXT BUTTON (Solid Style) -->
                         <button
                             type="button"
                             onclick="validateAndGo('step3', 'step4')"
-                            class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Next Step
                         </button>
@@ -547,23 +569,25 @@
                         </label>
                     </div>
 
-                    <!-- BUTTON CONTAINER (Back at Submit) -->
-                    <div class="w-full flex justify-between mt-8">
-                        <!-- BACK BUTTON -->
+                    <!-- BUTTON CONTAINER (Responsive / Dynamic Resizing) -->
+                    <div
+                        class="w-full flex flex-col-reverse md:flex-row justify-between items-stretch gap-4 mt-8"
+                    >
+                        <!-- BACK BUTTON (Ghost Style with Mobile Tap Feedback) -->
                         <button
                             type="button"
                             onclick="goBack('step4', 'step3')"
-                            class="bg-slate-500 hover:bg-slate-600 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto border-2 border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Back
                         </button>
 
-                        <!-- SUBMIT BUTTON (Naka-disable sa simula, may id="submitBtn") -->
+                        <!-- SUBMIT BUTTON -->
                         <button
                             type="submit"
                             id="submitBtn"
                             disabled
-                            class="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
+                            class="w-full md:w-auto whitespace-nowrap bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
                         >
                             Submit Registration
                         </button>
@@ -577,23 +601,42 @@
     <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
     <script>
         // 1. Custom function para sa live image preview
+        // 1. Custom function para sa live image preview at size validation
         function previewImage(event, previewId) {
             let input = event.target;
             let previewImg = document.getElementById(previewId);
             let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
 
-            // Kunin ang unang file gamit ang .item(0)
+            // Kunin ang unang file
             let file = input.files.item(0);
 
-            // DEFENSIVE DESIGN (Galing sa Stack Overflow):
-            // Kung nag-cancel ang user at walang file (undefined/null), tapusin agad ang function
+            // DEFENSIVE DESIGN: Kung nag-cancel ang user
             if (!file) {
                 console.log('Nag-cancel ang user, walang file na napili.');
                 return;
             }
 
-            console.log('File na nakuha:', file.name);
+            // ---> ITO ANG BAGONG FILE SIZE VALIDATION (5MB LIMIT) <---
+            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSizeInBytes) {
+                // Ipakita ang modal gamit ang custom message
+                showErrorModal(
+                    'Ang file ay masyadong malaki. Paki-upload ng litrato na may maximum size na 5MB.',
+                );
 
+                // I-reset ang input field para hindi ma-submit ang malaking file
+                input.value = '';
+
+                // Ibalik ang preview box sa "No image selected" state kung may dating picture
+                previewImg.classList.add('hidden');
+                previewImg.src = '';
+                placeholder.classList.remove('hidden');
+
+                return; // Patayin ang function dito, wag nang ituloy ang pag-load
+            }
+
+            // Kung nakapasa sa 5MB rule, i-load ang preview
+            console.log('File na nakuha at pasado:', file.name);
             let reader = new FileReader();
 
             reader.onload = function (e) {
@@ -680,6 +723,9 @@
                     nextElement.classList.remove('hidden');
                     let stepNum = parseInt(nextStepId.replace('step', ''));
                     updateProgressBar(stepNum);
+
+                    // ---> ITO ANG BAGONG LINYA: I-save ang step sa memory <---
+                    sessionStorage.setItem('bdls_active_step', nextStepId);
                 }
             }
         }
@@ -726,6 +772,57 @@
         function closePrivacyModal() {
             document.getElementById('privacyModal').classList.add('hidden');
         }
+
+        function showErrorModal(message) {
+            document.getElementById('errorModalMessage').innerText = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        // 8. sticky form
+        document.addEventListener('DOMContentLoaded', function () {
+            // PANSININ: Idinagdag ko ang ", select" sa dulo ng query na ito!
+            const formElements = document.querySelectorAll(
+                'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
+            );
+
+            formElements.forEach((element) => {
+                // Sinisiguro nating may ID o Name ang dropdown mo para may tagapagkakilanlan
+                const key = 'bdls_draft_' + (element.id || element.name);
+
+                // Ibalik ang text o piniling dropdown kung may naka-save
+                const savedValue = sessionStorage.getItem(key);
+                if (savedValue) {
+                    element.value = savedValue;
+                }
+
+                // I-save tuwing may tina-type (para sa inputs) o may pinipili (para sa select dropdowns)
+                element.addEventListener('input', function () {
+                    sessionStorage.setItem(key, this.value);
+                });
+                element.addEventListener('change', function () {
+                    sessionStorage.setItem(key, this.value);
+                });
+            });
+            // ---> ITO ANG BAGONG BLOKE PARA SA STICKY STEP <---
+            const savedStep = sessionStorage.getItem('bdls_active_step');
+            if (savedStep && savedStep !== 'step1') {
+                // Itago ang default na Step 1
+                document.getElementById('step1').classList.add('hidden');
+
+                // Ipakita ang naka-save na step
+                let activeStepElement = document.getElementById(savedStep);
+                if (activeStepElement) {
+                    activeStepElement.classList.remove('hidden');
+                    let stepNum = parseInt(savedStep.replace('step', ''));
+                    // I-update ang kulay ng progress bar
+                    updateProgressBar(stepNum);
+                }
+            }
+        });
     </script>
 
     <!-- DATA PRIVACY MODAL -->
@@ -769,6 +866,35 @@
                     I Understand
                 </button>
             </div>
+        </div>
+    </div>
+    <!-- GLOBAL ERROR MODAL -->
+    <div
+        id="errorModal"
+        class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
+    >
+        <div
+            class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500"
+        >
+            <!-- Red Warning Icon -->
+            <div
+                class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4"
+            >
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Oops! May Mali.</h3>
+            <p id="errorModalMessage" class="text-sm text-slate-600 mb-6">
+                <!-- Dito papasok ang "File must be less than 5MB" via JS -->
+            </p>
+            <button
+                type="button"
+                onclick="closeErrorModal()"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95"
+            >
+                I-try Ulit
+            </button>
         </div>
     </div>
 </body>
