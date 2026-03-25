@@ -52,36 +52,30 @@
     <!-- Main Content (Overlapping Section) -->
     <main class="max-w-7xl mx-auto px-6 md:px-12 -mt-16 relative z-20 pb-24">
         <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Left Side: Government Services Cards -->
-            <div class="flex-1 mt-16 lg:mt-24">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Government Services</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Card 1: Online Services -->
-                    <div
-                        class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all"
-                    >
-                        <div
-                            class="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-4"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-800 mb-2">Online Services</h3>
-                        <p class="text-slate-600 text-sm">Mag-request ng Barangay Clearance, Indigency, at iba pang dokumento online.</p>
-                    </div>
+            <!-- Left Side: Government Services Cards -->             
+            <div class="flex-1 mt-16 lg:mt-24">                 
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Government Services</h2>                 
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">                                         
+                    
+                    <!-- Card 1: Online Services (Clickable na) -->
+                    <a href="/signup" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-red-300 active:scale-95 active:bg-slate-50 transition-all duration-200">                         
+                        <div class="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-4">                             
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>                         
+                        </div>                         
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">Online Services</h3>                         
+                        <p class="text-slate-600 text-sm">Mag-request ng Barangay Clearance, Indigency, at iba pang dokumento online.</p>                     
+                    </a>
 
-                    <!-- Card 2: Queue Tracking -->
-                    <div
-                        class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all"
-                    >
-                        <div
-                            class="w-12 h-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-4"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-800 mb-2">Queue & SMS Tracking</h3>
-                        <p class="text-slate-600 text-sm">Alamin ang status ng iyong papel in real-time gamit ang SMS technology.</p>
-                    </div>
-                </div>
+                    <!-- Card 2: Queue Tracking (Clickable na) -->                     
+                    <a href="/login" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-400 active:scale-95 active:bg-slate-50 transition-all duration-200">                         
+                        <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-4">                             
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>                         
+                        </div>                         
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">Queue & SMS Tracking</h3>                         
+                        <p class="text-slate-600 text-sm">Alamin ang status ng iyong papel in real-time gamit ang SMS technology.</p>                     
+                    </a>
+
+                </div>             
             </div>
 
             <!-- Right Side: The Overlapping Announcement Card -->
