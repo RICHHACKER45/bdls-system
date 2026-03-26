@@ -32,3 +32,20 @@ Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.rese
 
 // Saluhin ang Login Data
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+// ==========================================
+// RESIDENT DASHBOARD ROUTES (Protected by Auth)
+// ==========================================
+Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(function () {
+    
+    // Ang mismong Dashboard
+    Route::get('/dashboard', function () {
+        return view('resident.dashboard');
+    })->name('dashboard');
+
+    // Ang Settings/Preferences
+    Route::get('/settings', function () {
+        return view('resident.settings');
+    })->name('settings');
+
+});
