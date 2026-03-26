@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
 Route::get('/', function () {
     return view('welcome'); // a welcome page
@@ -13,3 +14,5 @@ Route::get('/login', function () {
 Route::get('/signup', function () {
     return view('auth.signup'); 
 });
+
+Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');

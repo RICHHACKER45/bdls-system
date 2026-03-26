@@ -105,7 +105,7 @@
                 </div>
             </div>
 
-            <form action="#" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <!-- ========================================================-->
                 <!-- STEP 1: Personal Na Impormasyon (Personal Information) -->
