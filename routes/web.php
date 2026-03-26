@@ -29,3 +29,6 @@ Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
 
 // Resend otp
 Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend');
+
+// Saluhin ang Login Data
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
