@@ -44,9 +44,9 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
     })->name('dashboard');
 
     // Ang Settings/Preferences
-    Route::get('/settings', function () {
-        return view('resident.settings');
-    })->name('settings');
+    // Route::get('/settings', function () {
+    //     return view('resident.settings');
+    // })->name('settings');
 
 });
 
