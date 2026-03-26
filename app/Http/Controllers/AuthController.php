@@ -228,6 +228,7 @@ class AuthController extends Controller
      */
     public function sendEmailOtp(Request $request)
     {
+
         $user = Auth::user();
 
         // THE LARAVEL WAY (SECURITY): Rate Limiter (1 request per 60 seconds)
