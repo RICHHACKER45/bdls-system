@@ -34,6 +34,10 @@ class User extends Authenticatable
         'otp_expires_at',
         'contact_verified_at',
         'is_verified',
+        // Dito natin idinagdag ang tatlong bago:
+        'email_verified_at',
+        'email_otp_code',
+        'email_otp_expires_at',
     ];
 
     /**
