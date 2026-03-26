@@ -19,16 +19,16 @@
             <span class="font-bold text-lg tracking-tight">BDLS System</span>
         </div>
 
-        <!-- Navigation Links (Dynamic Active States: 10% Red Accent) -->
+        <!-- Navigation TABS (SPA Logic: 10% Red Accent) -->
         <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-            <a href="{{ route('resident.dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ request()->routeIs('resident.dashboard') ? 'bg-red-50 text-red-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all bg-red-50 text-red-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 Dashboard
-            </a>
-            <a href="{{ route('resident.settings') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ request()->routeIs('resident.settings') ? 'bg-red-50 text-red-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Preferences
-            </a>
+                Account Settings
+            </button>
         </nav>
 
         <!-- SECURE LOGOUT FORM -->
@@ -53,7 +53,8 @@
 
            <!-- Topbar Right (Laravel Auth Data Integration) -->
             <div class="ml-auto flex items-center gap-3">
-                <span class="text-sm font-semibold text-slate-700 hidden sm:block">Kamusta, {{ Auth::user()->first_name }}!</span>
+                <!-- TANGGAL ANG HIDDEN, NILAGYAN NG TRUNCATE MAX-WIDTH -->
+                <span class="text-sm font-semibold text-slate-700 truncate max-w-[100px] sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
                 
                 <!-- INITIALS AVATAR FALLBACK -->
                 @php
@@ -79,6 +80,32 @@
             const overlay = document.getElementById('mobile-overlay');
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
+        }
+
+        function switchTab(tabId) {
+            // 1. Itago lahat ng tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // 2. Ipakita ang piniling tab
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            // 3. I-reset ang kulay ng lahat ng buttons sa sidebar
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-red-50', 'text-red-700');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-50', 'hover:text-slate-900');
+            });
+
+            // 4. Kulayan ng pula ang active na button
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-red-50', 'text-red-700');
+                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50', 'hover:text-slate-900');
+            }
+
+            // 5. Kung nasa mobile, isara ang sidebar pagkatapos pumili
+            const sidebar = document.getElementById('sidebar');
+            if(window.innerWidth < 1024 && !sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
         }
     </script>
 </body>
