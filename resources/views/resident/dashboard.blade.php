@@ -166,13 +166,45 @@
                         </button>
                     </form>
 
-                    <!-- RESEND CODE FORM -->
-                    <form action="{{ route('resident.email.send') }}" method="POST" class="mt-4">
+                    <!-- RESEND CODE FORM WITH LARAVEL RATE LIMITER SYNC -->
+                    @php
+                        // Kukunin natin ang totoong server cooldown time
+                        $cooldown = \Illuminate\Support\Facades\RateLimiter::availableIn('resend_email_otp_' . Auth::id());
+                    @endphp
+                    
+                    <form action="{{ route('resident.email.add') }}" method="POST" class="mt-4" id="resendOtpForm">
                         @csrf
-                        <button type="submit" class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline">
-                            Magpadala ng bagong code
+                        <!-- Dinagdag ang disabled states para maging gray kapag hindi mapindot -->
+                        <button type="submit" id="resendBtn" class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-all">
+                            Magpadala ng bagong code <span id="timerDisplay" class="text-red-600 ml-1 font-mono"></span>
                         </button>
                     </form>
+
+                    <!-- Kung may natitirang cooldown, i-trigger ang live JS countdown -->
+                    @if($cooldown > 0)
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            let secondsLeft = {{ $cooldown }};
+                            const btn = document.getElementById('resendBtn');
+                            const timerDisplay = document.getElementById('timerDisplay');
+
+                            // I-lock ang button
+                            btn.disabled = true;
+
+                            const countdown = setInterval(() => {
+                                timerDisplay.innerText = `(${secondsLeft}s)`;
+                                secondsLeft--;
+
+                                // Kapag tapos na, ibalik ang button sa normal
+                                if (secondsLeft < 0) {
+                                    clearInterval(countdown);
+                                    btn.disabled = false;
+                                    timerDisplay.innerText = '';
+                                }
+                            }, 1000);
+                        });
+                    </script>
+                    @endif
                 </div>
             @endif
         @endif
