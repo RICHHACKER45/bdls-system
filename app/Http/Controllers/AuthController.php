@@ -172,11 +172,30 @@ class AuthController extends Controller
         if (Auth::attempt([$loginType => $credentials['login_id'], 'password' => $credentials['password']])) {
             $user = Auth::user();
 
-            // 4. ANG ADMIN SHIELD: I-check kung approved na ng admin
-            // if (!$user->is_verified) {
-            //     Auth::logout(); // I-kick palabas
-            //     return back()->withErrors(['login_id' => 'Hindi ka pa maaaring pumasok. Sinusuri pa ng Barangay Admin ang iyong Valid ID at Selfie.']);
-            // }
+            // 3. Subukang i-authenticate (The Laravel Way)
+        if (Auth::attempt([$loginType => $credentials['login_id'], 'password' => $credentials['password']])) {
+            $user = Auth::user();
+
+            // 4. ANG OTP SHIELD: I-check kung tapos na siya sa OTP Verification (Kung null ang timestamp)
+            if (is_null($user->contact_verified_at)) {
+                Auth::logout(); // I-kick palabas sa system
+                
+                // I-restore ang session memory para gumana ulit ang OTP page niya
+                $request->session()->put('registration_contact', $user->contact_number);
+                
+                // Ibato pabalik sa OTP page kalakip ang error message
+                return redirect('/otp')->withErrors(['otp' => 'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.']);
+            }
+
+            // (Nakatago pa rin ang Admin Shield natin para makapag-design tayo)
+            // if (!$user->is_verified) { ... }
+
+            // 5. SECURITY: Regenerate session laban sa hackers
+            $request->session()->regenerate();
+
+            // 6. I-redirect sa Resident Dashboard
+            return redirect()->intended('/resident/dashboard');
+        }
 
             // 5. SECURITY: Regenerate session laban sa hackers
             $request->session()->regenerate();
