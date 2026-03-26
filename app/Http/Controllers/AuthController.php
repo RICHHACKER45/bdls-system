@@ -254,7 +254,7 @@ class AuthController extends Controller
         RateLimiter::hit($rateLimitKey, 60);
 
         // DUMMY EMAIL INTEGRATION
-        \Illuminate\Support\Facades\Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+        Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
 
         return back()->with(['success' => 'Naipadala na ang 6-digit code sa iyong email!', 'active_tab' => 'settings']);
     }
@@ -319,7 +319,7 @@ class AuthController extends Controller
         ]);
 
         // DUMMY EMAIL INTEGRATION
-        \Illuminate\Support\Facades\Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+        Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
 
         return back()->with(['success' => 'Email naidagdag! Nagpadala kami ng 6-digit code upang ma-verify ito.', 'active_tab' => 'settings']);
     }
