@@ -26,3 +26,6 @@ Route::get('/otp', function () {
 
 // 2. POST Route: Ito ang sasalo sa 6-digit code kapag pinindot ang "Verify Account"
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
+
+// Resend otp
+Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend');
