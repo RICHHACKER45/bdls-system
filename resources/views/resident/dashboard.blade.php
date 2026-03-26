@@ -3,6 +3,11 @@
 @section('title', 'Dashboard')
 
 @section('content')
+
+<!-- ===================================== -->
+<!-- TAB 1: DASHBOARD CONTENT              -->
+<!-- ===================================== -->
+<div id="tab-dashboard" class="tab-content">
     
     <!-- OPTIONAL EMAIL VERIFICATION BANNER (Blue Accent) -->
     <!-- Lalabas lang ito kung naglagay siya ng email sa registration pero hindi pa verified -->
@@ -28,8 +33,8 @@
     @endif
 
     <h1 class="text-2xl font-bold text-slate-900 mb-6">Resident Dashboard</h1>
-    
-    <!-- THE WAITING ROOM SHIELD (Nakatago na dahil verified ka na) -->
+
+    <!-- THE WAITING ROOM SHIELD -->
     @if(!Auth::user()->is_verified)
         <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-xl shadow-sm mb-6">
             <div class="flex items-center gap-3 text-amber-800 font-bold text-lg mb-2">
@@ -43,7 +48,6 @@
     @else
         <!-- VERIFIED DASHBOARD CONTENT (60/30/10 Rule) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
             <!-- PRIMARY ACTION: Request Document (10% Red Accent) -->
             <div class="col-span-1 lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col justify-between">
                 <div>
@@ -87,7 +91,21 @@
                     </div>
                 </div>
             </div>
-
         </div>
     @endif
+</div>
+
+<!-- ===================================== -->
+<!-- TAB 2: SETTINGS CONTENT (Nakatago)    -->
+<!-- ===================================== -->
+<div id="tab-settings" class="tab-content hidden">
+    <h1 class="text-2xl font-bold text-slate-900 mb-6">Account Settings</h1>
+    
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+        <h2 class="text-lg font-bold text-slate-800 mb-4">Email Verification Form</h2>
+        <p class="text-slate-500 text-sm mb-6">Dito natin ilalagay ang logic para makapag-add o makapag-verify ng email ang user nang hindi umaalis sa dashboard.</p>
+        <!-- Bubuin natin ang laman nito sa susunod na step! -->
+    </div>
+</div>
+
 @endsection
