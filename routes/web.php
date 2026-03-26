@@ -49,3 +49,6 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
     })->name('settings');
 
 });
+
+// Call the logout function
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

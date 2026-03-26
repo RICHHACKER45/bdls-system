@@ -188,4 +188,13 @@ class AuthController extends Controller
         // Kapag mali ang password o number/email
         return back()->withErrors(['login_id' => 'Mali ang Contact Number/Email o Password na inilagay.']);
     }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken(); // CSRF Protection
+        return redirect('/login');
+    }
 }
+
