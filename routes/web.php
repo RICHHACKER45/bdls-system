@@ -18,3 +18,11 @@ Route::get('/signup', function () {
 Route::post('/signup', [AuthController::class, 'register'])
     ->name('signup.post');
     // ->middleware('throttle:3,1'); // LIMIT: 3 signups per 1 minute per IP Address
+
+// 1. GET Route: Ito ang nagpapakita ng UI ng OTP page (Kaya ka nag-404 dahil nawala ito)
+Route::get('/otp', function () {
+    return view('auth.otp');
+})->name('otp.show');
+
+// 2. POST Route: Ito ang sasalo sa 6-digit code kapag pinindot ang "Verify Account"
+Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
