@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -229,8 +230,16 @@ class AuthController extends Controller
     {
         $user = Auth::user();
 
+        // THE LARAVEL WAY (SECURITY): Rate Limiter (1 request per 60 seconds)
+        $rateLimitKey = 'resend_email_otp_' . $user->id;
+        
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return back()->withErrors(['email_otp' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit."])->with('active_tab', 'settings');
+        }
+
         if (!$user->email) {
-            return back()->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.']);
+            return back()->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.'])->with('active_tab', 'settings');
         }
 
         // Mag-generate ng 6-digit code
@@ -241,10 +250,12 @@ class AuthController extends Controller
             'email_otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        // DUMMY EMAIL INTEGRATION (Makikita sa laravel.log)
-        Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+        // I-lock ang user ng 60 seconds bago makapag-send ulit
+        RateLimiter::hit($rateLimitKey, 60);
 
-        // Ipapasa ang 'active_tab' para hindi mawala ang user sa Settings view
+        // DUMMY EMAIL INTEGRATION
+        \Illuminate\Support\Facades\Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+
         return back()->with(['success' => 'Naipadala na ang 6-digit code sa iyong email!', 'active_tab' => 'settings']);
     }
 
