@@ -897,5 +897,25 @@
             </button>
         </div>
     </div>
+    <!-- LARAVEL BACKEND ERROR CATCHER -->
+    @if ($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Kunin ang pinakaunang error na ibinato ng Laravel Controller
+                let laravelError = "{{ $errors->first() }}";
+                
+                // Tawagin ang custom function mo para buksan ang modal!
+                showErrorModal(laravelError);
+                
+                // Siguraduhing ibalik ang user sa Step 3 kung password ang error
+                @if($errors->has('password'))
+                    sessionStorage.setItem('bdls_active_step', 'step3');
+                    document.getElementById('step4').classList.add('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
+                    updateProgressBar(3);
+                @endif
+            });
+        </script>
+    @endif
 </body>
 </html>
