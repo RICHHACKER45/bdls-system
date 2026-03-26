@@ -14,6 +14,16 @@
         <p class="text-sm text-slate-500 mb-8">
             Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.
         </p>
+        <!-- LARAVEL ERROR DISPLAY -->
+        @if ($errors->any())
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-left shadow-sm">
+                <div class="flex items-center gap-2 text-red-700 font-bold mb-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Verification Failed
+                </div>
+                <p class="text-sm text-red-600 font-medium">{{ $errors->first() }}</p>
+            </div>
+        @endif
 
         <!-- OTP FORM -->
         <form action="{{ route('otp.verify') }}" method="POST">

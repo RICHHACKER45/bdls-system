@@ -125,4 +125,31 @@ class AuthController extends Controller
         // I-redirect sa Login page kasama ang Success Message
         return redirect('/login')->with('success', 'Number Verified! Hinihintay na lamang ang Admin Approval bago makapag-login.');
     }
+
+    /**
+     * Mag-generate ng bagong OTP at i-update ang expiration
+     */
+    public function resendOtp(Request $request)
+    {
+        $contactNumber = $request->session()->get('registration_contact');
+
+        if (!$contactNumber) {
+            return redirect('/signup')->withErrors(['error' => 'Session expired. Mangyaring mag-register muli.']);
+        }
+
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        // Mag-generate ng BAGONG 6-digit OTP
+        $newOtpCode = (string) rand(100000, 999999);
+        
+        $user->update([
+            'otp_code' => $newOtpCode,
+            'otp_expires_at' => now()->addMinutes(10),
+        ]);
+
+        // DUMMY SMS INTEGRATION PARA SA RESEND
+        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtpCode}");
+
+        return back()->with('success', 'Ang bagong 6-digit code ay naipadala na sa iyong numero!');
+    }
 }
