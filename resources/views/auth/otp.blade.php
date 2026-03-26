@@ -14,6 +14,16 @@
         <p class="text-sm text-slate-500 mb-8">
             Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.
         </p>
+        <!-- LARAVEL SUCCESS DISPLAY -->
+        @if (session('success'))
+            <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg text-left shadow-sm">
+                <div class="flex items-center gap-2 text-green-700 font-bold mb-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Success
+                </div>
+                <p class="text-sm text-green-600 font-medium">{{ session('success') }}</p>
+            </div>
+        @endif
         <!-- LARAVEL ERROR DISPLAY -->
         @if ($errors->any())
             <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-left shadow-sm">
@@ -45,12 +55,15 @@
             </button>
         </form>
 
-        <!-- RESEND LINK -->
+        <!-- RESEND LINK (Converted to Secure Form) -->
         <div class="mt-6 text-sm text-slate-500">
             Hindi nakuha ang code? 
-            <button type="button" class="text-slate-900 font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-slate-200 rounded">
-                Mag-resend
-            </button>
+            <form action="{{ route('otp.resend') }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="text-slate-900 font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-slate-200 rounded">
+                    Mag-resend
+                </button>
+            </form>
         </div>
 
     </div>
