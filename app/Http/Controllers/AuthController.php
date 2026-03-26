@@ -221,5 +221,62 @@ class AuthController extends Controller
         $request->session()->regenerateToken(); // CSRF Protection
         return redirect('/login');
     }
+
+    /**
+     * Mag-generate at magpadala ng Dummy Email OTP
+     */
+    public function sendEmailOtp(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->email) {
+            return back()->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.']);
+        }
+
+        // Mag-generate ng 6-digit code
+        $otp = (string) rand(100000, 999999);
+        
+        $user->update([
+            'email_otp_code' => $otp,
+            'email_otp_expires_at' => now()->addMinutes(10),
+        ]);
+
+        // DUMMY EMAIL INTEGRATION (Makikita sa laravel.log)
+        Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+
+        // Ipapasa ang 'active_tab' para hindi mawala ang user sa Settings view
+        return back()->with(['success' => 'Naipadala na ang 6-digit code sa iyong email!', 'active_tab' => 'settings']);
+    }
+
+    /**
+     * I-verify ang inilagay na Email OTP
+     */
+    public function verifyEmailOtp(Request $request)
+    {
+        $request->validate([
+            'email_otp' => 'required|size:6'
+        ], [
+            'email_otp.required' => 'Pakilagay ang 6-digit code.',
+            'email_otp.size' => 'Ang code ay dapat eksaktong 6 digits.'
+        ]);
+
+        $user = Auth::user();
+
+        if ($user->email_otp_code !== $request->email_otp) {
+            return back()->withErrors(['email_otp' => 'Mali ang 6-digit code. Subukan muli.'])->with('active_tab', 'settings');
+        }
+
+        if (now()->greaterThan($user->email_otp_expires_at)) {
+            return back()->withErrors(['email_otp' => 'Expired na ang code. Mag-request ng bago.'])->with('active_tab', 'settings');
+        }
+
+        // SUCCESS: I-update ang email_verified_at
+        $user->update([
+            'email_verified_at' => now(),
+            'email_otp_code' => null, // Burahin ang code para sa security
+        ]);
+
+        return back()->with(['success' => 'Email Verified! Maaari ka nang makatanggap ng digital receipts.', 'active_tab' => 'settings']);
+    }
 }
 

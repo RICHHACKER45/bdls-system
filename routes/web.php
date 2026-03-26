@@ -48,6 +48,10 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
     //     return view('resident.settings');
     // })->name('settings');
 
+    // EMAIL VERIFICATION ROUTES
+    Route::post('/email/send-otp', [AuthController::class, 'sendEmailOtp'])->name('email.send');
+    Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp'])->name('email.verify');
+
 });
 
 // Call the logout function

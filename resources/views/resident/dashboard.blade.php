@@ -22,8 +22,8 @@
                     Kasalukuyang naka-link ang <span class="font-bold">{{ Auth::user()->email }}</span>. I-verify ito para makatanggap ng digital receipts ng iyong mga request.
                 </p>
             </div>
-            <!-- Pansamantalang # muna ang form action hanggang magawa natin ang controller function -->
-            <form action="#" method="POST" class="w-full sm:w-auto">
+            <!-- for email confirmation -->
+            <form action="{{ route('resident.email.send') }}" method="POST" class="w-full sm:w-auto">
                 @csrf
                 <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm active:scale-95 transition-all shadow-sm">
                     I-verify Ngayon
@@ -108,4 +108,12 @@
     </div>
 </div>
 
+<!-- SPA STATE MANAGER: I-auto bukas ang settings tab kapag nanggaling sa pag-submit ng email form -->
+@if(session('active_tab') == 'settings' || $errors->has('email_otp'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        switchTab('settings');
+    });
+</script>
+@endif
 @endsection
