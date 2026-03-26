@@ -120,11 +120,17 @@ class AuthController extends Controller
             'otp_code' => null, // Burahin ang ginamit na code para sa security
         ]);
 
-        // Burahin ang session para malinis ang browser
+        // Burahin ang OTP session memory
         $request->session()->forget('registration_contact');
-        
-        // I-redirect sa Login page kasama ang Success Message
-        return redirect('/login')->with('success', 'Number Verified! Hinihintay na lamang ang Admin Approval bago makapag-login.');
+
+        // THE LARAVEL WAY: I-login agad ang user dahil napatunayan na niya ang OTP niya
+        Auth::login($user);
+
+        // SECURITY: Regenerate session laban sa session fixation attacks
+        $request->session()->regenerate();
+
+        // I-redirect diretso sa Resident Dashboard
+        return redirect('/resident/dashboard')->with('success', 'Number Verified! Welcome sa iyong dashboard.');
     }
 
     /**
