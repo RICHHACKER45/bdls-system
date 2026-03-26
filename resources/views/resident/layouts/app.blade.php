@@ -53,16 +53,11 @@
 
            <!-- Topbar Right (Laravel Auth Data Integration) -->
             <div class="ml-auto flex items-center gap-3">
-                <!-- TANGGAL ANG HIDDEN, NILAGYAN NG TRUNCATE MAX-WIDTH -->
                 <span class="text-sm font-semibold text-slate-700 truncate max-w-[180px] sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
                 
-                <!-- INITIALS AVATAR FALLBACK -->
-                @php
-                    // Kukunin ang unang letra ng First Name at Last Name
-                    $initials = strtoupper(substr(Auth::user()->first_name, 0, 1) . substr(Auth::user()->last_name, 0, 1));
-                @endphp
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-sm border-2 border-white select-none">
-                    {{ $initials }}
+                <!-- TOTOONG PROFILE PICTURE MULA SA SELFIE -->
+                <div class="w-9 h-9 rounded-full bg-slate-200 shadow-sm overflow-hidden border-2 border-white">
+                    <img src="{{ asset('storage/' . Auth::user()->selfie_photo_path) }}" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
         </header>

@@ -52,7 +52,11 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
     Route::post('/email/send-otp', [AuthController::class, 'sendEmailOtp'])->name('email.send');
     Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp'])->name('email.verify');
 
+    // add Email
+    Route::post('/email/add', [AuthController::class, 'addEmail'])->name('email.add');
+
 });
 
 // Call the logout function
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+

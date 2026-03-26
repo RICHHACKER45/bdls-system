@@ -119,8 +119,19 @@
         @endif
 
         @if(!Auth::user()->email)
-            <!-- Dito natin ilalagay ang "Add Email" feature sa susunod -->
-            <p class="text-slate-500 text-sm">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts.</p>
+            <div class="mt-4 p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                <h3 class="text-sm font-bold text-slate-800 mb-2">Magdagdag ng Email Address</h3>
+                <p class="text-xs text-slate-500 mb-4">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts para sa iyong mga request.</p>
+                
+                <form action="{{ route('resident.email.add') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                    @csrf
+                    <input type="email" name="new_email" placeholder="juan@email.com" required class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 block w-full sm:w-64 p-2.5 outline-none transition-all">
+                    
+                    <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg transition-all active:scale-95 text-sm sm:w-auto w-full">
+                        I-save at I-verify
+                    </button>
+                </form>
+            </div>
         @else
             <!-- EMAIL STATUS BADGE -->
             <div class="mb-4">

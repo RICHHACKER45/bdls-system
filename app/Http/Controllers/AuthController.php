@@ -278,5 +278,39 @@ class AuthController extends Controller
 
         return back()->with(['success' => 'Email Verified! Maaari ka nang makatanggap ng digital receipts.', 'active_tab' => 'settings']);
     }
+
+     /**
+     * Mag-add ng bagong email ang user mula sa Settings Tab
+     */
+    public function addEmail(Request $request)
+    {
+        $request->validate([
+            'new_email' => 'required|email|unique:users,email'
+        ], [
+            'new_email.required' => 'Pakilagay ang iyong email address.',
+            'new_email.email' => 'Mali ang format ng email.',
+            'new_email.unique' => 'Ginamit na ng ibang account ang email na ito.'
+        ]);
+
+        $user = Auth::user();
+
+        // I-save ang email pero Unverified pa
+        $user->update([
+            'email' => $request->new_email,
+            'email_verified_at' => null, 
+        ]);
+
+        // Mag-generate at mag-send agad ng OTP
+        $otp = (string) rand(100000, 999999);
+        $user->update([
+            'email_otp_code' => $otp,
+            'email_otp_expires_at' => now()->addMinutes(10),
+        ]);
+
+        // DUMMY EMAIL INTEGRATION
+        \Illuminate\Support\Facades\Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
+
+        return back()->with(['success' => 'Email naidagdag! Nagpadala kami ng 6-digit code upang ma-verify ito.', 'active_tab' => 'settings']);
+    }
 }
 
