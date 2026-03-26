@@ -54,7 +54,7 @@
            <!-- Topbar Right (Laravel Auth Data Integration) -->
             <div class="ml-auto flex items-center gap-3">
                 <!-- TANGGAL ANG HIDDEN, NILAGYAN NG TRUNCATE MAX-WIDTH -->
-                <span class="text-sm font-semibold text-slate-700 truncate max-w-[100px] sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
+                <span class="text-sm font-semibold text-slate-700 truncate max-w-[180px] sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
                 
                 <!-- INITIALS AVATAR FALLBACK -->
                 @php
