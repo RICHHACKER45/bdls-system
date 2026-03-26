@@ -102,9 +102,70 @@
     <h1 class="text-2xl font-bold text-slate-900 mb-6">Account Settings</h1>
     
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Email Verification Form</h2>
-        <p class="text-slate-500 text-sm mb-6">Dito natin ilalagay ang logic para makapag-add o makapag-verify ng email ang user nang hindi umaalis sa dashboard.</p>
-        <!-- Bubuin natin ang laman nito sa susunod na step! -->
+        <h2 class="text-xl font-bold text-slate-900 mb-6">Email Address</h2>
+
+        <!-- SPA SUCCESS MESSAGES -->
+        @if(session('success') && session('active_tab') == 'settings')
+            <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg text-sm text-green-700 font-medium shadow-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <!-- SPA ERROR MESSAGES -->
+        @if($errors->has('email_otp') || $errors->has('email'))
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-sm text-red-700 font-medium shadow-sm">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
+        @if(!Auth::user()->email)
+            <!-- Dito natin ilalagay ang "Add Email" feature sa susunod -->
+            <p class="text-slate-500 text-sm">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts.</p>
+        @else
+            <!-- EMAIL STATUS BADGE -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Kasalukuyang Email</label>
+                <div class="flex items-center gap-3">
+                    <input type="email" value="{{ Auth::user()->email }}" disabled class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg block w-full sm:w-80 p-2.5">
+
+                    @if(Auth::user()->email_verified_at)
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Verified
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                            Unverified
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- EMAIL OTP FORM (Lalabas lang kung HINDI pa verified) -->
+            @if(!Auth::user()->email_verified_at)
+                <div class="mt-6 p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2">I-verify ang iyong Email</h3>
+                    <p class="text-xs text-slate-500 mb-4">I-type ang 6-digit code na ipinadala namin sa iyong email upang ma-verify ito.</p>
+
+                    <!-- OTP INPUT FORM -->
+                    <form action="{{ route('resident.email.verify') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                        @csrf
+                        <input type="text" name="email_otp" maxlength="6" placeholder="000000" class="bg-white border border-slate-300 text-slate-900 text-center text-lg font-bold rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 block w-full sm:w-40 p-2.5 tracking-[0.3em] outline-none transition-all">
+                        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg transition-all active:scale-95 text-sm sm:w-auto w-full">
+                            I-verify Code
+                        </button>
+                    </form>
+
+                    <!-- RESEND CODE FORM -->
+                    <form action="{{ route('resident.email.send') }}" method="POST" class="mt-4">
+                        @csrf
+                        <button type="submit" class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline">
+                            Magpadala ng bagong code
+                        </button>
+                    </form>
+                </div>
+            @endif
+        @endif
     </div>
 </div>
 
