@@ -10,10 +10,12 @@
     class="bg-slate-50 font-sans text-slate-900 antialiased min-h-screen flex flex-col justify-center py-10"
 >
     <div class="max-w-3xl mx-auto w-full px-4">
-        <!-- BUMALIK SA HOME BUTTON (Nasa loob ng container para pantay) -->
-        <div class="flex justify-start mb-2">
+        <!-- TOP NAVIGATION & FORM CONTROLS -->
+        <div class="flex justify-between items-center mb-2">
+            <!-- BUMALIK SA HOME BUTTON (Intentional Exit = Clear Memory) -->
             <a
                 href="/"
+                onclick="sessionStorage.clear()"
                 class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 py-2 px-4 rounded-xl transition-all duration-200"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,7 +23,20 @@
                 </svg>
                 Bumalik sa Home
             </a>
+
+            <!-- RESET FORM BUTTON (Subtle, malayo sa "Next" buttons, may Confirmation) -->
+            <button
+                type="button"
+                onclick="if(confirm('Sigurado ka bang gusto mong burahin lahat ng tina-type mo at umpisahan muli?')) { sessionStorage.clear(); location.reload(); }"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-700 active:scale-95 focus:outline-none transition-all duration-200 py-2 px-4 rounded-xl"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                I-reset ang Form
+            </button>
         </div>
+
         <div class="text-center mb-8">
             {{-- <div
                 class="w-16 h-16 bg-red-600 rounded-full mx-auto flex items-center justify-center shadow-lg mb-4"
