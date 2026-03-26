@@ -6,7 +6,7 @@
     <title>@yield('title', 'Resident Dashboard') - BDLS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 antialiased flex h-screen overflow-hidden">
+<body class="bg-slate-50 font-sans text-slate-900 antialiased flex h-[100dvh] overflow-hidden">
 
     <!-- MOBILE OVERLAY -->
     <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
@@ -51,11 +51,17 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
 
-            <!-- Topbar Right (Laravel Auth Data Integration) -->
+           <!-- Topbar Right (Laravel Auth Data Integration) -->
             <div class="ml-auto flex items-center gap-3">
                 <span class="text-sm font-semibold text-slate-700 hidden sm:block">Kamusta, {{ Auth::user()->first_name }}!</span>
-                <div class="w-8 h-8 rounded-full bg-slate-200 shadow-sm overflow-hidden border-2 border-white">
-                    <img src="{{ asset('storage/' . Auth::user()->selfie_photo_path) }}" alt="Profile" class="w-full h-full object-cover">
+                
+                <!-- INITIALS AVATAR FALLBACK -->
+                @php
+                    // Kukunin ang unang letra ng First Name at Last Name
+                    $initials = strtoupper(substr(Auth::user()->first_name, 0, 1) . substr(Auth::user()->last_name, 0, 1));
+                @endphp
+                <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-sm border-2 border-white select-none">
+                    {{ $initials }}
                 </div>
             </div>
         </header>
