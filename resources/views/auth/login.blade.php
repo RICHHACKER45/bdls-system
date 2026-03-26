@@ -55,7 +55,7 @@
                         <p class="text-sm text-green-600 font-medium">{{ session('success') }}</p>
                     </div>
                 @endif
-                <form action="#" method="POST" class="space-y-5">
+                <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
                     @csrf
                     <!-- Login Credential Input (Contact Number or Email) -->
                     <div>
