@@ -173,10 +173,10 @@ class AuthController extends Controller
             $user = Auth::user();
 
             // 4. ANG ADMIN SHIELD: I-check kung approved na ng admin
-            if (!$user->is_verified) {
-                Auth::logout(); // I-kick palabas
-                return back()->withErrors(['login_id' => 'Hindi ka pa maaaring pumasok. Sinusuri pa ng Barangay Admin ang iyong Valid ID at Selfie.']);
-            }
+            // if (!$user->is_verified) {
+            //     Auth::logout(); // I-kick palabas
+            //     return back()->withErrors(['login_id' => 'Hindi ka pa maaaring pumasok. Sinusuri pa ng Barangay Admin ang iyong Valid ID at Selfie.']);
+            // }
 
             // 5. SECURITY: Regenerate session laban sa hackers
             $request->session()->regenerate();
