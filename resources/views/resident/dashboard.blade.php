@@ -95,128 +95,146 @@
 </div>
 
 <!-- ===================================== -->
-<!-- TAB 2: SETTINGS CONTENT (Nakatago)    -->
+<!-- TAB 2: SETTINGS CONTENT (SPA)         -->
 <!-- ===================================== -->
 <div id="tab-settings" class="tab-content hidden">
     <h1 class="text-2xl font-bold text-slate-900 mb-6">Account Settings</h1>
     
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-        <h2 class="text-xl font-bold text-slate-900 mb-6">Email Address</h2>
-
-        <!-- SPA SUCCESS MESSAGES -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-8">
+        
+        <!-- SPA MESSAGES -->
         @if(session('success') && session('active_tab') == 'settings')
-            <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg text-sm text-green-700 font-medium shadow-sm">
+            <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg text-sm text-green-700 font-medium shadow-sm">
                 {{ session('success') }}
             </div>
         @endif
-
-        <!-- SPA ERROR MESSAGES -->
         @if($errors->has('email_otp') || $errors->has('email'))
-            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-sm text-red-700 font-medium shadow-sm">
+            <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-sm text-red-700 font-medium shadow-sm">
                 {{ $errors->first() }}
             </div>
         @endif
 
-        @if(!Auth::user()->email)
-            <div class="mt-4 p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-xl">
-                <h3 class="text-sm font-bold text-slate-800 mb-2">Magdagdag ng Email Address</h3>
-                <p class="text-xs text-slate-500 mb-4">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts para sa iyong mga request.</p>
-                
-                <form action="{{ route('resident.email.add') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
-                    @csrf
-                    <input type="email" name="new_email" placeholder="juan@email.com" required class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 block w-full sm:w-64 p-2.5 outline-none transition-all">
-                    
-                    <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg transition-all active:scale-95 text-sm sm:w-auto w-full">
-                        I-save at I-verify
-                    </button>
-                </form>
+        <!-- 1. PRIMARY CONTACT SECTION (Nasa itaas na) -->
+        <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">Primary Contact Number</h2>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <input type="text" value="{{ Auth::user()->contact_number }}" disabled class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg block w-full sm:w-80 p-2.5 font-bold">
+                <span class="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 w-full sm:w-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Verified
+                </span>
             </div>
-        @else
-            <!-- EMAIL STATUS BADGE -->
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Kasalukuyang Email</label>
-                <div class="flex items-center gap-3">
-                    <input type="email" value="{{ Auth::user()->email }}" disabled class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg block w-full sm:w-80 p-2.5">
+            <p class="text-xs text-slate-500 mt-2">Dito ipapadala ang mga pangunahing SMS notifications para sa iyong mga request.</p>
+        </div>
 
+        <hr class="border-slate-100">
+
+        <!-- 2. EMAIL FALLBACK SECTION -->
+        <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">Email Address</h2>
+            
+            @if(!Auth::user()->email)
+                <div class="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <p class="text-xs text-slate-500 mb-3">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts para sa iyong mga request.</p>
+                    <form action="{{ route('resident.email.add') }}" method="POST" class="flex flex-col sm:flex-row gap-2">
+                        @csrf
+                        <input type="email" name="new_email" placeholder="juan@email.com" required class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-slate-900 block w-full sm:w-64 p-2.5 outline-none">
+                        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-all active:scale-95">I-save</button>
+                    </form>
+                </div>
+            @else
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                    <input type="email" value="{{ Auth::user()->email }}" disabled class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg block w-full sm:w-80 p-2.5">
+                    
                     @if(Auth::user()->email_verified_at)
-                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                        <span class="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 w-full sm:w-auto">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             Verified
                         </span>
                     @else
-                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                            Unverified
-                        </span>
+                        <span class="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 w-full sm:w-auto">Unverified</span>
                     @endif
                 </div>
-            </div>
 
-            <!-- EMAIL OTP FORM (Lalabas lang kung HINDI pa verified) -->
-            @if(!Auth::user()->email_verified_at)
-                <div class="mt-6 p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-xl">
-                    <h3 class="text-sm font-bold text-slate-800 mb-2">I-verify ang iyong Email</h3>
-                    <p class="text-xs text-slate-500 mb-4">I-type ang 6-digit code na ipinadala namin sa iyong email upang ma-verify ito.</p>
+                <!-- OTP VERIFICATION UI (Kung may email pero di pa verified) -->
+                @if(!Auth::user()->email_verified_at)
+                    <div class="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                        <h3 class="text-sm font-bold text-slate-800 mb-2">I-verify ang iyong Email</h3>
 
-                    <!-- OTP INPUT FORM -->
-                    <form action="{{ route('resident.email.verify') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
-                        @csrf
-                        <input type="text" name="email_otp" maxlength="6" placeholder="000000" class="bg-white border border-slate-300 text-slate-900 text-center text-lg font-bold rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 block w-full sm:w-40 p-2.5 tracking-[0.3em] outline-none transition-all">
-                        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg transition-all active:scale-95 text-sm sm:w-auto w-full">
-                            I-verify Code
-                        </button>
-                    </form>
+                        <form action="{{ route('resident.email.verify') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                            @csrf
+                            <input type="text" name="email_otp" maxlength="6" placeholder="000000" class="bg-white border border-slate-300 text-center text-lg font-bold rounded-lg block w-full sm:w-40 p-2.5 tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900">
+                            <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg text-sm w-full sm:w-auto transition-all active:scale-95">Verify</button>
+                        </form>
 
-                    <!-- RESEND CODE FORM WITH LARAVEL RATE LIMITER SYNC -->
-                    @php
-                        // Kukunin natin ang totoong server cooldown time
-                        $cooldown = \Illuminate\Support\Facades\RateLimiter::availableIn('resend_email_otp_' . Auth::id());
-                    @endphp
-                    
-                    <form action="{{ route('resident.email.add') }}" method="POST" class="mt-4" id="resendOtpForm">
-                        @csrf
-                        <!-- Dinagdag ang disabled states para maging gray kapag hindi mapindot -->
-                        <button type="submit" id="resendBtn" class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-all">
-                            Magpadala ng bagong code <span id="timerDisplay" class="text-red-600 ml-1 font-mono"></span>
-                        </button>
-                    </form>
+                        @php $cooldown = \Illuminate\Support\Facades\RateLimiter::availableIn('resend_email_otp_' . Auth::id()); @endphp
+                        <form action="{{ route('resident.email.send') }}" method="POST" class="mt-3">
+                            @csrf
+                            <button type="submit" id="resendBtn" class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-all">
+                                Magpadala ng bagong code <span id="timerDisplay" class="text-red-600 ml-1 font-mono"></span>
+                            </button>
+                        </form>
 
-                    <!-- Kung may natitirang cooldown, i-trigger ang live JS countdown -->
-                    @if($cooldown > 0)
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            let secondsLeft = {{ $cooldown }};
-                            const btn = document.getElementById('resendBtn');
-                            const timerDisplay = document.getElementById('timerDisplay');
-
-                            // I-lock ang button
-                            btn.disabled = true;
-
-                            const countdown = setInterval(() => {
-                                timerDisplay.innerText = `(${secondsLeft}s)`;
-                                secondsLeft--;
-
-                                // Kapag tapos na, ibalik ang button sa normal
-                                if (secondsLeft < 0) {
-                                    clearInterval(countdown);
-                                    btn.disabled = false;
-                                    timerDisplay.innerText = '';
-                                }
-                            }, 1000);
-                        });
-                    </script>
-                    @endif
-                </div>
+                        <!-- SCRIPTS PARA SA TIMER -->
+                        @if($cooldown > 0)
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                let secondsLeft = {{ $cooldown }};
+                                const btn = document.getElementById('resendBtn');
+                                const timerDisplay = document.getElementById('timerDisplay');
+                                btn.disabled = true;
+                                const countdown = setInterval(() => {
+                                    timerDisplay.innerText = `(${secondsLeft}s)`;
+                                    secondsLeft--;
+                                    if (secondsLeft < 0) { clearInterval(countdown); btn.disabled = false; timerDisplay.innerText = ''; }
+                                }, 1000);
+                            });
+                        </script>
+                        @endif
+                    </div>
+                @endif
             @endif
-        @endif
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- 3. NOTIFICATION PREFERENCES SECTION -->
+        <div>
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Notification Preferences</h2>
+            <p class="text-sm text-slate-500 mb-4">Piliin kung saan mo gustong makatanggap ng mga update para sa iyong mga service requests.</p>
+
+            <div class="space-y-3">
+                <!-- SMS Toggle (Always On dahil ito ang main requirement sa system mo) -->
+                <label class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-not-allowed opacity-80">
+                    <div>
+                        <p class="font-bold text-slate-800 text-sm">SMS Notifications</p>
+                        <p class="text-xs text-slate-500">Pangunahing channel para sa mabilis na updates (Required).</p>
+                    </div>
+                    <input type="checkbox" checked disabled class="w-5 h-5 accent-slate-900">
+                </label>
+
+                <!-- Email Toggle (Para sa Opt-in Fallback na nakasulat sa Scope and Delimitation) -->
+                <label class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                    <div>
+                        <p class="font-bold text-slate-800 text-sm">Email / Digital Receipts</p>
+                        <p class="text-xs text-slate-500">Makatanggap ng kopya ng updates sa iyong email.</p>
+                    </div>
+                    <input type="checkbox" checked class="w-5 h-5 accent-slate-900 cursor-pointer">
+                </label>
+            </div>
+        </div>
+
     </div>
 </div>
-
-<!-- SPA STATE MANAGER: I-auto bukas ang settings tab kapag nanggaling sa pag-submit ng email form -->
-@if(session('active_tab') == 'settings' || $errors->has('email_otp'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        switchTab('settings');
-    });
-</script>
+<!-- ===================================== -->
+<!-- TAB STATE RETENTION SCRIPT            -->
+<!-- ===================================== -->
+@if(session('active_tab'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Babasahin ng JS ang ibinato ng Controller at awtomatikong lilipat sa tab na iyon
+            switchTab("{{ session('active_tab') }}");
+        });
+    </script>
 @endif
 @endsection
