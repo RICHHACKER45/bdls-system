@@ -10,10 +10,12 @@
     class="bg-slate-50 font-sans text-slate-900 antialiased min-h-screen flex flex-col justify-center py-10"
 >
     <div class="max-w-3xl mx-auto w-full px-4">
-        <!-- BUMALIK SA HOME BUTTON (Nasa loob ng container para pantay) -->
-        <div class="flex justify-start mb-2">
+        <!-- TOP NAVIGATION & FORM CONTROLS -->
+        <div class="flex justify-between items-center mb-2">
+            <!-- BUMALIK SA HOME BUTTON (Intentional Exit = Clear Memory) -->
             <a
                 href="/"
+                onclick="sessionStorage.clear()"
                 class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 active:bg-slate-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-slate-200 py-2 px-4 rounded-xl transition-all duration-200"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,7 +23,20 @@
                 </svg>
                 Bumalik sa Home
             </a>
+
+            <!-- RESET FORM BUTTON (Subtle, malayo sa "Next" buttons, may Confirmation) -->
+            <button
+                type="button"
+                onclick="if(confirm('Sigurado ka bang gusto mong burahin lahat ng tina-type mo at umpisahan muli?')) { sessionStorage.clear(); location.reload(); }"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-700 active:scale-95 focus:outline-none transition-all duration-200 py-2 px-4 rounded-xl"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                I-reset ang Form
+            </button>
         </div>
+
         <div class="text-center mb-8">
             {{-- <div
                 class="w-16 h-16 bg-red-600 rounded-full mx-auto flex items-center justify-center shadow-lg mb-4"
@@ -105,7 +120,7 @@
                 </div>
             </div>
 
-            <form action="#" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <!-- ========================================================-->
                 <!-- STEP 1: Personal Na Impormasyon (Personal Information) -->
@@ -782,24 +797,19 @@
             document.getElementById('errorModal').classList.add('hidden');
         }
 
-        // 8. sticky form
+        // 8. Sticky Form with Step 3 Security Fallback
         document.addEventListener('DOMContentLoaded', function () {
-            // PANSININ: Idinagdag ko ang ", select" sa dulo ng query na ito!
             const formElements = document.querySelectorAll(
                 'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
             );
 
             formElements.forEach((element) => {
-                // Sinisiguro nating may ID o Name ang dropdown mo para may tagapagkakilanlan
                 const key = 'bdls_draft_' + (element.id || element.name);
-
-                // Ibalik ang text o piniling dropdown kung may naka-save
                 const savedValue = sessionStorage.getItem(key);
                 if (savedValue) {
                     element.value = savedValue;
                 }
 
-                // I-save tuwing may tina-type (para sa inputs) o may pinipili (para sa select dropdowns)
                 element.addEventListener('input', function () {
                     sessionStorage.setItem(key, this.value);
                 });
@@ -807,19 +817,24 @@
                     sessionStorage.setItem(key, this.value);
                 });
             });
-            // ---> ITO ANG BAGONG BLOKE PARA SA STICKY STEP <---
+
+            // STICKY STEP LOGIC WITH FALLBACK
             const savedStep = sessionStorage.getItem('bdls_active_step');
             if (savedStep && savedStep !== 'step1') {
-                // Itago ang default na Step 1
                 document.getElementById('step1').classList.add('hidden');
-
-                // Ipakita ang naka-save na step
-                let activeStepElement = document.getElementById(savedStep);
-                if (activeStepElement) {
-                    activeStepElement.classList.remove('hidden');
-                    let stepNum = parseInt(savedStep.replace('step', ''));
-                    // I-update ang kulay ng progress bar
-                    updateProgressBar(stepNum);
+                
+                // SECURITY FALLBACK: Kung ire-reload at nasa Step 4 pero walang password, IBALIK SA STEP 3
+                if (savedStep === 'step4' && document.getElementById('password').value === '') {
+                    sessionStorage.setItem('bdls_active_step', 'step3');
+                    document.getElementById('step3').classList.remove('hidden');
+                    updateProgressBar(3);
+                } else {
+                    let activeStepElement = document.getElementById(savedStep);
+                    if (activeStepElement) {
+                        activeStepElement.classList.remove('hidden');
+                        let stepNum = parseInt(savedStep.replace('step', ''));
+                        updateProgressBar(stepNum);
+                    }
                 }
             }
         });
@@ -897,5 +912,26 @@
             </button>
         </div>
     </div>
+    <!-- LARAVEL BACKEND ERROR CATCHER (Dynamic Modal) -->
+    @if ($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Kunin ang error mula sa backend (hal. Duplicate Account, Invalid Data)
+                let laravelError = "{{ $errors->first() }}";
+                
+                // Buksan ang Global Error Modal gamit ang dynamic message
+                showErrorModal(laravelError || "We have encountered some problems. Please try again.");
+                
+                // Dahil ibinato pabalik ng server ang form, burado ang password at files.
+                // FORCE BACK TO STEP 3 para makapag-type ulit ng password!
+                sessionStorage.setItem('bdls_active_step', 'step3');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step4').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+                updateProgressBar(3);
+            });
+        </script>
+    @endif
 </body>
 </html>

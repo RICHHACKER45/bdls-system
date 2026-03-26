@@ -11,7 +11,13 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: '192.168.1.4', // Allows connections from other devices
+        cors: true, // <--- ADD THIS LINE to fix the CORS error
+        hmr: {
+            host: '192.168.1.4', // Your IPv4 address
+        },
         watch: {
+            usePolling: true, // This ensures Windows catches the "Save" event
             ignored: ['**/storage/framework/views/**'],
         },
     },
