@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -151,5 +152,40 @@ class AuthController extends Controller
         Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtpCode}");
 
         return back()->with('success', 'Ang bagong 6-digit code ay naipadala na sa iyong numero!');
+    }
+
+    /**
+     * Authenticate ang user papasok sa system
+     */
+    public function login(Request $request)
+    {
+        // 1. I-validate ang input mula sa form
+        $credentials = $request->validate([
+            'login_id' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        // 2. Tukuyin kung Email ba o Contact Number ang tina-type ni user
+        $loginType = filter_var($credentials['login_id'], FILTER_VALIDATE_EMAIL) ? 'email' : 'contact_number';
+
+        // 3. Subukang i-authenticate (The Laravel Way)
+        if (Auth::attempt([$loginType => $credentials['login_id'], 'password' => $credentials['password']])) {
+            $user = Auth::user();
+
+            // 4. ANG ADMIN SHIELD: I-check kung approved na ng admin
+            if (!$user->is_verified) {
+                Auth::logout(); // I-kick palabas
+                return back()->withErrors(['login_id' => 'Hindi ka pa maaaring pumasok. Sinusuri pa ng Barangay Admin ang iyong Valid ID at Selfie.']);
+            }
+
+            // 5. SECURITY: Regenerate session laban sa hackers
+            $request->session()->regenerate();
+
+            // 6. I-redirect sa Resident Dashboard (Gagawa tayo nito mamaya)
+            return redirect()->intended('/resident/dashboard');
+        }
+
+        // Kapag mali ang password o number/email
+        return back()->withErrors(['login_id' => 'Mali ang Contact Number/Email o Password na inilagay.']);
     }
 }
