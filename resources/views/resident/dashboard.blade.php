@@ -22,13 +22,12 @@
                     Kasalukuyang naka-link ang <span class="font-bold">{{ Auth::user()->email }}</span>. I-verify ito para makatanggap ng digital receipts ng iyong mga request.
                 </p>
             </div>
-            <!-- for email confirmation -->
-            <form action="{{ route('resident.email.send') }}" method="POST" class="w-full sm:w-auto">
-                @csrf
-                <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm active:scale-95 transition-all shadow-sm">
-                    I-verify Ngayon
+            <!-- SPA NAVIGATION: Lilipat lang ng tab, hindi mag-i-spam ng API -->
+            <div class="w-full sm:w-auto">
+                <button type="button" onclick="switchTab('settings')" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm active:scale-95 transition-all shadow-sm">
+                    Pumunta sa Settings
                 </button>
-            </form>
+            </div>
         </div>
     @endif
 
