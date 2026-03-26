@@ -84,4 +84,45 @@ class AuthController extends Controller
         return redirect('/otp')->with('success', 'Registration successful! Nagpadala kami ng code sa iyong numero.');
 
     }
+
+    /**
+     * Sasalo at magbe-verify sa 6-digit OTP code mula sa otp.blade.php
+     */
+    public function verifyOtp(Request $request)
+    {
+        // I-combine ang 6 na kahon mula sa Front-End
+        $otpArray = $request->input('otp');
+        $enteredOtp = implode('', $otpArray);
+
+        // Hanapin kung kaninong session ito naka-link
+        $contactNumber = $request->session()->get('registration_contact');
+        
+        if (!$contactNumber) {
+            return redirect('/signup')->withErrors(['error' => 'Session expired. Mangyaring mag-register muli.']);
+        }
+
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        // I-check kung tama ang OTP
+        if ($user->otp_code !== $enteredOtp) {
+            return back()->withErrors(['otp' => 'Mali ang 6-digit code. Subukan muli.']);
+        }
+
+        // I-check kung Expired na (10 minutes rule)
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return back()->withErrors(['otp' => 'Expired na ang OTP code. Mag-request ng bago.']);
+        }
+
+        // SUCCESS LENS: I-update ang database na "Verified Number" na siya!
+        $user->update([
+            'contact_verified_at' => now(),
+            'otp_code' => null, // Burahin ang ginamit na code para sa security
+        ]);
+
+        // Burahin ang session para malinis ang browser
+        $request->session()->forget('registration_contact');
+        
+        // I-redirect sa Login page kasama ang Success Message
+        return redirect('/login')->with('success', 'Number Verified! Hinihintay na lamang ang Admin Approval bago makapag-login.');
+    }
 }
