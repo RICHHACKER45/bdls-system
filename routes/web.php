@@ -15,4 +15,6 @@ Route::get('/signup', function () {
     return view('auth.signup'); 
 });
 
-Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
+Route::post('/signup', [AuthController::class, 'register'])
+    ->name('signup.post');
+    // ->middleware('throttle:3,1'); // LIMIT: 3 signups per 1 minute per IP Address
