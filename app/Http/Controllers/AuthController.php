@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -44,25 +45,42 @@ class AuthController extends Controller
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'public');
         $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
 
-        // STEP 4: I-save nang tuluyan sa Database (users table)
-        $user = User::create([
-            'first_name' => $validatedData['first_name'],
-            'middle_name' => $validatedData['middle_name'],
-            'last_name' => $validatedData['last_name'],
-            'suffix' => $validatedData['suffix'],
-            'date_of_birth' => $dateOfBirth,
-            'house_number' => $validatedData['house_number'],
-            'purok_street' => $validatedData['purok_street'],
-            'contact_number' => $validatedData['contact_number'],
-            'email' => $validatedData['email'],
-            'password' => Hash::make($validatedData['password']), // Ligtas na naka-hash
-            'id_photo_path' => $idPhotoPath,
-            'selfie_photo_path' => $selfiePath,
-            'role' => 'resident',
-            'is_verified' => false,
-        ]);
+        // STEP 4 & 5: Gagamit tayo ng Database Transaction para safe!
+        // Kung may mag-error sa loob nito (tulad ng sirang SMS API), hindi mase-save ang User sa database.
+        DB::transaction(function () use ($validatedData, $dateOfBirth, $idPhotoPath, $selfiePath, $request) {
+            
+            $otpCode = (string) rand(100000, 999999);
+            $otpExpiresAt = now()->addMinutes(10);
 
-        // STEP 5: Pambihirang testing output para makita mo agad kung gumana!
-        dd('SUCCESS, LEAD DEV! Nasa Database na ang user!', $user);
+            // I-save sa database (Naka-pending pa ito sa transaction)
+            $user = User::create([
+                'first_name' => $validatedData['first_name'],
+                'middle_name' => $validatedData['middle_name'],
+                'last_name' => $validatedData['last_name'],
+                'suffix' => $validatedData['suffix'],
+                'date_of_birth' => $dateOfBirth,
+                'house_number' => $validatedData['house_number'],
+                'purok_street' => $validatedData['purok_street'],
+                'contact_number' => $validatedData['contact_number'],
+                'email' => $validatedData['email'],
+                'password' => Hash::make($validatedData['password']),
+                'id_photo_path' => $idPhotoPath,
+                'selfie_photo_path' => $selfiePath,
+                'role' => 'resident',
+                'is_verified' => false,
+                'otp_code' => $otpCode,
+                'otp_expires_at' => $otpExpiresAt,
+            ]);
+
+            // DUMMY SMS INTEGRATION
+            // Kung mag-error ito, automatic mabu-bura si User sa itaas!
+            Log::info("DUMMY SMS SENT to {$user->contact_number}: Ang iyong BDLS OTP ay {$otpCode}");
+
+            $request->session()->put('registration_contact', $user->contact_number);
+        });
+
+        // Kapag lumabas na dito ang code, ibig sabihin 100% SUCCESS ang transaction!
+        return redirect('/otp')->with('success', 'Registration successful! Nagpadala kami ng code sa iyong numero.');
+
     }
 }
