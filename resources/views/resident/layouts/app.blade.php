@@ -117,6 +117,46 @@
             <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
         </div>
     </div>
+    <!-- GLOBAL FORM SUBMIT LISTENER WITH TIMEOUT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forms = document.querySelectorAll('form');
+            const loader = document.getElementById('global-loader');
+            const loaderText = loader.querySelector('p'); // Kukunin natin yung <p> tag sa loob ng loader
 
+            forms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    // Ipakita ang loading screen
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                    loaderText.innerText = "Pinoproseso...";
+                    loaderText.classList.replace('text-red-600', 'text-slate-800');
+
+                    // I-disable ang button
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('cursor-not-allowed', 'opacity-70');
+                    }
+
+                    // FRONTEND TIMEOUT SAFETY NET (30 seconds)
+                    setTimeout(() => {
+                        // Kung 30 seconds na at hindi pa rin nagre-refresh ang page galing server:
+                        loaderText.innerText = "Masyadong matagal ang server. Paki-refresh ang page.";
+                        loaderText.classList.replace('text-slate-800', 'text-red-600');
+                        
+                        // Patayin ang browser loading spinner (parang pinindot ang 'X' sa browser)
+                        window.stop();
+
+                        // I-enable ulit ang button para makapag-try ulit ang user
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('cursor-not-allowed', 'opacity-70');
+                        }
+                    }, 30000); // 30000 milliseconds = 30 seconds
+                });
+            });
+        });
+    </script>
 </body>
 </html>
