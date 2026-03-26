@@ -782,24 +782,19 @@
             document.getElementById('errorModal').classList.add('hidden');
         }
 
-        // 8. sticky form
+        // 8. Sticky Form with Step 3 Security Fallback
         document.addEventListener('DOMContentLoaded', function () {
-            // PANSININ: Idinagdag ko ang ", select" sa dulo ng query na ito!
             const formElements = document.querySelectorAll(
                 'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
             );
 
             formElements.forEach((element) => {
-                // Sinisiguro nating may ID o Name ang dropdown mo para may tagapagkakilanlan
                 const key = 'bdls_draft_' + (element.id || element.name);
-
-                // Ibalik ang text o piniling dropdown kung may naka-save
                 const savedValue = sessionStorage.getItem(key);
                 if (savedValue) {
                     element.value = savedValue;
                 }
 
-                // I-save tuwing may tina-type (para sa inputs) o may pinipili (para sa select dropdowns)
                 element.addEventListener('input', function () {
                     sessionStorage.setItem(key, this.value);
                 });
@@ -807,19 +802,24 @@
                     sessionStorage.setItem(key, this.value);
                 });
             });
-            // ---> ITO ANG BAGONG BLOKE PARA SA STICKY STEP <---
+
+            // STICKY STEP LOGIC WITH FALLBACK
             const savedStep = sessionStorage.getItem('bdls_active_step');
             if (savedStep && savedStep !== 'step1') {
-                // Itago ang default na Step 1
                 document.getElementById('step1').classList.add('hidden');
-
-                // Ipakita ang naka-save na step
-                let activeStepElement = document.getElementById(savedStep);
-                if (activeStepElement) {
-                    activeStepElement.classList.remove('hidden');
-                    let stepNum = parseInt(savedStep.replace('step', ''));
-                    // I-update ang kulay ng progress bar
-                    updateProgressBar(stepNum);
+                
+                // SECURITY FALLBACK: Kung ire-reload at nasa Step 4 pero walang password, IBALIK SA STEP 3
+                if (savedStep === 'step4' && document.getElementById('password').value === '') {
+                    sessionStorage.setItem('bdls_active_step', 'step3');
+                    document.getElementById('step3').classList.remove('hidden');
+                    updateProgressBar(3);
+                } else {
+                    let activeStepElement = document.getElementById(savedStep);
+                    if (activeStepElement) {
+                        activeStepElement.classList.remove('hidden');
+                        let stepNum = parseInt(savedStep.replace('step', ''));
+                        updateProgressBar(stepNum);
+                    }
                 }
             }
         });
@@ -897,23 +897,24 @@
             </button>
         </div>
     </div>
-    <!-- LARAVEL BACKEND ERROR CATCHER -->
+    <!-- LARAVEL BACKEND ERROR CATCHER (Dynamic Modal) -->
     @if ($errors->any())
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Kunin ang pinakaunang error na ibinato ng Laravel Controller
+                // Kunin ang error mula sa backend (hal. Duplicate Account, Invalid Data)
                 let laravelError = "{{ $errors->first() }}";
                 
-                // Tawagin ang custom function mo para buksan ang modal!
-                showErrorModal(laravelError);
+                // Buksan ang Global Error Modal gamit ang dynamic message
+                showErrorModal(laravelError || "We have encountered some problems. Please try again.");
                 
-                // Siguraduhing ibalik ang user sa Step 3 kung password ang error
-                @if($errors->has('password'))
-                    sessionStorage.setItem('bdls_active_step', 'step3');
-                    document.getElementById('step4').classList.add('hidden');
-                    document.getElementById('step3').classList.remove('hidden');
-                    updateProgressBar(3);
-                @endif
+                // Dahil ibinato pabalik ng server ang form, burado ang password at files.
+                // FORCE BACK TO STEP 3 para makapag-type ulit ng password!
+                sessionStorage.setItem('bdls_active_step', 'step3');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step4').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+                updateProgressBar(3);
             });
         </script>
     @endif
