@@ -25,7 +25,7 @@ return new class extends Migration
             
             // Contact & Authentication
             $table->string('contact_number', 20)->unique();
-            $table->string('email')->unique();
+            $table->string('email')->nullable()->unique();
             $table->string('password');
             
             // Attachments (Uploads)
