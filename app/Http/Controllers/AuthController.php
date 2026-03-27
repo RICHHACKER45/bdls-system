@@ -134,31 +134,34 @@ class AuthController extends Controller
         return redirect('/resident/dashboard')->with('success', 'Number Verified! Welcome sa iyong dashboard.');
     }
 
-    /**
-     * Mag-generate ng bagong OTP at i-update ang expiration
-     */
-    public function resendOtp(Request $request)
+     public function resendOtp(Request $request)
     {
-        $contactNumber = $request->session()->get('registration_contact');
+        // 1. I-setup ang dalawang susi (keys) gamit ang IP address ng user
+        $cooldownKey = 'resend_sms_otp_' . $request->ip(); // Para sa 60s timer
+        $blockKey = 'block_sms_otp_' . $request->ip();    // Para sa 3-strike block
 
-        if (!$contactNumber) {
-            return redirect('/signup')->withErrors(['error' => 'Session expired. Mangyaring mag-register muli.']);
+        // 2. CHECK: Naka-3 beses na ba siya? (Naka-lock ng 1 oras kapag spammer)
+        if (RateLimiter::tooManyAttempts($blockKey, 3)) {
+            return back()->withErrors(['otp_error' => 'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.']);
         }
 
-        $user = User::where('contact_number', $contactNumber)->first();
+        // 3. CHECK: Nakapag-hintay na ba siya ng 60 seconds?
+        if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
+            return back()->withErrors(['otp_error' => 'Masyado pang mabilis. Maghintay bago mag-resend.']);
+        }
 
-        // Mag-generate ng BAGONG 6-digit OTP
-        $newOtpCode = (string) rand(100000, 999999);
-        
-        $user->update([
-            'otp_code' => $newOtpCode,
-            'otp_expires_at' => now()->addMinutes(10),
-        ]);
+        /* 
+        ====================================================
+        DITO MO ILALAGAY YUNG LOGIC MO SA PAG-SEND NG SMS
+        (e.g., pag-generate ng bagong code, pag-save sa DB)
+        ====================================================
+        */
 
-        // DUMMY SMS INTEGRATION PARA SA RESEND
-        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtpCode}");
+        // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
+        RateLimiter::hit($cooldownKey, 60);    // I-lock ang button ng 60 seconds
+        RateLimiter::hit($blockKey, 3600);     // Dagdagan ng 1 strike ang IP block (babalik sa zero after 1 hour)
 
-        return back()->with('success', 'Ang bagong 6-digit code ay naipadala na sa iyong numero!');
+        return back()->with('success', 'Bagong OTP code ay naipadala na!');
     }
 
     /**
