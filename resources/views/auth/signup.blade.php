@@ -9,8 +9,8 @@
 <body
     class="bg-slate-50 font-sans text-slate-900 antialiased min-h-screen flex flex-col justify-center py-10"
 >
+    <!-- TOP NAVIGATION & FORM CONTROLS -->
     <div class="max-w-3xl mx-auto w-full px-4">
-        <!-- TOP NAVIGATION & FORM CONTROLS -->
         <div class="flex justify-between items-center mb-2">
             <!-- BUMALIK SA HOME BUTTON (Intentional Exit = Clear Memory) -->
             <a
@@ -27,7 +27,16 @@
             <!-- RESET FORM BUTTON (Subtle, malayo sa "Next" buttons, may Confirmation) -->
             <button
                 type="button"
-                onclick="if(confirm('Sigurado ka bang gusto mong burahin lahat ng tina-type mo at umpisahan muli?')) { sessionStorage.clear(); location.reload(); }"
+                onclick="
+                    if (
+                        confirm(
+                            'Sigurado ka bang gusto mong burahin lahat ng tina-type mo at umpisahan muli?',
+                        )
+                    ) {
+                        sessionStorage.clear();
+                        location.reload();
+                    }
+                "
                 class="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-700 active:scale-95 focus:outline-none transition-all duration-200 py-2 px-4 rounded-xl"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,8 +56,8 @@
             <p class="text-slate-600 mt-2">Kumpletuhin ang 4 steps upang magkaroon ng account.</p>
         </div>
 
+        <!-- PROGRESS BAR UI (FIXED ALIGNMENT) -->
         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-10 relative">
-            <!-- PROGRESS BAR UI (FIXED ALIGNMENT) -->
             <div class="mb-10 relative">
                 <!-- LINES CONTAINER: Nagsisimula sa 12.5% (gitna ng Step 1) at may habang 75% (hanggang gitna ng Step 4) -->
                 <div class="absolute left-[12.5%] top-5 w-[75%] h-1 bg-slate-200 z-0">
@@ -558,7 +567,9 @@
                     </div>
 
                     <!-- BAGONG LEGAL AGREEMENT CHECKBOX (Poka-yoke) -->
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8">
+                    <div
+                        class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8"
+                    >
                         <input
                             type="checkbox"
                             id="terms"
@@ -568,10 +579,22 @@
                             class="mt-1 w-5 h-5 text-slate-900 border-slate-300 rounded cursor-pointer focus:ring-slate-900"
                         />
                         <label for="terms" class="text-sm text-slate-700 cursor-pointer">
-                            Nabasa ko at sumasang-ayon ako sa 
-                            <button type="button" onclick="openLegalModal('privacyModal')" class="text-red-600 font-bold hover:underline transition-all focus:outline-none">Privacy Policy</button> 
-                            at 
-                            <button type="button" onclick="openLegalModal('termsModal')" class="text-red-600 font-bold hover:underline transition-all focus:outline-none">Terms & Conditions</button> 
+                            Nabasa ko at sumasang-ayon ako sa
+                            <button
+                                type="button"
+                                onclick="openLegalModal('privacyModal')"
+                                class="text-red-600 font-bold hover:underline transition-all focus:outline-none"
+                            >
+                                Privacy Policy
+                            </button>
+                            at
+                            <button
+                                type="button"
+                                onclick="openLegalModal('termsModal')"
+                                class="text-red-600 font-bold hover:underline transition-all focus:outline-none"
+                            >
+                                Terms & Conditions
+                            </button>
                             ng BDLS.
                         </label>
                     </div>
@@ -814,7 +837,7 @@
             const savedStep = sessionStorage.getItem('bdls_active_step');
             if (savedStep && savedStep !== 'step1') {
                 document.getElementById('step1').classList.add('hidden');
-                
+
                 // SECURITY FALLBACK: Kung ire-reload at nasa Step 4 pero walang password, IBALIK SA STEP 3
                 if (savedStep === 'step4' && document.getElementById('password').value === '') {
                     sessionStorage.setItem('bdls_active_step', 'step3');
@@ -837,35 +860,73 @@
     <!-- ========================================== -->
 
     <!-- 1. PRIVACY POLICY MODAL -->
-    <div id="privacyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
-            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+    <div
+        id="privacyModal"
+        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
+    >
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+        >
+            <div
+                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
+            >
                 <h2 class="text-xl font-bold text-slate-900">Patakaran sa Privacy ng BDLS</h2>
-                <button type="button" onclick="closeLegalModal('privacyModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">&times;</button>
+                <button
+                    type="button"
+                    onclick="closeLegalModal('privacyModal')"
+                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
+                >
+                    &times;
+                </button>
             </div>
             <div class="p-6 overflow-y-auto text-sm text-slate-700 space-y-4">
                 <p>Ang Barangay Doña Lucia ay nagpapahalaga sa iyong personal na impormasyon. Ang patakarang ito ay nagpapaliwanag kung paano namin ginagamit at pino-protektahan ang iyong data.</p>
-                <h3 class="font-bold text-slate-900">1. Anong impormasyon ang kinokolekta namin?</h3>
+                <h3 class="font-bold text-slate-900">
+                    1. Anong impormasyon ang kinokolekta namin?
+                </h3>
                 <p>Para makagawa ng account, kukunin namin ang iyong Pangalan, Address, Contact Number, Password, litrato ng iyong ID, at isang Selfie. Ang pagbibigay ng Email ay optional. Kukunin din namin ang iyong Edad at Kasarian para matukoy ng barangay kung anong mga benepisyo o programa ang nararapat sa iyong grupo.</p>
-                <h3 class="font-bold text-slate-900">2. Paano namin ito itatago at pino-protektahan?</h3>
+                <h3 class="font-bold text-slate-900">
+                    2. Paano namin ito itatago at pino-protektahan?
+                </h3>
                 <p>Ang iyong Selfie ay gagamitin bilang iyong Profile Picture sa system. Ang litrato ng iyong ID ay itatago ng system upang hindi mo na kailangang mag-pasa ulit para sa mga susunod mong transaksyon. Para sa iyong kaligtasan, <strong class="text-slate-900">ang iyong data ay naka-encrypt at naka-imbak sa mga secure servers</strong> upang maiwasan ang pagnanakaw ng impormasyon.</p>
                 <h3 class="font-bold text-slate-900">3. Kanino namin ito ibinabahagi?</h3>
                 <p>HINDI namin ibebenta, ipagpapalit, o ibibigay ang iyong data sa mga taong walang awtorisasyon. Ipapasa lamang ang iyong Contact Number (at Email kung meron) sa aming awtomatikong Notification System para makapagpadala sa iyo ng updates tungkol sa iyong request. Ibabahagi lamang namin ang iyong impormasyon sa mga awtoridad kung may utos ng batas o may naganap na krimen.</p>
-                <h3 class="font-bold text-slate-900">4. Ang Iyong Karapatan sa Data (Data Rights)</h3>
+                <h3 class="font-bold text-slate-900">
+                    4. Ang Iyong Karapatan sa Data (Data Rights)
+                </h3>
                 <p>Maaari mong hilingin na i-update o i-delete ang iyong impormasyon sa system anumang oras sa pamamagitan ng pagpapadala ng mensahe o paglapit nang personal sa aming barangay admin.</p>
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
-                <button type="button" onclick="closeLegalModal('privacyModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">Naintindihan Ko</button>
+                <button
+                    type="button"
+                    onclick="closeLegalModal('privacyModal')"
+                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
+                >
+                    Naintindihan Ko
+                </button>
             </div>
         </div>
     </div>
 
     <!-- 2. TERMS AND CONDITIONS MODAL -->
-    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
-            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+    <div
+        id="termsModal"
+        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
+    >
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+        >
+            <div
+                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
+            >
                 <h2 class="text-xl font-bold text-slate-900">Mga Tuntunin at Kundisyon</h2>
-                <button type="button" onclick="closeLegalModal('termsModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">&times;</button>
+                <button
+                    type="button"
+                    onclick="closeLegalModal('termsModal')"
+                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
+                >
+                    &times;
+                </button>
             </div>
             <div class="p-6 overflow-y-auto text-sm text-slate-700 space-y-4">
                 <p>Sa paggawa ng account sa BDLS, sumasang-ayon ka sa mga sumusunod na patakaran ng aming barangay:</p>
@@ -875,17 +936,27 @@
                 <p>Huwag ibigay ang iyong password sa iba. Ikaw ang responsable sa pag-iingat ng iyong account. Anumang transaksyon o request na ginawa gamit ang iyong account ay ituturing na gawa mo.</p>
                 <h3 class="font-bold text-slate-900">3. Bawal ang Spam at Panliligalig</h3>
                 <p>Mahigpit na ipinagbabawal ang paggamit ng system para mang-harass, mang-troll, o mag-spam ng mga walang kwentang service requests na nakakaabala sa operasyon ng barangay hall.</p>
-                <h3 class="font-bold text-slate-900">4. Bawal ang Paggamit ng Pagkakakilanlan ng Iba (Identity Theft)</h3>
+                <h3 class="font-bold text-slate-900">
+                    4. Bawal ang Paggamit ng Pagkakakilanlan ng Iba (Identity Theft)
+                </h3>
                 <p>Ang paggamit ng pekeng pangalan, o pag-upload ng ID at mukha ng ibang tao nang walang pahintulot ay isang krimen. Ito ay labag sa RA 10175 (Cybercrime Prevention Act of 2012). Ang sinumang mahuhuli ay ire-report sa mga awtoridad para sa legal na aksyon at agad na iba-ban ang account.</p>
                 <h3 class="font-bold text-slate-900">5. Bawal ang Pangha-hack at Kriminalidad</h3>
                 <p>Anumang pagsubok na nakawin ang data ng ibang residente o sirain ang system ay may katumbas na kasong kriminal at agarang pagka-ban.</p>
-                <h3 class="font-bold text-slate-900">6. Patakaran sa Hindi Pagkuha ng Dokumento (No-Show Policy)</h3>
-                <p>Kapag na-aprubahan at na-text ka na ang iyong dokumento ay "Ready for Release", mangyaring kunin ito agad. <br>
-                • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br>
+                <h3 class="font-bold text-slate-900">
+                    6. Patakaran sa Hindi Pagkuha ng Dokumento (No-Show Policy)
+                </h3>
+                <p>Kapag na-aprubahan at na-text ka na ang iyong dokumento ay "Ready for Release", mangyaring kunin ito agad. <br />
+                • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br />
                 • Kung lumipas ang <strong>2 linggo</strong> at hindi mo pa rin kinukuha, papatawan ang iyong account ng <strong>1-linggong penalty</strong> kung saan hindi ka muna makakapag-request ng bagong dokumento sa system. Gayunpaman, maaari mo pa ring kunin ang iyong nakabinbing dokumento nang personal sa barangay hall.</p>
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
-                <button type="button" onclick="closeLegalModal('termsModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">Naintindihan Ko</button>
+                <button
+                    type="button"
+                    onclick="closeLegalModal('termsModal')"
+                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
+                >
+                    Naintindihan Ko
+                </button>
             </div>
         </div>
     </div>
@@ -896,14 +967,14 @@
             const modal = document.getElementById(modalId);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            document.body.style.overflow = 'hidden'; 
+            document.body.style.overflow = 'hidden';
         }
 
         function closeLegalModal(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            document.body.style.overflow = 'auto'; 
+            document.body.style.overflow = 'auto';
         }
     </script>
     <!-- GLOBAL ERROR MODAL -->
@@ -938,13 +1009,13 @@
     <!-- LARAVEL BACKEND ERROR CATCHER (Dynamic Modal) -->
     @if ($errors->any())
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 // Kunin ang error mula sa backend (hal. Duplicate Account, Invalid Data)
-                let laravelError = "{{ $errors->first() }}";
-                
+                let laravelError = '{{ $errors->first() }}';
+
                 // Buksan ang Global Error Modal gamit ang dynamic message
-                showErrorModal(laravelError || "We have encountered some problems. Please try again.");
-                
+                showErrorModal(laravelError || 'We have encountered some problems. Please try again.');
+
                 // Dahil ibinato pabalik ng server ang form, burado ang password at files.
                 // FORCE BACK TO STEP 3 para makapag-type ulit ng password!
                 sessionStorage.setItem('bdls_active_step', 'step3');
