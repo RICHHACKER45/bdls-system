@@ -557,30 +557,22 @@
                         </div>
                     </div>
 
-                    <!-- Poka-yoke Defensive Design: Data Privacy Consent -->
-                    <div
-                        class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8"
-                    >
+                    <!-- BAGONG LEGAL AGREEMENT CHECKBOX (Poka-yoke) -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-start gap-3 mb-8">
                         <input
                             type="checkbox"
-                            id="privacy"
-                            name="privacy"
+                            id="terms"
+                            name="terms"
                             required
                             onchange="document.getElementById('submitBtn').disabled = !this.checked"
                             class="mt-1 w-5 h-5 text-slate-900 border-slate-300 rounded cursor-pointer focus:ring-slate-900"
                         />
-                        <label for="privacy" class="text-sm text-slate-700 cursor-pointer">
-                            Sumasang-ayon ako na ang aking mga personal na impormasyon, kalakip ang
-                            aking ID at selfie, ay kokolektahin at ipoproseso lamang para sa account
-                            verification at serbisyo ng system, alinsunod sa
-                            <button
-                                type="button"
-                                onclick="openPrivacyModal()"
-                                class="text-red-600 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
-                            >
-                                Data Privacy Terms
-                            </button>
-                            ng Barangay Doña Lucia.
+                        <label for="terms" class="text-sm text-slate-700 cursor-pointer">
+                            Nabasa ko at sumasang-ayon ako sa 
+                            <button type="button" onclick="openLegalModal('privacyModal')" class="text-red-600 font-bold hover:underline transition-all focus:outline-none">Privacy Policy</button> 
+                            at 
+                            <button type="button" onclick="openLegalModal('termsModal')" class="text-red-600 font-bold hover:underline transition-all focus:outline-none">Terms & Conditions</button> 
+                            ng BDLS.
                         </label>
                     </div>
 
@@ -840,49 +832,80 @@
         });
     </script>
 
-    <!-- DATA PRIVACY MODAL -->
-    <div
-        id="privacyModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-    >
-        <!-- Modal Card -->
-        <div
-            class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
-        >
-            <!-- Header -->
-            <div
-                class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50"
-            >
-                <h3 class="text-lg font-bold text-slate-800">Data Privacy Terms</h3>
-                <button
-                    type="button"
-                    onclick="closePrivacyModal()"
-                    class="text-slate-400 hover:text-slate-700 focus:outline-none text-2xl font-bold"
-                >
-                    &times;
-                </button>
-            </div>
+    <!-- ========================================== -->
+    <!-- BAGONG LEGAL MODALS (Privacy & Terms)      -->
+    <!-- ========================================== -->
 
-            <!-- Body (Scrollable kung mahaba) -->
-            <div class="px-6 py-4 overflow-y-auto text-sm text-slate-600 space-y-4">
-                <p>Alinsunod sa <strong>Data Privacy Act of 2012</strong>, ang Barangay Doña Lucia ay nangangakong poprotektahan ang iyong personal na impormasyon.</p>
-                <p><strong>1. Pangongolekta ng Data:</strong> Kinokolekta namin ang iyong pangalan, contact number, valid ID, at selfie upang ma-verify ang iyong pagkakakilanlan.</p>
-                <p><strong>2. Paggamit ng Data:</strong> Gagamitin lamang ang iyong impormasyon para sa pagproseso ng iyong mga service requests at pagpapadala ng SMS/Email notifications.</p>
-                <p><strong>3. Pag-iingat:</strong> Ang iyong mga dokumento ay ligtas na iimbakin sa aming system at tanging mga awtorisadong barangay admin lamang ang makakakita nito.</p>
+    <!-- 1. PRIVACY POLICY MODAL -->
+    <div id="privacyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h2 class="text-xl font-bold text-slate-900">Patakaran sa Privacy ng BDLS</h2>
+                <button type="button" onclick="closeLegalModal('privacyModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">&times;</button>
             </div>
-
-            <!-- Footer -->
-            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-                <button
-                    type="button"
-                    onclick="closePrivacyModal()"
-                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg transition-all active:scale-95"
-                >
-                    I Understand
-                </button>
+            <div class="p-6 overflow-y-auto text-sm text-slate-700 space-y-4">
+                <p>Ang Barangay Doña Lucia ay nagpapahalaga sa iyong personal na impormasyon. Ang patakarang ito ay nagpapaliwanag kung paano namin ginagamit at pino-protektahan ang iyong data.</p>
+                <h3 class="font-bold text-slate-900">1. Anong impormasyon ang kinokolekta namin?</h3>
+                <p>Para makagawa ng account, kukunin namin ang iyong Pangalan, Address, Contact Number, Password, litrato ng iyong ID, at isang Selfie. Ang pagbibigay ng Email ay optional. Kukunin din namin ang iyong Edad at Kasarian para matukoy ng barangay kung anong mga benepisyo o programa ang nararapat sa iyong grupo.</p>
+                <h3 class="font-bold text-slate-900">2. Paano namin ito itatago at pino-protektahan?</h3>
+                <p>Ang iyong Selfie ay gagamitin bilang iyong Profile Picture sa system. Ang litrato ng iyong ID ay itatago ng system upang hindi mo na kailangang mag-pasa ulit para sa mga susunod mong transaksyon. Para sa iyong kaligtasan, <strong class="text-slate-900">ang iyong data ay naka-encrypt at naka-imbak sa mga secure servers</strong> upang maiwasan ang pagnanakaw ng impormasyon.</p>
+                <h3 class="font-bold text-slate-900">3. Kanino namin ito ibinabahagi?</h3>
+                <p>HINDI namin ibebenta, ipagpapalit, o ibibigay ang iyong data sa mga taong walang awtorisasyon. Ipapasa lamang ang iyong Contact Number (at Email kung meron) sa aming awtomatikong Notification System para makapagpadala sa iyo ng updates tungkol sa iyong request. Ibabahagi lamang namin ang iyong impormasyon sa mga awtoridad kung may utos ng batas o may naganap na krimen.</p>
+                <h3 class="font-bold text-slate-900">4. Ang Iyong Karapatan sa Data (Data Rights)</h3>
+                <p>Maaari mong hilingin na i-update o i-delete ang iyong impormasyon sa system anumang oras sa pamamagitan ng pagpapadala ng mensahe o paglapit nang personal sa aming barangay admin.</p>
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
+                <button type="button" onclick="closeLegalModal('privacyModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">Naintindihan Ko</button>
             </div>
         </div>
     </div>
+
+    <!-- 2. TERMS AND CONDITIONS MODAL -->
+    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h2 class="text-xl font-bold text-slate-900">Mga Tuntunin at Kundisyon</h2>
+                <button type="button" onclick="closeLegalModal('termsModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto text-sm text-slate-700 space-y-4">
+                <p>Sa paggawa ng account sa BDLS, sumasang-ayon ka sa mga sumusunod na patakaran ng aming barangay:</p>
+                <h3 class="font-bold text-slate-900">1. Responsibilidad sa Tamang Impormasyon</h3>
+                <p>Responsibilidad ng user na siguraduhing tama at totoo ang lahat ng impormasyong ibibigay sa system. Anumang maling impormasyon ay maaaring maging dahilan ng pagka-antala o pagka-reject ng iyong request.</p>
+                <h3 class="font-bold text-slate-900">2. Seguridad ng Account</h3>
+                <p>Huwag ibigay ang iyong password sa iba. Ikaw ang responsable sa pag-iingat ng iyong account. Anumang transaksyon o request na ginawa gamit ang iyong account ay ituturing na gawa mo.</p>
+                <h3 class="font-bold text-slate-900">3. Bawal ang Spam at Panliligalig</h3>
+                <p>Mahigpit na ipinagbabawal ang paggamit ng system para mang-harass, mang-troll, o mag-spam ng mga walang kwentang service requests na nakakaabala sa operasyon ng barangay hall.</p>
+                <h3 class="font-bold text-slate-900">4. Bawal ang Paggamit ng Pagkakakilanlan ng Iba (Identity Theft)</h3>
+                <p>Ang paggamit ng pekeng pangalan, o pag-upload ng ID at mukha ng ibang tao nang walang pahintulot ay isang krimen. Ito ay labag sa RA 10175 (Cybercrime Prevention Act of 2012). Ang sinumang mahuhuli ay ire-report sa mga awtoridad para sa legal na aksyon at agad na iba-ban ang account.</p>
+                <h3 class="font-bold text-slate-900">5. Bawal ang Pangha-hack at Kriminalidad</h3>
+                <p>Anumang pagsubok na nakawin ang data ng ibang residente o sirain ang system ay may katumbas na kasong kriminal at agarang pagka-ban.</p>
+                <h3 class="font-bold text-slate-900">6. Patakaran sa Hindi Pagkuha ng Dokumento (No-Show Policy)</h3>
+                <p>Kapag na-aprubahan at na-text ka na ang iyong dokumento ay "Ready for Release", mangyaring kunin ito agad. <br>
+                • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br>
+                • Kung lumipas ang <strong>2 linggo</strong> at hindi mo pa rin kinukuha, papatawan ang iyong account ng <strong>1-linggong penalty</strong> kung saan hindi ka muna makakapag-request ng bagong dokumento sa system. Gayunpaman, maaari mo pa ring kunin ang iyong nakabinbing dokumento nang personal sa barangay hall.</p>
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
+                <button type="button" onclick="closeLegalModal('termsModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">Naintindihan Ko</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL JS LOGIC -->
+    <script>
+        function openLegalModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeLegalModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto'; 
+        }
+    </script>
     <!-- GLOBAL ERROR MODAL -->
     <div
         id="errorModal"
