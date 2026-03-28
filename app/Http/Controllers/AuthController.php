@@ -35,7 +35,11 @@ class AuthController extends Controller
             
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'selfie_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-            'privacy' => 'required|accepted'
+            // SECURITY: Ito lang ang dapat nandito, wala nang 'privacy'
+            'terms' => 'accepted', 
+        ], [
+            // Custom error message kung sinubukan nilang i-bypass ang HTML
+            'terms.accepted' => 'Kailangan mong sumang-ayon sa Privacy Policy at Terms & Conditions.',
         ]);
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
@@ -73,7 +77,11 @@ class AuthController extends Controller
                 'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
+                // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
+                'terms_accepted_at' => now(),    // Kukunin ng Laravel ang petsa at oras ngayon
+                'signup_ip'         => $request->ip(), // Kukunin ng Laravel ang IP address nila
             ]);
+
 
             // DUMMY SMS INTEGRATION
             // Kung mag-error ito, automatic mabu-bura si User sa itaas!
