@@ -128,7 +128,7 @@
                     </div>
                 </div>
             </div>
-
+            <!-- Registration Form -->
             <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <!-- ========================================================-->
@@ -185,23 +185,8 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <!-- Suffix (Nullable, No Error Tag) -->
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Suffix (e.g., Jr., Sr.)</label
-                            >
-                            <input
-                                type="text"
-                                id="suffix"
-                                name="suffix"
-                                maxlength="5"
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
-                        </div>
-
+                    <div class="mb-6">
                         <!-- Date of Birth (Custom Dropdowns) -->
-                        <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-slate-700 mb-1"
                                 >Date of Birth <span class="text-red-500">*</span></label
                             >
