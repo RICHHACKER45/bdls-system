@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return view('welcome'); // a welcome page
@@ -48,12 +49,13 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
     //     return view('resident.settings');
     // })->name('settings');
 
-    // EMAIL VERIFICATION ROUTES
-    Route::post('/email/send-otp', [AuthController::class, 'sendEmailOtp'])->name('email.send');
-    Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp'])->name('email.verify');
+    // EMAIL VERIFICATION ROUTES (Inilipat sa ProfileController)
+    Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');
+    Route::post('/email/verify-otp', [ProfileController::class, 'verifyEmailOtp'])->name('email.verify');
+    Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
 
-    // add Email
-    Route::post('/email/add', [AuthController::class, 'addEmail'])->name('email.add');
+    // BAGONG ROUTE: Para sa Email Notification Toggle
+    Route::post('/settings/email-preference', [ProfileController::class, 'updateEmailPreference'])->name('settings.email_preference');
 
 });
 
