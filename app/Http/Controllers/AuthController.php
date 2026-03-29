@@ -162,6 +162,25 @@ class AuthController extends Controller
         (e.g., pag-generate ng bagong code, pag-save sa DB)
         ====================================================
         */
+        // 1. Kuhanin ang number ng user na nagre-request mula sa Session memory
+        $contactNumber = $request->session()->get('registration_contact');
+        
+        if (!$contactNumber) {
+            return back()->withErrors(['otp_error' => 'Session expired. Hindi mahanap ang iyong numero.']);
+        }
+
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        // 2. GUMAWA NG BAGONG OTP (Action)
+        $newOtp = (string) rand(100000, 999999);
+
+        // 3. I-UPDATE ANG KASALUKUYANG USER (CRUD: Update)
+        $user->otp_code = $newOtp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        // 4. I-LOG ANG BAGONG OTP SA LARAVEL.LOG (Para mabasa mo!)
+        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtp}");
 
         // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
         RateLimiter::hit($cooldownKey, 60);    // I-lock ang button ng 60 seconds
