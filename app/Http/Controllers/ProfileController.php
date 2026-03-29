@@ -110,4 +110,22 @@ class ProfileController extends Controller
 
         return back()->with(['success' => 'Email naidagdag! Nagpadala kami ng 6-digit code upang ma-verify ito.', 'active_tab' => 'settings']);
     }
+    /**
+     * I-update kung gusto ng user makatanggap ng Email Notifications (Fallback)
+     */
+    public function updateEmailPreference(Request $request)
+    {
+        $user = Auth::user();
+
+        // THE LARAVEL WAY: I-check kung pinindot ba ang checkbox. 
+        // (Kung oo = 1, kung hindi = 0)
+        $user->wants_email_notification = $request->has('wants_email_notification') ? 1 : 0;
+        $user->save();
+
+        // Ibalik sa Settings tab kalakip ang success message
+        return back()->with([
+            'success' => 'Na-update na ang iyong Notification Preferences!', 
+            'active_tab' => 'settings'
+        ]);
+    }
 }
