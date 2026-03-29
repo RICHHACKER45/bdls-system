@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
@@ -51,30 +52,39 @@ class ProfileController extends Controller
      */
     public function verifyEmailOtp(Request $request)
     {
-        $request->validate([
+        // 1. MANUAL VALIDATION (Para masalo ang error at malagyan ng active_tab)
+        $validator = Validator::make($request->all(), [
             'email_otp' => 'required|size:6'
         ], [
             'email_otp.required' => 'Pakilagay ang 6-digit code.',
             'email_otp.size' => 'Ang code ay dapat eksaktong 6 digits.'
         ]);
 
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->with('active_tab', 'settings');
+        }
+
         $user = Auth::user();
 
+        // 2. CHECK KUNG MALI ANG OTP
         if ($user->email_otp_code !== $request->email_otp) {
             return back()->withErrors(['email_otp' => 'Mali ang 6-digit code. Subukan muli.'])->with('active_tab', 'settings');
         }
 
+        // 3. CHECK KUNG EXPIRED NA
         if (now()->greaterThan($user->email_otp_expires_at)) {
             return back()->withErrors(['email_otp' => 'Expired na ang code. Mag-request ng bago.'])->with('active_tab', 'settings');
         }
 
-        // SUCCESS: I-update ang email_verified_at
-        $user->update([
-            'email_verified_at' => now(),
-            'email_otp_code' => null, // Burahin ang code para sa security
-        ]);
+        // 4. SUCCESS: I-save nang direkta para iwas Fillable array errors
+        $user->email_verified_at = now();
+        $user->email_otp_code = null;
+        $user->save();
 
-        return back()->with(['success' => 'Email Verified! Maaari ka nang makatanggap ng digital receipts.', 'active_tab' => 'settings']);
+        return back()->with([
+            'success' => 'Email Verified! Maaari ka nang makatanggap ng digital receipts.', 
+            'active_tab' => 'settings'
+        ]);
     }
 
      /**
