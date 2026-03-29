@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServiceRequestController;
 
 Route::get('/', function () {
     return view('welcome'); // a welcome page
@@ -56,7 +57,10 @@ Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(functi
 
     // BAGONG ROUTE: Para sa Email Notification Toggle
     Route::post('/settings/email-preference', [ProfileController::class, 'updateEmailPreference'])->name('settings.email_preference');
-
+    
+    // SERVICE REQUEST ROUTES
+    Route::get('/request/create', [ServiceRequestController::class, 'create'])->name('resident.request.create');
+    Route::post('/request', [ServiceRequestController::class, 'store'])->name('resident.request.store');
 });
 
 // Call the logout function
