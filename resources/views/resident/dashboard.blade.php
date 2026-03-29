@@ -214,13 +214,24 @@
                 </label>
 
                 <!-- Email Toggle (Para sa Opt-in Fallback na nakasulat sa Scope and Delimitation) -->
-                <label class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
-                    <div>
-                        <p class="font-bold text-slate-800 text-sm">Email / Digital Receipts</p>
-                        <p class="text-xs text-slate-500">Makatanggap ng kopya ng updates sa iyong email.</p>
-                    </div>
-                    <input type="checkbox" checked class="w-5 h-5 accent-slate-900 cursor-pointer">
-                </label>
+                <form action="{{ route('resident.settings.email_preference') }}" method="POST">
+                    @csrf
+                    <label class="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">Email / Digital Receipts</p>
+                            <p class="text-xs text-slate-500">Makatanggap ng kopya ng updates sa iyong email.</p>
+                        </div>
+                        <!-- Ang onchange event ay nagpapa-submit agad ng form pagka-click (UX trick) -->
+                        <input 
+                            type="checkbox" 
+                            name="wants_email_notification" 
+                            value="1"
+                            onchange="this.form.submit()" 
+                            {{ Auth::user()->wants_email_notification ? 'checked' : '' }}
+                            class="w-5 h-5 accent-slate-900 cursor-pointer"
+                        >
+                    </label>
+                </form>
             </div>
         </div>
 
