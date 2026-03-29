@@ -34,10 +34,10 @@ class User extends Authenticatable
         'otp_expires_at',
         'contact_verified_at',
         'is_verified',
-        // Dito natin idinagdag ang tatlong bago:
         'email_verified_at',
         'email_otp_code',
         'email_otp_expires_at',
+        'wants_email_notification',
     ];
 
     /**
@@ -65,6 +65,7 @@ class User extends Authenticatable
             'contact_verified_at' => 'datetime',
             'otp_expires_at' => 'datetime',
             'password' => 'hashed',
+            'wants_email_notification' => 'boolean',
             'is_verified' => 'boolean', // Kino-convert ang tinyint(1) [4] sa true/false
         ];
     }
