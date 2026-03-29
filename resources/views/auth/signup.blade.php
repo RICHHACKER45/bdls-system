@@ -185,71 +185,69 @@
                         </div>
                     </div>
 
+                    <!-- Date of Birth (Custom Dropdowns) -->
                     <div class="mb-6">
-                        <!-- Date of Birth (Custom Dropdowns) -->
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Date of Birth <span class="text-red-500">*</span></label
-                            >
-                            <div class="grid grid-cols-3 gap-2">
-                                <!-- Month -->
-                                <div>
-                                    <select
-                                        id="dob_month"
-                                        name="dob_month"
-                                        required
-                                        class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                    >
-                                        <option value="">Month</option>
-                                        <option value="01">January</option>
-                                        <option value="02">February</option>
-                                        <option value="03">March</option>
-                                        <option value="04">April</option>
-                                        <option value="05">May</option>
-                                        <option value="06">June</option>
-                                        <option value="07">July</option>
-                                        <option value="08">August</option>
-                                        <option value="09">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                    <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
-                                </div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1"
+                            >Date of Birth <span class="text-red-500">*</span></label
+                        >
+                        <div class="grid grid-cols-3 gap-2">
+                            <!-- Month -->
+                            <div>
+                                <select
+                                    id="dob_month"
+                                    name="dob_month"
+                                    required
+                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                                >
+                                    <option value="">Month</option>
+                                    <option value="01">January</option>
+                                    <option value="02">February</option>
+                                    <option value="03">March</option>
+                                    <option value="04">April</option>
+                                    <option value="05">May</option>
+                                    <option value="06">June</option>
+                                    <option value="07">July</option>
+                                    <option value="08">August</option>
+                                    <option value="09">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                                <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
+                            </div>
 
-                                <!-- Day (Gamit ang Laravel Blade For Loop) -->
-                                <div>
-                                    <select
-                                        id="dob_day"
-                                        name="dob_day"
-                                        required
-                                        class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                    >
-                                        <option value="">Day</option>
-                                        @for ($i = 1; $i <= 31; $i++)
-                                            <!-- Ang str_pad ay naglalagay ng '0' sa unahan ng 1-9 -->
-                                            <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
-                                                {{ $i }}
-                                            </option>
-                                        @endfor
-                                    </select>
-                                    <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
-                                </div>
+                            <!-- Day (Gamit ang Laravel Blade For Loop) -->
+                            <div>
+                                <select
+                                    id="dob_day"
+                                    name="dob_day"
+                                    required
+                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                                >
+                                    <option value="">Day</option>
+                                    @for ($i = 1; $i <= 31; $i++)
+                                        <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
+                                            {{ $i }}
+                                        </option>
+                                    @endfor
+                                </select>
+                                <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
+                            </div>
 
-                                <!-- Year (Gamit ang Laravel Blade For Loop) -->
-                                <div>
-                                    <select
-                                        id="dob_year"
-                                        name="dob_year"
-                                        required
-                                        class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                    >
-                                        <option value="">Year</option>
-                                        @for ($i = date('Y'); $i >= 1900; $i--)
-                                            <option value="{{ $i }}">{{ $i }}</option>
-                                        @endfor
-                                    </select>
-                                    <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
-                                </div>
+                            <!-- Year (Gamit ang Laravel Blade For Loop) -->
+                            <div>
+                                <select
+                                    id="dob_year"
+                                    name="dob_year"
+                                    required
+                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
+                                >
+                                    <option value="">Year</option>
+                                    @for ($i = date('Y'); $i >= 1900; $i--)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                                </select>
+                                <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
                             </div>
                         </div>
                     </div>
