@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -19,7 +20,6 @@ class AuthController extends Controller
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
-            'suffix' => 'nullable|string|max:5',
             
             'dob_month' => 'required|numeric|min:1|max:12',
             'dob_day' => 'required|numeric|min:1|max:31',
@@ -34,7 +34,11 @@ class AuthController extends Controller
             
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'selfie_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-            'privacy' => 'required|accepted'
+            // SECURITY: Ito lang ang dapat nandito, wala nang 'privacy'
+            'terms' => 'accepted', 
+        ], [
+            // Custom error message kung sinubukan nilang i-bypass ang HTML
+            'terms.accepted' => 'Kailangan mong sumang-ayon sa Privacy Policy at Terms & Conditions.',
         ]);
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
@@ -59,7 +63,6 @@ class AuthController extends Controller
                 'first_name' => $validatedData['first_name'],
                 'middle_name' => $validatedData['middle_name'],
                 'last_name' => $validatedData['last_name'],
-                'suffix' => $validatedData['suffix'],
                 'date_of_birth' => $dateOfBirth,
                 'house_number' => $validatedData['house_number'],
                 'purok_street' => $validatedData['purok_street'],
@@ -72,7 +75,11 @@ class AuthController extends Controller
                 'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
+                // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
+                'terms_accepted_at' => now(),    // Kukunin ng Laravel ang petsa at oras ngayon
+                'signup_ip'         => $request->ip(), // Kukunin ng Laravel ang IP address nila
             ]);
+
 
             // DUMMY SMS INTEGRATION
             // Kung mag-error ito, automatic mabu-bura si User sa itaas!
@@ -133,31 +140,53 @@ class AuthController extends Controller
         return redirect('/resident/dashboard')->with('success', 'Number Verified! Welcome sa iyong dashboard.');
     }
 
-    /**
-     * Mag-generate ng bagong OTP at i-update ang expiration
-     */
-    public function resendOtp(Request $request)
+     public function resendOtp(Request $request)
     {
-        $contactNumber = $request->session()->get('registration_contact');
+        // 1. I-setup ang dalawang susi (keys) gamit ang IP address ng user
+        $cooldownKey = 'resend_sms_otp_' . $request->ip(); // Para sa 60s timer
+        $blockKey = 'block_sms_otp_' . $request->ip();    // Para sa 3-strike block
 
+        // 2. CHECK: Naka-3 beses na ba siya? (Naka-lock ng 1 oras kapag spammer)
+        if (RateLimiter::tooManyAttempts($blockKey, 3)) {
+            return back()->withErrors(['otp_error' => 'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.']);
+        }
+
+        // 3. CHECK: Nakapag-hintay na ba siya ng 60 seconds?
+        if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
+            return back()->withErrors(['otp_error' => 'Masyado pang mabilis. Maghintay bago mag-resend.']);
+        }
+
+        /* 
+        ====================================================
+        DITO MO ILALAGAY YUNG LOGIC MO SA PAG-SEND NG SMS
+        (e.g., pag-generate ng bagong code, pag-save sa DB)
+        ====================================================
+        */
+        // 1. Kuhanin ang number ng user na nagre-request mula sa Session memory
+        $contactNumber = $request->session()->get('registration_contact');
+        
         if (!$contactNumber) {
-            return redirect('/signup')->withErrors(['error' => 'Session expired. Mangyaring mag-register muli.']);
+            return back()->withErrors(['otp_error' => 'Session expired. Hindi mahanap ang iyong numero.']);
         }
 
         $user = User::where('contact_number', $contactNumber)->first();
 
-        // Mag-generate ng BAGONG 6-digit OTP
-        $newOtpCode = (string) rand(100000, 999999);
-        
-        $user->update([
-            'otp_code' => $newOtpCode,
-            'otp_expires_at' => now()->addMinutes(10),
-        ]);
+        // 2. GUMAWA NG BAGONG OTP (Action)
+        $newOtp = (string) rand(100000, 999999);
 
-        // DUMMY SMS INTEGRATION PARA SA RESEND
-        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtpCode}");
+        // 3. I-UPDATE ANG KASALUKUYANG USER (CRUD: Update)
+        $user->otp_code = $newOtp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
 
-        return back()->with('success', 'Ang bagong 6-digit code ay naipadala na sa iyong numero!');
+        // 4. I-LOG ANG BAGONG OTP SA LARAVEL.LOG (Para mabasa mo!)
+        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtp}");
+
+        // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
+        RateLimiter::hit($cooldownKey, 60);    // I-lock ang button ng 60 seconds
+        RateLimiter::hit($blockKey, 3600);     // Dagdagan ng 1 strike ang IP block (babalik sa zero after 1 hour)
+
+        return back()->with('success', 'Bagong OTP code ay naipadala na!');
     }
 
     /**
@@ -220,63 +249,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken(); // CSRF Protection
         return redirect('/login');
-    }
-
-    /**
-     * Mag-generate at magpadala ng Dummy Email OTP
-     */
-    public function sendEmailOtp(Request $request)
-    {
-        $user = Auth::user();
-
-        if (!$user->email) {
-            return back()->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.']);
-        }
-
-        // Mag-generate ng 6-digit code
-        $otp = (string) rand(100000, 999999);
-        
-        $user->update([
-            'email_otp_code' => $otp,
-            'email_otp_expires_at' => now()->addMinutes(10),
-        ]);
-
-        // DUMMY EMAIL INTEGRATION (Makikita sa laravel.log)
-        Log::info("DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}");
-
-        // Ipapasa ang 'active_tab' para hindi mawala ang user sa Settings view
-        return back()->with(['success' => 'Naipadala na ang 6-digit code sa iyong email!', 'active_tab' => 'settings']);
-    }
-
-    /**
-     * I-verify ang inilagay na Email OTP
-     */
-    public function verifyEmailOtp(Request $request)
-    {
-        $request->validate([
-            'email_otp' => 'required|size:6'
-        ], [
-            'email_otp.required' => 'Pakilagay ang 6-digit code.',
-            'email_otp.size' => 'Ang code ay dapat eksaktong 6 digits.'
-        ]);
-
-        $user = Auth::user();
-
-        if ($user->email_otp_code !== $request->email_otp) {
-            return back()->withErrors(['email_otp' => 'Mali ang 6-digit code. Subukan muli.'])->with('active_tab', 'settings');
-        }
-
-        if (now()->greaterThan($user->email_otp_expires_at)) {
-            return back()->withErrors(['email_otp' => 'Expired na ang code. Mag-request ng bago.'])->with('active_tab', 'settings');
-        }
-
-        // SUCCESS: I-update ang email_verified_at
-        $user->update([
-            'email_verified_at' => now(),
-            'email_otp_code' => null, // Burahin ang code para sa security
-        ]);
-
-        return back()->with(['success' => 'Email Verified! Maaari ka nang makatanggap ng digital receipts.', 'active_tab' => 'settings']);
     }
 }
 

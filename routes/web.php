@@ -2,57 +2,72 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServiceRequestController;
+use Illuminate\Support\Facades\Auth;
 
+
+// ==========================================
+// 1. THE TRAFFIC DIRECTOR (Welcome Page)
+// ==========================================
 Route::get('/', function () {
-    return view('welcome'); // a welcome page
+    // Kung naka-login na, dalhin sa dashboard nang direkta (Walang loop)
+    if (Auth::check()) {
+        return redirect()->route('resident.dashboard');
+    }
+    // Kung guest, ipakita ang welcome page
+    return view('welcome'); 
+})->name('welcome');
+
+// ==========================================
+// 2. GUEST ROUTES (Para lang sa mga HINDI pa naka-login)
+// ==========================================
+Route::middleware(['guest'])->group(function () {
+    
+    Route::get('/login', function () {
+        return view('auth.login'); 
+    })->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+    Route::get('/signup', function () {
+        return view('auth.signup'); 
+    })->name('signup');
+    Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
 });
 
-Route::get('/login', function () {
-    return view('auth.login'); // goes to login page
-});
-
-Route::get('/signup', function () {
-    return view('auth.signup'); 
-});
-
-Route::post('/signup', [AuthController::class, 'register'])
-    ->name('signup.post');
-    // ->middleware('throttle:3,1'); // LIMIT: 3 signups per 1 minute per IP Address
-
-// 1. GET Route: Ito ang nagpapakita ng UI ng OTP page (Kaya ka nag-404 dahil nawala ito)
+// ==========================================
+// 3. OTP ROUTES (Para sa Account Verification)
+// ==========================================
 Route::get('/otp', function () {
     return view('auth.otp');
 })->name('otp.show');
-
-// 2. POST Route: Ito ang sasalo sa 6-digit code kapag pinindot ang "Verify Account"
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
-
-// Resend otp
 Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend');
 
-// Saluhin ang Login Data
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-
 // ==========================================
-// RESIDENT DASHBOARD ROUTES (Protected by Auth)
+// 4. AUTHENTICATED ROUTES (Bawal ang walang account)
 // ==========================================
-Route::middleware(['auth'])->prefix('resident')->name('resident.')->group(function () {
+Route::middleware(['auth'])->group(function () {
     
-    // Ang mismong Dashboard
-    Route::get('/dashboard', function () {
-        return view('resident.dashboard');
-    })->name('dashboard');
+    // LOGOUT (Dapat naka-login bago makapag-logout)
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Ang Settings/Preferences
-    // Route::get('/settings', function () {
-    //     return view('resident.settings');
-    // })->name('settings');
+    // RESIDENT DASHBOARD GROUP
+    Route::prefix('resident')->name('resident.')->group(function () {
+        
+        // Dashboard
+        Route::get('/dashboard', function () {
+            return view('resident.dashboard');
+        })->name('dashboard');
 
-    // EMAIL VERIFICATION ROUTES
-    Route::post('/email/send-otp', [AuthController::class, 'sendEmailOtp'])->name('email.send');
-    Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp'])->name('email.verify');
+        // Email & Notification Preferences
+        Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');
+        Route::post('/email/verify-otp', [ProfileController::class, 'verifyEmailOtp'])->name('email.verify');
+        Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
+        Route::post('/settings/email-preference', [ProfileController::class, 'updateEmailPreference'])->name('settings.email_preference');
 
+        // Service Requests (Tinanggal ang sobrang 'resident.' para hindi mag-doble)
+        Route::get('/request/create', [ServiceRequestController::class, 'create'])->name('request.create');
+        Route::post('/request', [ServiceRequestController::class, 'store'])->name('request.store');
+    });
 });
-
-// Call the logout function
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

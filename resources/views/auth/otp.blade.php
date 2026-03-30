@@ -55,16 +55,47 @@
             </button>
         </form>
 
-        <!-- RESEND LINK (Converted to Secure Form) -->
-        <div class="mt-6 text-sm text-slate-500">
-            Hindi nakuha ang code? 
-            <form action="{{ route('otp.resend') }}" method="POST" class="inline">
+        <!-- RESEND OTP SECTION WITH RATE LIMITER -->
+        @php
+            // Dahil baka hindi pa naka-login, IP address ang gagamitin nating identifier para sa lock
+            $cooldown = \Illuminate\Support\Facades\RateLimiter::availableIn('resend_sms_otp_' . request()->ip());
+        @endphp
+
+        <div class="mt-8 text-center border-t border-slate-100 pt-6">
+            <p class="text-sm text-slate-500 mb-3">Hindi nakuha ang code?</p>
+            
+            <!-- Palitan ang 'otp.resend' ng totoong pangalan ng route mo para sa resend -->
+            <form action="{{ route('otp.resend') }}" method="POST" id="resendOtpForm">
                 @csrf
-                <button type="submit" class="text-slate-900 font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-slate-200 rounded">
-                    Mag-resend
+                <button type="submit" id="resendBtn" class="text-sm font-bold text-slate-900 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-all">
+                    Magpadala ulit ng code <span id="timerDisplay" class="text-red-600 ml-1 font-mono"></span>
                 </button>
             </form>
         </div>
+
+        <!-- FRONTEND TIMER SCRIPT -->
+        @if($cooldown > 0)
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                let secondsLeft = {{ $cooldown }};
+                const btn = document.getElementById('resendBtn');
+                const timerDisplay = document.getElementById('timerDisplay');
+
+                btn.disabled = true;
+
+                const countdown = setInterval(() => {
+                    timerDisplay.innerText = `(${secondsLeft}s)`;
+                    secondsLeft--;
+
+                    if (secondsLeft < 0) {
+                        clearInterval(countdown);
+                        btn.disabled = false;
+                        timerDisplay.innerText = '';
+                    }
+                }, 1000);
+            });
+        </script>
+        @endif
 
     </div>
 

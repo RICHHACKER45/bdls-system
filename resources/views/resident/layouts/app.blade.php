@@ -53,16 +53,11 @@
 
            <!-- Topbar Right (Laravel Auth Data Integration) -->
             <div class="ml-auto flex items-center gap-3">
-                <!-- TANGGAL ANG HIDDEN, NILAGYAN NG TRUNCATE MAX-WIDTH -->
                 <span class="text-sm font-semibold text-slate-700 truncate max-w-[180px] sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
                 
-                <!-- INITIALS AVATAR FALLBACK -->
-                @php
-                    // Kukunin ang unang letra ng First Name at Last Name
-                    $initials = strtoupper(substr(Auth::user()->first_name, 0, 1) . substr(Auth::user()->last_name, 0, 1));
-                @endphp
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-sm border-2 border-white select-none">
-                    {{ $initials }}
+                <!-- TOTOONG PROFILE PICTURE MULA SA SELFIE -->
+                <div class="w-9 h-9 rounded-full bg-slate-200 shadow-sm overflow-hidden border-2 border-white">
+                    <img src="{{ asset('storage/' . Auth::user()->selfie_photo_path) }}" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
         </header>
@@ -107,6 +102,61 @@
                 toggleSidebar();
             }
         }
+    </script>
+
+    <!-- ========================================== -->
+    <!-- GLOBAL LOADING SCREEN (Hidden by default)  -->
+    <!-- ========================================== -->
+    <div id="global-loader" class="fixed inset-0 z- hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
+            <!-- Spinner Icon -->
+            <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
+        </div>
+    </div>
+    <!-- GLOBAL FORM SUBMIT LISTENER WITH TIMEOUT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forms = document.querySelectorAll('form');
+            const loader = document.getElementById('global-loader');
+            const loaderText = loader.querySelector('p'); // Kukunin natin yung <p> tag sa loob ng loader
+
+            forms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    // Ipakita ang loading screen
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                    loaderText.innerText = "Pinoproseso...";
+                    loaderText.classList.replace('text-red-600', 'text-slate-800');
+
+                    // I-disable ang button
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('cursor-not-allowed', 'opacity-70');
+                    }
+
+                    // FRONTEND TIMEOUT SAFETY NET (30 seconds)
+                    setTimeout(() => {
+                        // Kung 30 seconds na at hindi pa rin nagre-refresh ang page galing server:
+                        loaderText.innerText = "Masyadong matagal ang server. Paki-refresh ang page.";
+                        loaderText.classList.replace('text-slate-800', 'text-red-600');
+                        
+                        // Patayin ang browser loading spinner (parang pinindot ang 'X' sa browser)
+                        window.stop();
+
+                        // I-enable ulit ang button para makapag-try ulit ang user
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('cursor-not-allowed', 'opacity-70');
+                        }
+                    }, 30000); // 30000 milliseconds = 30 seconds
+                });
+            });
+        });
     </script>
 </body>
 </html>
