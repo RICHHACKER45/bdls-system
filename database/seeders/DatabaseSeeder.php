@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         // Tinatawag natin dito yung ginawa nating UserSeeder
         $this->call([
             UserSeeder::class,
+            DocumentTypeSeeder::class,
         ]);
     }
 }
