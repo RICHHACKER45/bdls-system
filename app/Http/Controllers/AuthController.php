@@ -15,7 +15,6 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        sleep(45);
         // STEP 1: I-validate ang lahat ng pumapasok na data mula sa signup form
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -109,7 +108,6 @@ class AuthController extends Controller
 
         // Hanapin kung kaninong session ito naka-link
         $contactNumber = $request->session()->get('registration_contact');
-        
         if (!$contactNumber) {
             return redirect('/signup')->withErrors(['error' => 'Session expired. Mangyaring mag-register muli.']);
         }
@@ -135,11 +133,18 @@ class AuthController extends Controller
         // Burahin ang OTP session memory
         $request->session()->forget('registration_contact');
 
-        // THE LARAVEL WAY: I-login agad ang user dahil napatunayan na niya ang OTP niya
+        // THE LARAVEL WAY: I-login agad ang user
         Auth::login($user);
 
         // SECURITY: Regenerate session laban sa session fixation attacks
         $request->session()->regenerate();
+
+        // ==========================================
+        // ROLE-BASED ROUTING (Ang Traffic Enforcer)
+        // ==========================================
+        if ($user->role === 'admin') {
+            return redirect('/admin/dashboard')->with('success', 'Admin Account Verified! Welcome.');
+        }
 
         // I-redirect diretso sa Resident Dashboard
         return redirect('/resident/dashboard')->with('success', 'Number Verified! Welcome sa iyong dashboard.');
@@ -212,35 +217,25 @@ class AuthController extends Controller
         if (Auth::attempt([$loginType => $credentials['login_id'], 'password' => $credentials['password']])) {
             $user = Auth::user();
 
-            // 3. Subukang i-authenticate (The Laravel Way)
-        if (Auth::attempt([$loginType => $credentials['login_id'], 'password' => $credentials['password']])) {
-            $user = Auth::user();
-
-            // 4. ANG OTP SHIELD: I-check kung tapos na siya sa OTP Verification (Kung null ang timestamp)
+            // 4. ANG OTP SHIELD: I-check kung tapos na siya sa OTP Verification
             if (is_null($user->contact_verified_at)) {
                 Auth::logout(); // I-kick palabas sa system
-                
                 // I-restore ang session memory para gumana ulit ang OTP page niya
                 $request->session()->put('registration_contact', $user->contact_number);
-                
-                // Ibato pabalik sa OTP page kalakip ang error message
                 return redirect('/otp')->withErrors(['otp' => 'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.']);
             }
 
-            // (Nakatago pa rin ang Admin Shield natin para makapag-design tayo)
-            // if (!$user->is_verified) { ... }
-
             // 5. SECURITY: Regenerate session laban sa hackers
             $request->session()->regenerate();
 
-            // 6. I-redirect sa Resident Dashboard
-            return redirect()->intended('/resident/dashboard');
-        }
+            // ==========================================
+            // 6. ROLE-BASED ROUTING (Ang Traffic Enforcer)
+            // ==========================================
+            if ($user->role === 'admin') {
+                return redirect()->intended('/admin/dashboard');
+            }
 
-            // 5. SECURITY: Regenerate session laban sa hackers
-            $request->session()->regenerate();
-
-            // 6. I-redirect sa Resident Dashboard (Gagawa tayo nito mamaya)
+            // Kung hindi siya admin, ibig sabihin resident siya:
             return redirect()->intended('/resident/dashboard');
         }
 
