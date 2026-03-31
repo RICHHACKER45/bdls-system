@@ -15,11 +15,14 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        sleep(45);
         // STEP 1: I-validate ang lahat ng pumapasok na data mula sa signup form
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
+            'sex' => 'required|string|in:Male,Female',
             
             'dob_month' => 'required|numeric|min:1|max:12',
             'dob_day' => 'required|numeric|min:1|max:31',
@@ -63,6 +66,8 @@ class AuthController extends Controller
                 'first_name' => $validatedData['first_name'],
                 'middle_name' => $validatedData['middle_name'],
                 'last_name' => $validatedData['last_name'],
+                'suffix' => $validatedData['suffix'] ?? null,
+                'sex' => $validatedData['sex'],
                 'date_of_birth' => $dateOfBirth,
                 'house_number' => $validatedData['house_number'],
                 'purok_street' => $validatedData['purok_street'],
