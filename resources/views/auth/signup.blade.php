@@ -136,129 +136,109 @@
                 <!-- ========================================================-->
                 <div id="step1">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                
+                    <!-- GRID 1: PANGALAN (Ginawang 4-Columns para sa Suffix) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <!-- First Name (Required) -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >First Name <span class="text-red-500">*</span></label
-                            >
-                            <input
-                                type="text"
-                                id="first_name"
-                                name="first_name"
-                                maxlength="255"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="first_name" name="first_name" maxlength="255" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                             <p id="error-first_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
-
-                        <!-- Middle Name (Nullable, No Error Tag) -->
+                    
+                        <!-- Middle Name -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Middle Name</label
-                            >
-                            <input
-                                type="text"
-                                id="middle_name"
-                                name="middle_name"
-                                maxlength="255"
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Middle Name</label>
+                            <input type="text" id="middle_name" name="middle_name" maxlength="255" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                         </div>
-
+                    
                         <!-- Last Name (Required) -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Last Name <span class="text-red-500">*</span></label
-                            >
-                            <input
-                                type="text"
-                                id="last_name"
-                                name="last_name"
-                                maxlength="255"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="last_name" name="last_name" maxlength="255" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                             <p id="error-last_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
+                    
+                        <!-- Suffix (Optional) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Suffix (Optional)</label>
+                            <select id="suffix" name="suffix" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200 cursor-pointer">
+                                <option value="">Wala</option>
+                                <option value="Jr.">Jr.</option>
+                                <option value="Sr.">Sr.</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                            </select>
+                        </div>
                     </div>
+                
+                    <!-- GRID 2: SEX & DATE OF BIRTH -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-                    <!-- Date of Birth (Custom Dropdowns) -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-slate-700 mb-1"
-                            >Date of Birth <span class="text-red-500">*</span></label
-                        >
-                        <div class="grid grid-cols-3 gap-2">
-                            <!-- Month -->
-                            <div>
-                                <select
-                                    id="dob_month"
-                                    name="dob_month"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Month</option>
-                                    <option value="01">January</option>
-                                    <option value="02">February</option>
-                                    <option value="03">March</option>
-                                    <option value="04">April</option>
-                                    <option value="05">May</option>
-                                    <option value="06">June</option>
-                                    <option value="07">July</option>
-                                    <option value="08">August</option>
-                                    <option value="09">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                                <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
-                            </div>
-
-                            <!-- Day (Gamit ang Laravel Blade For Loop) -->
-                            <div>
-                                <select
-                                    id="dob_day"
-                                    name="dob_day"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Day</option>
-                                    @for ($i = 1; $i <= 31; $i++)
-                                        <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
-                                            {{ $i }}
-                                        </option>
-                                    @endfor
-                                </select>
-                                <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
-                            </div>
-
-                            <!-- Year (Gamit ang Laravel Blade For Loop) -->
-                            <div>
-                                <select
-                                    id="dob_year"
-                                    name="dob_year"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Year</option>
-                                    @for ($i = date('Y'); $i >= 1900; $i--)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
-                                <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
+                        <!-- Sex (Required) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Kasarian (Sex) <span class="text-red-500">*</span></label>
+                            <select id="sex" name="sex" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200 cursor-pointer">
+                                <option value="">-- Pumili ng Kasarian --</option>
+                                <option value="Male">Lalaki (Male)</option>
+                                <option value="Female">Babae (Female)</option>
+                            </select>
+                            <p id="error-sex" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
+                        </div>
+                    
+                        <!-- Date of Birth (Custom Dropdowns) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Date of Birth <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <!-- Month -->
+                                <div>
+                                    <select id="dob_month" name="dob_month" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Month</option>
+                                        <option value="01">January</option>
+                                        <option value="02">February</option>
+                                        <option value="03">March</option>
+                                        <option value="04">April</option>
+                                        <option value="05">May</option>
+                                        <option value="06">June</option>
+                                        <option value="07">July</option>
+                                        <option value="08">August</option>
+                                        <option value="09">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
+                            
+                                <!-- Day -->
+                                <div>
+                                    <select id="dob_day" name="dob_day" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Day</option>
+                                        @for ($i = 1; $i <= 31; $i++)
+                                            <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                    <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
+                            
+                                <!-- Year -->
+                                <div>
+                                    <select id="dob_year" name="dob_year" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Year</option>
+                                        @for ($i = date('Y'); $i >= 1900; $i--)
+                                            <option value="{{ $i }}">{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                    <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                
                     <!-- BUTTON CONTAINER (Step 1 - Next Only) -->
                     <div class="w-full flex justify-end mt-8">
-                        <!-- NEXT BUTTON (Responsive Width) -->
-                        <button
-                            type="button"
-                            onclick="validateAndGo('step1', 'step2')"
-                            class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
-                        >
+                        <button type="button" onclick="validateAndGo('step1', 'step2')" class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200">
                             Next Step
                         </button>
                     </div>
@@ -613,53 +593,76 @@
 
     <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
     <script>
-        // 1. Custom function para sa live image preview
         // 1. Custom function para sa live image preview at size validation
         function previewImage(event, previewId) {
             let input = event.target;
             let previewImg = document.getElementById(previewId);
             let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
-
+        
             // Kunin ang unang file
             let file = input.files.item(0);
-
+        
             // DEFENSIVE DESIGN: Kung nag-cancel ang user
             if (!file) {
                 console.log('Nag-cancel ang user, walang file na napili.');
                 return;
             }
-
+        
             // ---> ITO ANG BAGONG FILE SIZE VALIDATION (5MB LIMIT) <---
             const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
             if (file.size > maxSizeInBytes) {
-                // Ipakita ang modal gamit ang custom message
-                showErrorModal(
-                    'Ang file ay masyadong malaki. Paki-upload ng litrato na may maximum size na 5MB.',
-                );
-
+                // TATAWAGIN NA NATIN ANG TOAST IMBES NA MODAL
+                showToast('Ang file ay masyadong malaki. Maximum size ay 5MB.');
+            
                 // I-reset ang input field para hindi ma-submit ang malaking file
                 input.value = '';
-
+            
                 // Ibalik ang preview box sa "No image selected" state kung may dating picture
                 previewImg.classList.add('hidden');
                 previewImg.src = '';
                 placeholder.classList.remove('hidden');
-
+            
                 return; // Patayin ang function dito, wag nang ituloy ang pag-load
             }
-
+        
             // Kung nakapasa sa 5MB rule, i-load ang preview
             console.log('File na nakuha at pasado:', file.name);
             let reader = new FileReader();
-
+        
             reader.onload = function (e) {
                 previewImg.src = e.target.result;
                 previewImg.classList.remove('hidden');
                 placeholder.classList.add('hidden');
             };
-
+        
             // IPASA ANG FILE BLOB NANG LIGTAS
             reader.readAsDataURL(file);
+        }
+        
+        // BAGONG FUNCTION PARA SA FRONTEND TOAST
+        function showToast(message) {
+            const toast = document.getElementById('frontend-toast');
+            const msgEl = document.getElementById('frontend-toast-message');
+            msgEl.innerText = message;
+            
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            
+            // Slide down animation
+            setTimeout(() => {
+                toast.classList.remove('-translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('flex');
+                }, 500); // hintayin matapos ang animation bago itago nang tuluyan
+            }, 5000);
         }
 
         // 2. Tagapag-alaga ng Progress Bar at Indicators
@@ -960,55 +963,147 @@
             document.body.style.overflow = 'auto';
         }
     </script>
-    <!-- GLOBAL ERROR MODAL -->
-    <div
-        id="errorModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500"
-        >
-            <!-- Red Warning Icon -->
-            <div
-                class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4"
-            >
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+    <!-- ========================================== -->
+    <!-- 1. GLOBAL LOADING SCREEN (Z-50)            -->
+    <!-- ========================================== -->
+    <div id="global-loader" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
+            <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. CRITICAL SERVER ERROR MODAL (TIMEOUT)   -->
+    <!-- ========================================== -->
+    <div id="errorModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Oops! May Mali.</h3>
-            <p id="errorModalMessage" class="text-sm text-slate-600 mb-6">
-                <!-- Dito papasok ang "File must be less than 5MB" via JS -->
-            </p>
-            <button
-                type="button"
-                onclick="closeErrorModal()"
-                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95"
-            >
-                I-try Ulit
+            <h3 class="text-xl font-bold text-slate-800 mb-2">System Timeout</h3>
+            <p id="errorModalMessage" class="text-sm text-slate-600 mb-6"></p>
+            <button type="button" onclick="closeErrorModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95">
+                Sige, Susubukan Ulit
             </button>
         </div>
     </div>
-    <!-- LARAVEL BACKEND ERROR CATCHER (Dynamic Modal) -->
-    @if ($errors->any())
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Kunin ang error mula sa backend (hal. Duplicate Account, Invalid Data)
-                let laravelError = '{{ $errors->first() }}';
 
-                // Buksan ang Global Error Modal gamit ang dynamic message
-                showErrorModal(laravelError || 'We have encountered some problems. Please try again.');
+    <!-- ========================================== -->
+    <!-- 3. TOAST NOTIFICATION SYSTEM (Z-60)        -->
+    <!-- ========================================== -->
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[64] flex flex-col gap-3 w-full max-w-md px-4 pointer-events-none">
 
-                // Dahil ibinato pabalik ng server ang form, burado ang password at files.
-                // FORCE BACK TO STEP 3 para makapag-type ulit ng password!
-                sessionStorage.setItem('bdls_active_step', 'step3');
-                document.getElementById('step1').classList.add('hidden');
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('step4').classList.add('hidden');
-                document.getElementById('step3').classList.remove('hidden');
-                updateProgressBar(3);
+        <!-- A. Laravel Backend Error Toast (Duplicate Email, etc.) -->
+        @if ($errors->any())
+            <div id="backend-toast" class="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
+                <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div>
+                    <p class="font-bold text-sm">Oops! May nakitang mali.</p>
+                    <p class="text-sm font-medium">{{ $errors->first() }}</p>
+                </div>
+            </div>
+        @endif
+
+        <!-- B. Javascript Frontend Error Toast (5MB Error) -->
+        <div id="frontend-toast" class="hidden bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
+            <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+                <p class="font-bold text-sm">Oops! May nakitang mali.</p>
+                <p id="frontend-toast-message" class="text-sm font-medium"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- FORM SUBMIT LOADER & TIMEOUT SCRIPT        -->
+    <!-- ========================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            const loader = document.getElementById('global-loader');
+
+            form.addEventListener('submit', function (e) {
+                // 1. Ipakita ang Loading Screen
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+
+                // 2. I-disable ang Submit Button para iwas spam
+                const submitBtn = document.getElementById('submitBtn');
+                if(submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('cursor-not-allowed', 'opacity-50');
+                }
+
+                // 3. 40-Second Timeout Safety Net Modal
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                    window.stop(); // Patayin ang browser loading
+
+                    // BAGONG TEXT MESSAGE PARA SA SERVER TIMEOUT
+                    document.getElementById('errorModalMessage').innerText = "May nangyaring error sa aming server o nawalan ka ng connection. Paki-try ulit.";
+                    document.getElementById('errorModal').classList.remove('hidden');
+                    document.getElementById('errorModal').classList.add('flex');
+
+                    if(submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('cursor-not-allowed', 'opacity-50');
+                    }
+                }, 10000); // BINAGO MULA 30000 (30s) PA-40000 (40s)
             });
-        </script>
+        });
+    </script>
+
+    <!-- ========================================== -->
+    <!-- SMART ERROR ROUTER & TOAST ANIMATION       -->
+    <!-- ========================================== -->
+    @if ($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Hanapin kung saan nagka-error para doon ibukas ang form
+            let errorStep = 'step1';
+            @if($errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'dob_month', 'dob_day', 'dob_year']))
+                errorStep = 'step1';
+            @elseif($errors->hasAny(['house_number', 'purok_street']))
+                errorStep = 'step2';
+            @elseif($errors->hasAny(['contact_number', 'email', 'password']))
+                errorStep = 'step3';
+            @elseif($errors->hasAny(['id_photo_path', 'selfie_photo_path', 'terms']))
+                errorStep = 'step4';
+            @endif
+
+            // 2. Itago lahat ng steps at buksan lamang ang may error
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.add('hidden');
+
+            document.getElementById(errorStep).classList.remove('hidden');
+
+            // 3. I-update ang Progress Bar UI
+            let stepNum = parseInt(errorStep.replace('step', ''));
+            updateProgressBar(stepNum);
+            sessionStorage.setItem('bdls_active_step', errorStep);
+
+            // 4. I-trigger ang Toast Animation
+            const toast = document.getElementById('backend-toast');
+            if (toast) {
+                setTimeout(() => {
+                    toast.classList.remove('-translate-y-20', 'opacity-0');
+                    toast.classList.add('translate-y-0', 'opacity-100');
+                }, 100);
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('-translate-y-20', 'opacity-0');
+                }, 5000); // Mawawala matapos ang 5 segundo
+            }
+        });
+    </script>
     @endif
 </body>
 </html>
