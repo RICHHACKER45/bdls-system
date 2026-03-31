@@ -59,10 +59,10 @@
                     </p>
                 </div>
                 <div>
-                    <a href="{{ route('resident.request.create') }}" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg w-full sm:w-auto">
+                    <button onclick="openRequestModal()" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg w-full sm:w-auto focus:outline-none">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Gumawa ng Bagong Request
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -259,5 +259,190 @@
             switchTab("{{ session('active_tab') }}");
         });
     </script>
+@endif
+<!-- ===================================== -->
+<!-- SPA MODAL: SERVICE REQUEST FORM       -->
+<!-- ===================================== -->
+<div id="requestModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+        
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Gumawa ng Request</h2>
+                <p class="text-slate-500 text-sm mt-1">Kumpletuhin ang detalye para sa iyong queue number.</p>
+            </div>
+            <button type="button" onclick="closeRequestModal()" class="text-slate-400 hover:text-red-600 active:scale-95 transition-all p-2 bg-slate-200 hover:bg-red-100 rounded-full focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Modal Body (Form) -->
+        <div class="p-6 overflow-y-auto">
+            <form action="{{ route('resident.request.store') }}" method="POST" id="requestForm" class="space-y-6" enctype="multipart/form-data">
+                @csrf
+                <!-- 0. PRE-FILLED RESIDENT INFORMATION -->
+                <div class="bg-slate-100 p-5 rounded-xl border border-slate-200 shadow-inner">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">Impormasyon ng Nagre-request</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500">Buong Pangalan</label>
+                            <p class="text-sm font-bold text-slate-900">{{ Auth::user()->first_name }} {{ Auth::user()->middle_name }} {{ Auth::user()->last_name }} {{ Auth::user()->suffix }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500">Edad</label>
+                            <!-- The Laravel Way: Carbon Age Calculation -->
+                            <p class="text-sm font-bold text-slate-900">{{ \Carbon\Carbon::parse(Auth::user()->date_of_birth)->age }} taong gulang</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-500">Tirahan</label>
+                            <p class="text-sm font-bold text-slate-900">{{ Auth::user()->house_number }} {{ Auth::user()->purok_street }}, Barangay Doña Lucia</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 1. URI NG DOKUMENTO (Dynamic mula sa Database) -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Uri ng Dokumento <span class="text-red-500">*</span></label>
+                    <select name="document_type_id" id="document_type_id" required onchange="showRequirements(this)" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                        <option value="">-- Pumili ng Dokumento --</option>
+                        @foreach($documents as $doc)
+                            <option value="{{ $doc->id }}" data-reqs="{{ $doc->requirements_description }}">
+                                {{ $doc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <!-- UX Dynamic Requirements Box -->
+                    <div id="requirements_box" class="hidden mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-inner transition-all">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p class="text-sm text-blue-800 font-bold">Mga Kinakailangang Dalhin / I-upload:</p>
+                        </div>
+                        <p id="requirements_text" class="text-sm text-blue-700 font-medium ml-7"></p>
+                        <p class="text-xs text-slate-500 italic mt-2 ml-7">* Paalala: Ang Valid ID mo ay na-verify na kaya hindi mo na ito kailangang dalhin muli.</p>
+                    </div>
+                </div>
+
+                <!-- 2. PURPOSE -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Layunin (Purpose) <span class="text-red-500">*</span></label>
+                    <input type="text" name="purpose" placeholder="Hal. Requirement sa Trabaho, Scholarship..." required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">
+                </div>
+
+                <!-- 3. PREFERRED PICKUP TIME -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Kailan mo gustong kunin? <span class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="preferred_pickup_time" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                    <p class="text-xs text-amber-600 font-bold mt-2">⚠️ Paalala: Nakadepende pa rin ito sa approval at schedule ng Admin.</p>
+                </div>
+
+                <!-- 4. ADDITIONAL DETAILS -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Karagdagang Detalye (Optional)</label>
+                    <textarea name="additional_details" rows="2" placeholder="I-type dito kung may espesyal kang habilin..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all"></textarea>
+                </div>
+
+                <!-- 5. KARAGDAGANG ATTACHMENTS (Nakatago by default) -->
+                <div id="upload_section" class="hidden p-5 bg-white border-2 border-dashed border-slate-300 rounded-xl">
+                    <label class="block text-sm font-bold text-slate-800 mb-2">I-upload ang mga Karagdagang Dokumento <span class="text-red-500">*</span></label>
+                    <p class="text-xs text-slate-500 mb-3">Base sa iyong pinili, kailangan mong i-upload ang hinihinging dokumento (Hal. CTC, RSBSA, PSA).</p>
+                    <input type="file" name="attachments[]" id="attachments" multiple accept="image/jpeg, image/png, image/jpg, application/pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer transition-all">
+                </div>
+            </form>
+        </div>
+        
+        <!-- Modal Footer (Submit Button) -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <button type="button" onclick="closeRequestModal()" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 active:scale-95 transition-all">Kanselahin</button>
+            <!-- Pinindot nito ang form gamit ang ID niya -->
+            <button type="button" onclick="document.getElementById('requestForm').submit()" class="bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-2.5 px-8 rounded-xl transition-all shadow-md">I-submit Request</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Scripts -->
+<script>
+    function openRequestModal() {
+        const modal = document.getElementById('requestModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden'; // Pigilan ang pag-scroll sa background
+    }
+
+    function closeRequestModal() {
+        const modal = document.getElementById('requestModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto'; // Ibalik ang scroll
+    }
+
+    function showRequirements(selectElement) {
+        const box = document.getElementById('requirements_box');
+        const textElement = document.getElementById('requirements_text');
+        const uploadSection = document.getElementById('upload_section');
+        const attachmentInput = document.getElementById('attachments');
+        
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const requirements = selectedOption.getAttribute('data-reqs');
+
+        if (selectElement.value !== "") {
+            textElement.innerText = requirements;
+            box.classList.remove('hidden');
+            box.classList.add('block');
+
+            // UX Logic: Kung ang requirements ay humihingi ng higit pa sa "Valid ID", ilabas ang Upload Box
+            if (requirements && requirements.toLowerCase() !== 'valid id') {
+                uploadSection.classList.remove('hidden');
+                uploadSection.classList.add('block');
+                attachmentInput.required = true; // Gawing required ang upload
+            } else {
+                uploadSection.classList.add('hidden');
+                uploadSection.classList.remove('block');
+                attachmentInput.required = false;
+            }
+        } else {
+            box.classList.add('hidden');
+            box.classList.remove('block');
+            uploadSection.classList.add('hidden');
+            uploadSection.classList.remove('block');
+            attachmentInput.required = false;
+        }
+    }
+</script>
+
+<!-- ========================================== -->
+<!-- SUCCESS CONFIRMATION MODAL                 -->
+<!-- ========================================== -->
+@if (session('success_message'))
+<div id="successModal" class="fixed inset-0 z-[1] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-green-500 animate-bounce-slight">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">{{ session('success_title') }}</h3>
+        <p class="text-base text-slate-600 mb-8 font-medium">{{ session('success_message') }}</p>
+        <button type="button" onclick="document.getElementById('successModal').classList.add('hidden')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all active:scale-95 shadow-md">
+            Sige, Naintindihan Ko
+        </button>
+    </div>
+</div>
+@endif
+
+<!-- ========================================== -->
+<!-- ERROR CONFIRMATION MODAL                   -->
+<!-- ========================================== -->
+@if ($errors->any())
+<div id="errorModal" class="fixed inset-0 z-[1] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500 animate-bounce-slight">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">Oops! May Mali.</h3>
+        <p class="text-base text-slate-600 mb-8 font-medium">{{ $errors->first() }}</p>
+        <button type="button" onclick="document.getElementById('errorModal').classList.add('hidden')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all active:scale-95 shadow-md">
+            I-try Ulit
+        </button>
+    </div>
+</div>
 @endif
 @endsection
