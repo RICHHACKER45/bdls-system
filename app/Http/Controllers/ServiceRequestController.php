@@ -4,26 +4,33 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceRequest;
-use App\Models\Attachment; // Dinagdag natin ito
+use App\Models\Attachment;
 use App\Models\DocumentType;
 use Illuminate\Support\Facades\Auth;
+use App\Services\SmsService; // 1. TINAWAG NATIN ANG SERVICE MO
 
 class ServiceRequestController extends Controller
 {
+    // 2. THE LARAVEL WAY: Dependency Injection
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function store(Request $request)
     {
-        // 1. Validation & Security Check (Hanggang 5MB per file)
+        // 1. Validation Check
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
             'preferred_pickup_time' => 'required|date',
             'additional_details' => 'nullable|string',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120'
-        ], [
-            'attachments.*.max' => 'Ang bawat file ay hindi dapat lumagpas sa 5MB.',
         ]);
 
-        // 2. Queue Number Generator (Halimbawa: O-001)
+        // 2. Queue Number Generator
         $latestRequest = ServiceRequest::where('request_channel', 'Online')->latest('id')->first();
         $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
         $queueNumber = 'O-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
@@ -40,12 +47,10 @@ class ServiceRequestController extends Controller
             'status' => 'Pending',
         ]);
 
-        // 4. I-save ang Karagdagang Uploads (Kung mayroon)
+        // 4. I-save ang Attachments
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                // I-save sa storage/app/public/service_requirements
                 $path = $file->store('service_requirements', 'public');
-                
                 Attachment::create([
                     'service_request_id' => $serviceRequest->id,
                     'file_path' => $path
@@ -53,7 +58,21 @@ class ServiceRequestController extends Controller
             }
         }
 
-        // 5. I-trigger ang Success Modal
+        // ==========================================
+        // 5. I-TRIGGER ANG SMS SERVICE (Workflow Step 8)
+        // ==========================================
+        $user = Auth::user();
+        $documentName = DocumentType::find($validated['document_type_id'])->name;
+        $message = "BDLS: Ang iyong request para sa {$documentName} ay naipasa na. Ang iyong Queue Number ay {$queueNumber}. Maghintay ng text para sa susunod na hakbang.";
+        
+        $this->smsService->sendSms(
+            $user->id, 
+            $user->contact_number, 
+            $message, 
+            $serviceRequest->id
+        );
+
+        // 6. Ibalik sa Dashboard
         return redirect()->route('resident.dashboard')->with([
             'success_title' => 'Request Submitted!',
             'success_message' => "Ang iyong dokumento ay pinoproseso na. Ang iyong Queue Number ay {$queueNumber}.",
