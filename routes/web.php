@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Auth;
+use App\Models\DocumentType;
 
 
 // ==========================================
@@ -55,11 +56,13 @@ Route::middleware(['auth'])->group(function () {
     // RESIDENT DASHBOARD GROUP
     Route::prefix('resident')->name('resident.')->group(function () {
         
-        // Dashboard
+            // Dashboard
         Route::get('/dashboard', function () {
-            return view('resident.dashboard');
-        })->name('dashboard');
+            // Kunin ang lahat ng active documents mula sa database
+            $documents = DocumentType::where('is_active', 1)->get();
 
+            return view('resident.dashboard', compact('documents'));
+        })->name('dashboard');
         // Email & Notification Preferences
         Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');
         Route::post('/email/verify-otp', [ProfileController::class, 'verifyEmailOtp'])->name('email.verify');
