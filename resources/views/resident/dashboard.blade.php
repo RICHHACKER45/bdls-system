@@ -300,17 +300,21 @@
                         </div>
                     </div>
                 </div>
-                <!-- 1. URI NG DOKUMENTO (Dynamic mula sa Database) -->
+                <!-- 1. URI NG DOKUMENTO -->
                 <div>
                     <label class="block text-sm font-bold text-slate-800 mb-2">Uri ng Dokumento <span class="text-red-500">*</span></label>
-                    <select name="document_type_id" id="document_type_id" required onchange="showRequirements(this)" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                    <select name="document_type_id" id="document_type_id" required onchange="showRequirements(this)" class="w-full px-4 py-3 rounded-xl border @error('document_type_id') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
                         <option value="">-- Pumili ng Dokumento --</option>
                         @foreach($documents as $doc)
-                            <option value="{{ $doc->id }}" data-reqs="{{ $doc->requirements_description }}">
+                            <!-- Gagamitin natin ang old() para i-retain ang pinili -->
+                            <option value="{{ $doc->id }}" data-reqs="{{ $doc->requirements_description }}" {{ old('document_type_id') == $doc->id ? 'selected' : '' }}>
                                 {{ $doc->name }}
                             </option>
                         @endforeach
                     </select>
+                    @error('document_type_id')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
 
                     <!-- UX Dynamic Requirements Box -->
                     <div id="requirements_box" class="hidden mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-inner transition-all">
@@ -319,37 +323,45 @@
                             <p class="text-sm text-blue-800 font-bold">Mga Kinakailangang Dalhin / I-upload:</p>
                         </div>
                         <p id="requirements_text" class="text-sm text-blue-700 font-medium ml-7"></p>
-                        <p class="text-xs text-slate-500 italic mt-2 ml-7">* Paalala: Ang Valid ID mo ay na-verify na kaya hindi mo na ito kailangang dalhin muli.</p>
                     </div>
                 </div>
 
                 <!-- 2. PURPOSE -->
                 <div>
                     <label class="block text-sm font-bold text-slate-800 mb-2">Layunin (Purpose) <span class="text-red-500">*</span></label>
-                    <input type="text" name="purpose" placeholder="Hal. Requirement sa Trabaho, Scholarship..." required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">
+                    <!-- I-retain gamit ang value="{{ old('purpose') }}" -->
+                    <input type="text" name="purpose" value="{{ old('purpose') }}" placeholder="Hal. Requirement sa Trabaho, Scholarship..." required class="w-full px-4 py-3 rounded-xl border @error('purpose') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">
+                    @error('purpose')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- 3. PREFERRED PICKUP TIME -->
                 <div>
                     <label class="block text-sm font-bold text-slate-800 mb-2">Kailan mo gustong kunin? <span class="text-red-500">*</span></label>
-                    <input type="datetime-local" name="preferred_pickup_time" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
-                    <p class="text-xs text-amber-600 font-bold mt-2">⚠️ Paalala: Nakadepende pa rin ito sa approval at schedule ng Admin.</p>
+                    <input type="datetime-local" name="preferred_pickup_time" value="{{ old('preferred_pickup_time') }}" required class="w-full px-4 py-3 rounded-xl border @error('preferred_pickup_time') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                    @error('preferred_pickup_time')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- 4. ADDITIONAL DETAILS -->
                 <div>
                     <label class="block text-sm font-bold text-slate-800 mb-2">Karagdagang Detalye (Optional)</label>
-                    <textarea name="additional_details" rows="2" placeholder="I-type dito kung may espesyal kang habilin..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all"></textarea>
+                    <textarea name="additional_details" rows="2" class="w-full px-4 py-3 rounded-xl border @error('additional_details') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">{{ old('additional_details') }}</textarea>
+                    @error('additional_details')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <!-- 5. KARAGDAGANG ATTACHMENTS (Nakatago by default) -->
-                <div id="upload_section" class="hidden p-5 bg-white border-2 border-dashed border-slate-300 rounded-xl">
+                <!-- 5. KARAGDAGANG ATTACHMENTS -->
+                <div id="upload_section" class="hidden p-5 bg-white border-2 border-dashed @error('attachments.*') border-red-500 bg-red-50 @else border-slate-300 @enderror rounded-xl">
                     <label class="block text-sm font-bold text-slate-800 mb-2">I-upload ang mga Karagdagang Dokumento <span class="text-red-500">*</span></label>
-                    <p class="text-xs text-slate-500 mb-3">Base sa iyong pinili, kailangan mong i-upload ang hinihinging dokumento (Hal. CTC, RSBSA, PSA).</p>
                     <input type="file" name="attachments[]" id="attachments" multiple accept="image/jpeg, image/png, image/jpg, application/pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer transition-all">
+                    @error('attachments.*')
+                        <p class="text-red-600 text-xs mt-2 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
-            </form>
-        </div>
         
         <!-- Modal Footer (Submit Button) -->
         <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
@@ -409,40 +421,21 @@
         }
     }
 </script>
-
-<!-- ========================================== -->
-<!-- SUCCESS CONFIRMATION MODAL                 -->
-<!-- ========================================== -->
-@if (session('success_message'))
-<div id="successModal" class="fixed inset-0 z-[1] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-green-500 animate-bounce-slight">
-        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-        </div>
-        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">{{ session('success_title') }}</h3>
-        <p class="text-base text-slate-600 mb-8 font-medium">{{ session('success_message') }}</p>
-        <button type="button" onclick="document.getElementById('successModal').classList.add('hidden')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all active:scale-95 shadow-md">
-            Sige, Naintindihan Ko
-        </button>
-    </div>
-</div>
-@endif
-
-<!-- ========================================== -->
-<!-- ERROR CONFIRMATION MODAL                   -->
-<!-- ========================================== -->
-@if ($errors->any())
-<div id="errorModal" class="fixed inset-0 z-[1] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500 animate-bounce-slight">
-        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        </div>
-        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">Oops! May Mali.</h3>
-        <p class="text-base text-slate-600 mb-8 font-medium">{{ $errors->first() }}</p>
-        <button type="button" onclick="document.getElementById('errorModal').classList.add('hidden')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all active:scale-95 shadow-md">
-            I-try Ulit
-        </button>
-    </div>
-</div>
+<!-- SPA ERROR AUTO-OPEN LOGIC -->
+@if ($errors->has('purpose') || $errors->has('document_type_id') || $errors->has('preferred_pickup_time') || $errors->has('attachments.*'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buksan ang modal
+        openRequestModal();
+        
+        // I-trigger ang dropdown event para lumabas ulit ang upload box kung nakapili na sila dati
+        setTimeout(() => {
+            const selectEl = document.getElementById('document_type_id');
+            if(selectEl && selectEl.value !== "") {
+                showRequirements(selectEl);
+            }
+        }, 100);
+    });
+</script>
 @endif
 @endsection
