@@ -107,7 +107,7 @@
     <!-- ========================================== -->
     <!-- GLOBAL LOADING SCREEN (Hidden by default)  -->
     <!-- ========================================== -->
-    <div id="global-loader" class="fixed inset-0 z- hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+    <div id="global-loader" class="fixed inset-0 z-index hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
             <!-- Spinner Icon -->
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">

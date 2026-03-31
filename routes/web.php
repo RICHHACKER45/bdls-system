@@ -53,6 +53,22 @@ Route::middleware(['auth'])->group(function () {
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // ==========================================
+    // ADMIN DASHBOARD GROUP
+    // ==========================================
+    Route::prefix('admin')->name('admin.')->group(function () {
+        
+        Route::get('/dashboard', function () {
+            // THE LARAVEL WAY: Basic Authorization Check (Security Lens)
+            // Kung hindi siya admin, sipain siya pabalik.
+            if (Auth::user()->role !== 'admin') {
+                abort(403, 'Unauthorized. Para lamang ito sa mga Barangay Admins.');
+            }
+            return view('admin.dashboard');
+        })->name('dashboard');
+
+    });
+
     // RESIDENT DASHBOARD GROUP
     Route::prefix('resident')->name('resident.')->group(function () {
         
