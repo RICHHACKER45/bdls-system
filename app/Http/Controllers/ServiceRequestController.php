@@ -63,8 +63,8 @@ class ServiceRequestController extends Controller
         // ==========================================
         $user = Auth::user();
         $documentName = DocumentType::find($validated['document_type_id'])->name;
-        $message = "BDLS: Ang iyong request para sa {$documentName} ay naipasa na. Ang iyong Queue Number ay {$queueNumber}. Maghintay ng text para sa susunod na hakbang.";
-        
+        $message = "BDLS: Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
+        // (Length: 115 characters - LIGTAS KAHIT ANONG REQUEST PA YAN)
         $this->smsService->sendSms(
             $user->id, 
             $user->contact_number, 
