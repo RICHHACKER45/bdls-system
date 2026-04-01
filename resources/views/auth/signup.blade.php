@@ -1054,7 +1054,7 @@
                         submitBtn.disabled = false;
                         submitBtn.classList.remove('cursor-not-allowed', 'opacity-50');
                     }
-                }, 10000); // BINAGO MULA 30000 (30s) PA-40000 (40s)
+                }, 30000); // BINAGO 30s
             });
         });
     </script>
