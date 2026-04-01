@@ -157,6 +157,20 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // ==========================================
+        // SMS: ACCOUNT UNDER REVIEW (Workflow Step 5)
+        // ==========================================
+        if ($user->role === 'resident') {
+            $message = "BDLS: Salamat sa pag-verify! Ang iyong account ay kasalukuyang sinusuri (under review) ng aming Admin. Hintayin na lamang ang kumpirmasyon bago makapag-request ng dokumento.";
+            
+            $this->smsService->sendSms(
+                $user->id, 
+                $user->contact_number, 
+                $message, 
+                null
+            );
+        }
+
+        // ==========================================
         // ROLE-BASED ROUTING (Ang Traffic Enforcer)
         // ==========================================
         if ($user->role === 'admin') {
