@@ -93,18 +93,9 @@ class AuthController extends Controller
             ]);
 
 
-            /// ==========================================
-            // TOTOONG SMS INTEGRATION (Gamit ang SmsService)
-            // ==========================================
-            $message = "BDLS: Ang iyong OTP verification code ay {$otpCode}. Ang code na ito ay mag-e-expire sa loob ng 10 minuto.";
-            
-            // Ipadala ang SMS. Ang 'null' sa dulo ay dahil wala pa namang Service Request ID ito.
-            $this->smsService->sendSms(
-                $user->id, 
-                $user->contact_number, 
-                $message, 
-                null
-            );
+            // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)
+            $message = "Ang iyong OTP code ay {$otpCode}. Ito ay mag-e-expire sa loob ng 10 minuto.";
+            $this->smsService->sendSms($user->id, $user->contact_number, $message);
 
             $request->session()->put('registration_contact', $user->contact_number);
         });
@@ -141,43 +132,38 @@ class AuthController extends Controller
             return back()->withErrors(['otp' => 'Expired na ang OTP code. Mag-request ng bago.']);
         }
 
-        // SUCCESS LENS: I-update ang database na "Verified Number" na siya!
-        $user->update([
-            'contact_verified_at' => now(),
-            'otp_code' => null, // Burahin ang ginamit na code para sa security
-        ]);
+        // SUCCESS LENS: I-wrap sa Transaction!
+        DB::transaction(function () use ($user) {
+            
+            // 1. I-update ang database na "Verified Number" na siya
+            $user->update([
+                'contact_verified_at' => now(),
+                'otp_code' => null, // Burahin ang ginamit na code para sa security
+            ]);
 
-        // Burahin ang OTP session memory
+            // ==========================================
+            // 2. SMS: ACCOUNT UNDER REVIEW (Workflow Step 5)
+            // ==========================================
+            if ($user->role === 'resident') {
+                $message = "Number verified! Ang account mo ay sinusuri pa ng Admin. Maghintay ng text confirmation bago mag-request ng dokumento.";
+                
+                $this->smsService->sendSms($user->id, $user->contact_number, $message, null);
+            }
+        });
+
+        // THE LARAVEL WAY: I-login at i-regenerate ang session SA LABAS ng transaction
+        // Gagawin lang ito ng system KUNG SUCCESSFUL ang database update at SMS sa itaas.
         $request->session()->forget('registration_contact');
-
-        // THE LARAVEL WAY: I-login agad ang user
         Auth::login($user);
-
-        // SECURITY: Regenerate session laban sa session fixation attacks
         $request->session()->regenerate();
 
         // ==========================================
-        // SMS: ACCOUNT UNDER REVIEW (Workflow Step 5)
-        // ==========================================
-        if ($user->role === 'resident') {
-            $message = "BDLS: Salamat sa pag-verify! Ang iyong account ay kasalukuyang sinusuri (under review) ng aming Admin. Hintayin na lamang ang kumpirmasyon bago makapag-request ng dokumento.";
-            
-            $this->smsService->sendSms(
-                $user->id, 
-                $user->contact_number, 
-                $message, 
-                null
-            );
-        }
-
-        // ==========================================
-        // ROLE-BASED ROUTING (Ang Traffic Enforcer)
+        // ROLE-BASED ROUTING
         // ==========================================
         if ($user->role === 'admin') {
             return redirect('/admin/dashboard')->with('success', 'Admin Account Verified! Welcome.');
         }
 
-        // I-redirect diretso sa Resident Dashboard
         return redirect('/resident/dashboard')->with('success', 'Number Verified! Welcome sa iyong dashboard.');
     }
 
@@ -215,13 +201,21 @@ class AuthController extends Controller
         // 2. GUMAWA NG BAGONG OTP (Action)
         $newOtp = (string) rand(100000, 999999);
 
-        // 3. I-UPDATE ANG KASALUKUYANG USER (CRUD: Update)
-        $user->otp_code = $newOtp;
-        $user->otp_expires_at = now()->addMinutes(10);
-        $user->save();
+        // THE LARAVEL WAY: I-wrap sa Transaction!
+        // Kapag nag-throw ng Exception ang SmsService (e.g. NTC Curfew blocker), 
+        // HINDI mase-save ang bagong OTP sa database. Ligtas ang lumang OTP ng user!
+        DB::transaction(function () use ($user, $newOtp) {
+            
+            // 3. I-UPDATE ANG KASALUKUYANG USER
+            $user->otp_code = $newOtp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
 
-        // 4. I-LOG ANG BAGONG OTP SA LARAVEL.LOG (Para mabasa mo!)
-        Log::info("DUMMY SMS RESENT to {$user->contact_number}: Ang iyong BAGONG BDLS OTP ay {$newOtp}");
+            // TOTOONG SMS INTEGRATION: Resend (Ligtas: 1 Credit)
+            $message = "Ang iyong BAGONG OTP code ay {$newOtp}. Ito ay mag-e-expire sa loob ng 10 minuto.";
+            $this->smsService->sendSms($user->id, $user->contact_number, $message);
+
+        });
 
         // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
         RateLimiter::hit($cooldownKey, 60);    // I-lock ang button ng 60 seconds

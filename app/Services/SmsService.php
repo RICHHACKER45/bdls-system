@@ -39,8 +39,10 @@ class SmsService
         // ==========================================
         // 3. UNICODE SANITIZER (Iwas 70-character Trap)
         // ==========================================
+
         // A. Palitan ang smart quotes ng normal quotes
         $messageContent = str_replace(['“', '”', '‘', '’'], ['"', '"', "'", "'"], $messageContent);
+
         // B. Burahin ang lahat ng Emojis gamit ang Regex para manatili sa 160 ang limit
         $messageContent = preg_replace('/[\x{1F600}-\x{1F64F}]/u', '', $messageContent); 
         $messageContent = preg_replace('/[\x{1F300}-\x{1F5FF}]/u', '', $messageContent); 
@@ -51,7 +53,7 @@ class SmsService
         // ==========================================
         // 4. IDENTITY HEADER (Mandatory NTC Prefix)
         // ==========================================
-        $prefix = "Brgy Dona Lucia: ";
+        $prefix = env('SMS_PREFIX');
         $fullMessage = $prefix . trim($messageContent);
 
         $driver = env('SMS_DRIVER', 'log');
@@ -90,53 +92,75 @@ class SmsService
     /**
      * Private function na tagapag-padala (The Laravel Way: DRY Principle)
      */
-    private function executeSend($userId, $recipientContact, $messageContent, $serviceRequestId, $driver)
+     private function executeSend($userId, $recipientContact, $messageContent, $serviceRequestId, $driver)
     {
         $status = 'Pending';
         $providerResponse = null;
 
+        // ==========================================
+        // UNIVERSAL LOGGING: Isusulat ito sa laravel.log 
+        // bago pa man tingnan kung 'log' o 'api' ang gamit mo!
+        // ==========================================
+        Log::info("====================================");
+        Log::info("SMS SEND INITIATED [Driver: {$driver}] [To: {$recipientContact}]");
+        Log::info("Length: " . Str::length($messageContent) . " chars");
+        Log::info("Message: {$messageContent}");
+        Log::info("====================================");
+
         if ($driver === 'log') {
-            Log::info("====================================");
-            Log::info("MOCK SMS SENT [To: {$recipientContact}]");
-            Log::info("Length: " . Str::length($messageContent) . " chars");
-            Log::info("Message: {$messageContent}");
-            Log::info("====================================");
             $status = 'Sent (Mock)';
             $providerResponse = 'Simulated via Laravel Log';
         } else if ($driver === 'api') {
             try {
-                $response = Http::withHeaders([
+                $response = Http::timeout(10)->withHeaders([
                     'Content-Type' => 'application/json',
                     'X-API-Key' => env('SMS_API_KEY'),
-                ])->post('https://fortmed.org/web/FMCSMS/api/messages.php', [
-                    'SenderName'  => 'BDLS', 
+                ])->post(env('SMS_API_URL'), [ // INAYOS KO ITO: Ginawa kong SMS_API_URL
+                    'SenderName'  => env('SMS_SENDER_NAME'), 
                     'ToNumber'    => $recipientContact,
                     'MessageBody' => $messageContent,
-                    'FromNumber'  => '+639189876543',
+                    'FromNumber'  => env('SMS_FROM_NUMBER'),
                 ]);
 
                 if ($response->successful()) {
                     $status = 'Sent (Live)';
                     $providerResponse = $response->body(); 
+                    // DAGDAG RESIBO: Isusulat kung success ang API
+                    Log::info("SMS API SUCCESS: Message delivered to {$recipientContact}. Provider Response: {$providerResponse}");
                 } else {
                     $status = 'Failed';
                     $providerResponse = 'HTTP Error: ' . $response->status() . ' - ' . $response->body();
+                    // DAGDAG RESIBO: Isusulat kung nag-fail ang API
+                    // Log::error("API FAILED: " . $providerResponse);
+                    // BAGONG LOG: Isusulat nito sa laravel.log kapag nag 400 or 500 error ang Fortmed
+                    Log::error("SMS API HTTP FAILED: Hindi naipadala kay {$recipientContact}. Reason: {$providerResponse}");
                 }
             } catch (Exception $e) {
                 $status = 'Failed (Exception)';
                 $providerResponse = $e->getMessage();
-                Log::error("SMS API Error: " . $e->getMessage());
+                // Log::error("SMS API Error: " . $e->getMessage());
+                 // BAGONG LOG: Isusulat nito kapag nag-timeout o nawalan ng internet ang server natin
+                Log::error("SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: " . $e->getMessage());
             }
         }
 
-        NotificationLog::create([
-            'user_id' => $userId,
-            'service_request_id' => $serviceRequestId,
-            'channel' => 'SMS',
-            'recipient_contact' => $recipientContact,
-            'message_content' => $messageContent,
-            'status' => $status,
-            'provider_response' => $providerResponse,
-        ]);
+       // ==========================================
+        // FAIL-SAFE DATABASE LOGGING
+        // ==========================================
+        try {
+            NotificationLog::create([
+                'user_id' => $userId,
+                'service_request_id' => $serviceRequestId,
+                'channel' => 'SMS',
+                'recipient_contact' => $recipientContact,
+                'message_content' => $messageContent,
+                'status' => $status,
+                'provider_response' => $providerResponse,
+            ]);
+        } catch (Exception $e) {
+            // Kung sakaling mag-crash ang MySQL Database mo, hindi sasabog ang screen ng user.
+            // Isusulat na lang niya ito sa laravel.log bilang emergency backup.
+            Log::critical("DATABASE ERROR: Hindi na-save sa notification_logs ang SMS para kay {$recipientContact}. Error: " . $e->getMessage());
+        }
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Attachment;
 use App\Models\DocumentType;
 use Illuminate\Support\Facades\Auth;
 use App\Services\SmsService; // 1. TINAWAG NATIN ANG SERVICE MO
+use Illuminate\Support\Facades\DB;
 
 class ServiceRequestController extends Controller
 {
@@ -35,42 +36,43 @@ class ServiceRequestController extends Controller
         $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
         $queueNumber = 'O-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
-        // 3. I-save ang Request
-        $serviceRequest = ServiceRequest::create([
-            'user_id' => Auth::id(),
-            'document_type_id' => $validated['document_type_id'],
-            'request_channel' => 'Online',
-            'queue_number' => $queueNumber,
-            'purpose' => $validated['purpose'],
-            'additional_details' => $validated['additional_details'],
-            'preferred_pickup_time' => $validated['preferred_pickup_time'],
-            'status' => 'Pending',
-        ]);
-
-        // 4. I-save ang Attachments
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('service_requirements', 'public');
-                Attachment::create([
-                    'service_request_id' => $serviceRequest->id,
-                    'file_path' => $path
-                ]);
-            }
-        }
-
-        // ==========================================
-        // 5. I-TRIGGER ANG SMS SERVICE (Workflow Step 8)
-        // ==========================================
         $user = Auth::user();
-        $documentName = DocumentType::find($validated['document_type_id'])->name;
-        $message = "BDLS: Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
-        // (Length: 115 characters - LIGTAS KAHIT ANONG REQUEST PA YAN)
-        $this->smsService->sendSms(
-            $user->id, 
-            $user->contact_number, 
-            $message, 
-            $serviceRequest->id
-        );
+
+        // THE LARAVEL WAY: I-wrap ang Service Request sa Transaction
+        DB::transaction(function () use ($validated, $request, $queueNumber, $user) {
+            
+            // 3. I-save ang Request
+            $serviceRequest = ServiceRequest::create([
+                'user_id' => $user->id,
+                'document_type_id' => $validated['document_type_id'],
+                'request_channel' => 'Online',
+                'queue_number' => $queueNumber,
+                'purpose' => $validated['purpose'],
+                'additional_details' => $validated['additional_details'],
+                'preferred_pickup_time' => $validated['preferred_pickup_time'],
+                'status' => 'Pending',
+            ]);
+
+            // 4. I-save ang Attachments
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('service_requirements', 'public');
+                    Attachment::create([
+                        'service_request_id' => $serviceRequest->id,
+                        'file_path' => $path
+                    ]);
+                }
+            }
+
+            // ==========================================
+            // 5. I-TRIGGER ANG SMS SERVICE (Workflow Step 8)
+            // ==========================================
+            // (Tinanggal ko na yung unused na $documentName query para bumilis)
+            $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
+            
+            $this->smsService->sendSms($user->id, $user->contact_number, $message, $serviceRequest->id);
+
+        });
 
         // 6. Ibalik sa Dashboard
         return redirect()->route('resident.dashboard')->with([
