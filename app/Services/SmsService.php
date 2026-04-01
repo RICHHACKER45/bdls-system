@@ -39,7 +39,7 @@ class SmsService
                     'Content-Type' => 'application/json',
                     'X-API-Key' => env('SMS_API_KEY'),
                 ])->post('https://fortmed.org/web/FMCSMS/api/messages.php', [
-                    'SenderName'  => 'BDLS', // Pinalitan ko ng BDLS para mas propesyonal
+                    'SenderName'  => 'Barangay Dona Lucia Services', // Pinalitan ko ng BDLS para mas propesyonal
                     'ToNumber'    => $recipientContact,
                     'MessageBody' => $messageContent,
                     'FromNumber'  => '+639189876543', // Default mula sa provider mo
