@@ -16,9 +16,9 @@
             </svg>
         </div>
         
-        <h1 class="text-2xl font-extrabold text-slate-900 mb-2">Ang aming website ay nasa maintenance.</h1>
+        <h1 class="text-2xl font-extrabold text-slate-900 mb-2">Ang aming website ay down.</h1>
         <p class="text-sm text-slate-600 mb-6 font-medium">
-            May inaayos lang kami sa Website. Balik na lang po kayo mamaya!
+            May inaayos lang kami sa Website. Maaring bumalik na lang po kayo mamaya!
         </p>
 
         <!-- Huwag gamitin ang route() dito dahil naka-down ang routing engine -->
