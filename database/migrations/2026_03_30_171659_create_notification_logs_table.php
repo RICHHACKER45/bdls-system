@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('notification_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('service_request_id')->constrained('service_requests')->cascadeOnDelete();
+            $table->foreignId('service_request_id')->nullable()->constrained('service_requests')->onDelete('cascade');
             $table->string('channel', 20); // SMS, Email
             $table->string('recipient_contact', 255);
             $table->text('message_content');
