@@ -10,9 +10,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Services\SmsService;
 
 class AuthController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function register(Request $request)
     {
         // STEP 1: I-validate ang lahat ng pumapasok na data mula sa signup form
@@ -85,9 +93,18 @@ class AuthController extends Controller
             ]);
 
 
-            // DUMMY SMS INTEGRATION
-            // Kung mag-error ito, automatic mabu-bura si User sa itaas!
-            Log::info("DUMMY SMS SENT to {$user->contact_number}: Ang iyong BDLS OTP ay {$otpCode}");
+            /// ==========================================
+            // TOTOONG SMS INTEGRATION (Gamit ang SmsService)
+            // ==========================================
+            $message = "BDLS: Ang iyong OTP verification code ay {$otpCode}. Ang code na ito ay mag-e-expire sa loob ng 10 minuto.";
+            
+            // Ipadala ang SMS. Ang 'null' sa dulo ay dahil wala pa namang Service Request ID ito.
+            $this->smsService->sendSms(
+                $user->id, 
+                $user->contact_number, 
+                $message, 
+                null
+            );
 
             $request->session()->put('registration_contact', $user->contact_number);
         });
