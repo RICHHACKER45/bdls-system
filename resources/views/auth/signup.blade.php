@@ -56,7 +56,7 @@
             <p class="text-slate-600 mt-2">Kumpletuhin ang 4 steps upang magkaroon ng account.</p>
         </div>
 
-        <!-- PROGRESS BAR UI (FIXED ALIGNMENT) -->
+        <!-- PROGRESS BAR UI -->
         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-10 relative">
             <div class="mb-10 relative">
                 <!-- LINES CONTAINER: Nagsisimula sa 12.5% (gitna ng Step 1) at may habang 75% (hanggang gitna ng Step 4) -->
@@ -308,6 +308,7 @@
                         </button>
                     </div>
                 </div>
+                <!-- CLOSING NG STEP 2 -->
 
                 <!-- ========================================== -->
                 <!-- STEP 3: ACCOUNT DETAILS                    -->
@@ -590,278 +591,18 @@
             </form>
         </div>
     </div>
-
-    <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
-    <script>
-        // 1. Custom function para sa live image preview at size validation
-        function previewImage(event, previewId) {
-            let input = event.target;
-            let previewImg = document.getElementById(previewId);
-            let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
-        
-            // Kunin ang unang file
-            let file = input.files.item(0);
-        
-            // DEFENSIVE DESIGN: Kung nag-cancel ang user
-            if (!file) {
-                console.log('Nag-cancel ang user, walang file na napili.');
-                return;
-            }
-        
-            // ---> ITO ANG BAGONG FILE SIZE VALIDATION (5MB LIMIT) <---
-            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSizeInBytes) {
-                // TATAWAGIN NA NATIN ANG TOAST IMBES NA MODAL
-                showToast('Ang file ay masyadong malaki. Maximum size ay 5MB.');
-            
-                // I-reset ang input field para hindi ma-submit ang malaking file
-                input.value = '';
-            
-                // Ibalik ang preview box sa "No image selected" state kung may dating picture
-                previewImg.classList.add('hidden');
-                previewImg.src = '';
-                placeholder.classList.remove('hidden');
-            
-                return; // Patayin ang function dito, wag nang ituloy ang pag-load
-            }
-        
-            // Kung nakapasa sa 5MB rule, i-load ang preview
-            console.log('File na nakuha at pasado:', file.name);
-            let reader = new FileReader();
-        
-            reader.onload = function (e) {
-                previewImg.src = e.target.result;
-                previewImg.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            };
-        
-            // IPASA ANG FILE BLOB NANG LIGTAS
-            reader.readAsDataURL(file);
-        }
-        
-        // BAGONG FUNCTION PARA SA FRONTEND TOAST
-        function showToast(message) {
-            const toast = document.getElementById('frontend-toast');
-            const msgEl = document.getElementById('frontend-toast-message');
-            msgEl.innerText = message;
-            
-            toast.classList.remove('hidden');
-            toast.classList.add('flex');
-            
-            // Slide down animation
-            setTimeout(() => {
-                toast.classList.remove('-translate-y-20', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
-            }, 10);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('-translate-y-20', 'opacity-0');
-                setTimeout(() => {
-                    toast.classList.add('hidden');
-                    toast.classList.remove('flex');
-                }, 500); // hintayin matapos ang animation bago itago nang tuluyan
-            }, 5000);
-        }
-
-        // 2. Tagapag-alaga ng Progress Bar at Indicators
-        function updateProgressBar(stepNumber) {
-            for (let i = 1; i <= 4; i++) {
-                let indicator = document.getElementById('ind-' + i);
-                if (indicator) {
-                    if (i <= stepNumber) {
-                        indicator.classList.remove('bg-slate-200', 'text-slate-500');
-                        indicator.classList.add('bg-red-600', 'text-white', 'shadow-md');
-                    } else {
-                        indicator.classList.add('bg-slate-200', 'text-slate-500');
-                        indicator.classList.remove('bg-red-600', 'text-white', 'shadow-md');
-                    }
-                }
-            }
-            let progressLine = document.getElementById('progress-line');
-            if (progressLine) {
-                let progressPercentage = ((stepNumber - 1) / 3) * 100;
-                progressLine.style.width = progressPercentage + '%';
-            }
-        }
-
-        // 3. Ang "Next" Button Function
-        function validateAndGo(currentStepId, nextStepId) {
-            let currentStepElement = document.getElementById(currentStepId);
-            if (!currentStepElement) return;
-
-            let isValid = true;
-            let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
-
-            inputs.forEach((input) => {
-                let errorMessage = document.getElementById('error-' + input.id);
-                let hasError = false;
-
-                // 1. Check kung blangko
-                if (input.value.trim() === '') {
-                    hasError = true;
-                    if (errorMessage) errorMessage.textContent = 'This field is required.';
-                }
-                // 2. SPECIAL RULE: Kung password field at less than 8 chars
-                else if (
-                    (input.id === 'password' || input.id === 'password_confirmation') &&
-                    input.value.length < 8
-                ) {
-                    hasError = true;
-                    if (errorMessage)
-                        errorMessage.textContent = 'Password must be at least 8 characters.';
-                }
-                // 3. SPECIAL RULE: Kung confirm password at hindi match sa password
-                else if (
-                    input.id === 'password_confirmation' &&
-                    input.value !== document.getElementById('password').value
-                ) {
-                    hasError = true;
-                    if (errorMessage) errorMessage.textContent = 'Passwords do not match.';
-                }
-
-                // Ipakita o itago ang error base sa mga rules sa itaas
-                if (hasError) {
-                    isValid = false;
-                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.remove('hidden');
-                } else {
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                }
-            });
-
-            if (isValid) {
-                currentStepElement.classList.add('hidden');
-                let nextElement = document.getElementById(nextStepId);
-                if (nextElement) {
-                    nextElement.classList.remove('hidden');
-                    let stepNum = parseInt(nextStepId.replace('step', ''));
-                    updateProgressBar(stepNum);
-
-                    // ---> ITO ANG BAGONG LINYA: I-save ang step sa memory <---
-                    sessionStorage.setItem('bdls_active_step', nextStepId);
-                }
-            }
-        }
-
-        // 4. Ang "Back" Button Function
-        function goBack(currentStepId, prevStepId) {
-            document.getElementById(currentStepId).classList.add('hidden');
-            document.getElementById(prevStepId).classList.remove('hidden');
-            let stepNum = parseInt(prevStepId.replace('step', ''));
-            updateProgressBar(stepNum);
-        }
-
-        // 5. Real-Time Error Removal
-        document.addEventListener('DOMContentLoaded', function () {
-            let requiredInputs = document.querySelectorAll('input[required], select[required]');
-            requiredInputs.forEach((input) => {
-                input.addEventListener('input', function () {
-                    let errorMessage = document.getElementById('error-' + this.id);
-                    this.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                });
-            });
-        });
-
-        // 6. Function para sa Show/Hide Password
-        function togglePassword(inputId) {
-            let input = document.getElementById(inputId);
-            let button = input.nextElementSibling; // Kukunin yung mismong SHOW button
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                button.innerText = 'HIDE';
-            } else {
-                input.type = 'password';
-                button.innerText = 'SHOW';
-            }
-        }
-
-        // 7. Modal Functions
-        function openPrivacyModal() {
-            document.getElementById('privacyModal').classList.remove('hidden');
-        }
-
-        function closePrivacyModal() {
-            document.getElementById('privacyModal').classList.add('hidden');
-        }
-
-        function showErrorModal(message) {
-            document.getElementById('errorModalMessage').innerText = message;
-            document.getElementById('errorModal').classList.remove('hidden');
-        }
-
-        function closeErrorModal() {
-            document.getElementById('errorModal').classList.add('hidden');
-        }
-
-        // 8. Sticky Form with Step 3 Security Fallback
-        document.addEventListener('DOMContentLoaded', function () {
-            const formElements = document.querySelectorAll(
-                'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
-            );
-
-            formElements.forEach((element) => {
-                const key = 'bdls_draft_' + (element.id || element.name);
-                const savedValue = sessionStorage.getItem(key);
-                if (savedValue) {
-                    element.value = savedValue;
-                }
-
-                element.addEventListener('input', function () {
-                    sessionStorage.setItem(key, this.value);
-                });
-                element.addEventListener('change', function () {
-                    sessionStorage.setItem(key, this.value);
-                });
-            });
-
-            // STICKY STEP LOGIC WITH FALLBACK
-            const savedStep = sessionStorage.getItem('bdls_active_step');
-            if (savedStep && savedStep !== 'step1') {
-                document.getElementById('step1').classList.add('hidden');
-
-                // SECURITY FALLBACK: Kung ire-reload at nasa Step 4 pero walang password, IBALIK SA STEP 3
-                if (savedStep === 'step4' && document.getElementById('password').value === '') {
-                    sessionStorage.setItem('bdls_active_step', 'step3');
-                    document.getElementById('step3').classList.remove('hidden');
-                    updateProgressBar(3);
-                } else {
-                    let activeStepElement = document.getElementById(savedStep);
-                    if (activeStepElement) {
-                        activeStepElement.classList.remove('hidden');
-                        let stepNum = parseInt(savedStep.replace('step', ''));
-                        updateProgressBar(stepNum);
-                    }
-                }
-            }
-        });
-    </script>
-
+    
+    
     <!-- ========================================== -->
-    <!-- BAGONG LEGAL MODALS (Privacy & Terms)      -->
+    <!--    LEGAL MODALS (Privacy & Terms)          -->
     <!-- ========================================== -->
-
+    
     <!-- 1. PRIVACY POLICY MODAL -->
-    <div
-        id="privacyModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
-        >
-            <div
-                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
-            >
+    <div id="privacyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h2 class="text-xl font-bold text-slate-900">Patakaran sa Privacy ng BDLS</h2>
-                <button
-                    type="button"
-                    onclick="closeLegalModal('privacyModal')"
-                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
-                >
+                <button type="button" onclick="closeLegalModal('privacyModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">
                     &times;
                 </button>
             </div>
@@ -884,8 +625,8 @@
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
                 <button
-                    type="button"
-                    onclick="closeLegalModal('privacyModal')"
+                type="button"
+                onclick="closeLegalModal('privacyModal')"
                     class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
                 >
                     Naintindihan Ko
@@ -893,24 +634,13 @@
             </div>
         </div>
     </div>
-
+    
     <!-- 2. TERMS AND CONDITIONS MODAL -->
-    <div
-        id="termsModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
-        >
-            <div
-                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
-            >
+    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h2 class="text-xl font-bold text-slate-900">Mga Tuntunin at Kundisyon</h2>
-                <button
-                    type="button"
-                    onclick="closeLegalModal('termsModal')"
-                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
-                >
+                <button type="button" onclick="closeLegalModal('termsModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">
                     &times;
                 </button>
             </div>
@@ -932,37 +662,17 @@
                     6. Patakaran sa Hindi Pagkuha ng Dokumento (No-Show Policy)
                 </h3>
                 <p>Kapag na-aprubahan at na-text ka na ang iyong dokumento ay "Ready for Release", mangyaring kunin ito agad. <br />
-                • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br />
+                    • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br />
                 • Kung lumipas ang <strong>2 linggo</strong> at hindi mo pa rin kinukuha, papatawan ang iyong account ng <strong>1-linggong penalty</strong> kung saan hindi ka muna makakapag-request ng bagong dokumento sa system. Gayunpaman, maaari mo pa ring kunin ang iyong nakabinbing dokumento nang personal sa barangay hall.</p>
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
-                <button
-                    type="button"
-                    onclick="closeLegalModal('termsModal')"
-                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
-                >
+                <button type="button" onclick="closeLegalModal('termsModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">
                     Naintindihan Ko
                 </button>
             </div>
         </div>
     </div>
-
-    <!-- MODAL JS LOGIC -->
-    <script>
-        function openLegalModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLegalModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-    </script>
+    
     <!-- ========================================== -->
     <!-- 1. GLOBAL LOADING SCREEN (Z-50)            -->
     <!-- ========================================== -->
@@ -975,7 +685,7 @@
             <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
         </div>
     </div>
-
+    
     <!-- ========================================== -->
     <!-- 2. CRITICAL SERVER ERROR MODAL (TIMEOUT)   -->
     <!-- ========================================== -->
@@ -984,14 +694,14 @@
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">System Timeout</h3>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">May Problema</h3>
             <p id="errorModalMessage" class="text-sm text-slate-600 mb-6"></p>
             <button type="button" onclick="closeErrorModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95">
                 Sige, Susubukan Ulit
             </button>
         </div>
     </div>
-
+    
     <!-- ========================================== -->
     <!-- 3. TOAST NOTIFICATION SYSTEM (Z-60)        -->
     <!-- ========================================== -->
@@ -999,15 +709,15 @@
 
         <!-- A. Laravel Backend Error Toast (Duplicate Email, etc.) -->
         @if ($errors->any())
-            <div id="backend-toast" class="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
+        <div id="backend-toast" class="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
                 <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 <div>
                     <p class="font-bold text-sm">Oops! May nakitang mali.</p>
                     <p class="text-sm font-medium">{{ $errors->first() }}</p>
                 </div>
             </div>
-        @endif
-
+            @endif
+            
         <!-- B. Javascript Frontend Error Toast (5MB Error) -->
         <div id="frontend-toast" class="hidden bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
             <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -1018,50 +728,11 @@
         </div>
 
     </div>
+    
+    <!--signup ui wizard-->
+    <script src="{{ asset('js/signup.js') }}"></script>
 
-    <!-- ========================================== -->
-    <!-- FORM SUBMIT LOADER & TIMEOUT SCRIPT        -->
-    <!-- ========================================== -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form');
-            const loader = document.getElementById('global-loader');
-
-            form.addEventListener('submit', function (e) {
-                // 1. Ipakita ang Loading Screen
-                loader.classList.remove('hidden');
-                loader.classList.add('flex');
-
-                // 2. I-disable ang Submit Button para iwas spam
-                const submitBtn = document.getElementById('submitBtn');
-                if(submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('cursor-not-allowed', 'opacity-50');
-                }
-
-                // 3. 40-Second Timeout Safety Net Modal
-                setTimeout(() => {
-                    loader.classList.add('hidden');
-                    loader.classList.remove('flex');
-                    window.stop(); // Patayin ang browser loading
-
-                    // BAGONG TEXT MESSAGE PARA SA SERVER TIMEOUT
-                    document.getElementById('errorModalMessage').innerText = "May nangyaring error sa aming server o nawalan ka ng connection. Paki-try ulit.";
-                    document.getElementById('errorModal').classList.remove('hidden');
-                    document.getElementById('errorModal').classList.add('flex');
-
-                    if(submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.classList.remove('cursor-not-allowed', 'opacity-50');
-                    }
-                }, 30000); // BINAGO 30s
-            });
-        });
-    </script>
-
-    <!-- ========================================== -->
-    <!-- SMART ERROR ROUTER & TOAST ANIMATION       -->
-    <!-- ========================================== -->
+    <!-- SMART ERROR ROUTER & TOAST ANIMATION -->
     @if ($errors->any())
     <script>
         document.addEventListener('DOMContentLoaded', function () {
