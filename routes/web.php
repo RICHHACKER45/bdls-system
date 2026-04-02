@@ -6,7 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Auth;
 use App\Models\DocumentType;
-
+use App\Http\Controllers\Admin\AdminDashboardController;
 
 // ==========================================
 // 1. THE TRAFFIC DIRECTOR (Welcome Page)
@@ -58,14 +58,11 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     Route::prefix('admin')->name('admin.')->group(function () {
         
-        Route::get('/dashboard', function () {
-            // THE LARAVEL WAY: Basic Authorization Check (Security Lens)
-            // Kung hindi siya admin, sipain siya pabalik.
-            if (Auth::user()->role !== 'admin') {
-                abort(403, 'Unauthorized. Para lamang ito sa mga Barangay Admins.');
-            }
-            return view('admin.dashboard');
-        })->name('dashboard');
+        // THE LARAVEL WAY: Tinawag na natin ang Controller. 
+        // Wala nang mahabang logic dito.
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        // THE LARAVEL WAY: "Skinny Endpoint" para sa AJAX Polling
+        Route::get('/api/pending-count', [AdminDashboardController::class, 'checkPendingCount'])->name('api.pending_count');
 
     });
 
@@ -89,4 +86,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/request/create', [ServiceRequestController::class, 'create'])->name('request.create');
         Route::post('/request', [ServiceRequestController::class, 'store'])->name('request.store');
     });
+});
+
+// ADMIN ROUTES
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 });
