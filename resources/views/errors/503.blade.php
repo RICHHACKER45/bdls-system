@@ -22,7 +22,7 @@
         </p>
 
         <!-- Huwag gamitin ang route() dito dahil naka-down ang routing engine -->
-        <a href="/" class="inline-block w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md">
+        <a href="{{ route('home') }}" class="inline-block w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md">
             I-refresh ang Page
         </a>
     </div>

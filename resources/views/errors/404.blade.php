@@ -21,7 +21,7 @@
         </p>
 
         <!-- Primary Action Button (Slate-900 Accent) -->
-        <a href="{{ route('welcome') }}" class="inline-block w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md">
+        <a href="{{ route('home') }}" class="inline-block w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md">
             Bumalik sa Home
         </a>
     </div>
