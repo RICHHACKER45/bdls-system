@@ -67,13 +67,16 @@
 
                         <!-- ACTION BUTTONS -->
                         <div class="flex gap-3 mt-auto">
-                            <form action="#" method="POST" class="flex-1">
+                            <!-- APPROVE FORM -->
+                            <form action="{{ route('admin.approve_account', $user->id) }}" method="POST" class="flex-1">
                                 @csrf
                                 <button type="submit" class="w-full bg-slate-900 text-white font-bold py-3 rounded-lg shadow hover:bg-slate-800 active:scale-95 transition-all">
                                     Approve
                                 </button>
                             </form>
-                            <form action="#" method="POST" class="flex-1">
+                            
+                            <!-- REJECT FORM -->
+                            <form action="{{ route('admin.reject_account', $user->id) }}" method="POST" class="flex-1" onsubmit="return confirm('Sigurado ka bang gusto mong i-reject at burahin ang account ni {{ $user->first_name }}?');">
                                 @csrf
                                 <button type="submit" class="w-full bg-red-50 text-red-600 border border-red-200 font-bold py-3 rounded-lg hover:bg-red-100 active:scale-95 transition-all">
                                     Reject
