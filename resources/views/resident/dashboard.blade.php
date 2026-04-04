@@ -367,8 +367,14 @@
         <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
             <button type="button" onclick="closeRequestModal()" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 active:scale-95 transition-all">Kanselahin</button>
             <!-- Pinindot nito ang form gamit ang ID niya -->
-            <button type="button" onclick="document.getElementById('requestForm').submit()" class="bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold py-2.5 px-8 rounded-xl transition-all shadow-md">I-submit Request</button>
-        </div>
+            <!-- THE LARAVEL / HTML5 WAY: Gamitin ang requestSubmit() -->
+            <button type="button" onclick="document.getElementById('requestForm').requestSubmit()" 
+            class="bg-slate-900 hover:bg-slate-800 
+            active:scale-95 text-white font-bold py-2.5 
+            px-8 rounded-xl transition-all shadow-md"
+            >
+            I-submit Request
+        </button>
     </div>
 </div>
 
