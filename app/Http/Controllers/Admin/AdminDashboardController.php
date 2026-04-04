@@ -10,22 +10,47 @@ use App\Services\SmsService;
 
 class AdminDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // 1. SECURITY LENS: Ito yung inilipat natin mula sa web.php
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Unauthorized.');
         }
 
-        // 2. THE LARAVEL WAY: Kunin ang mga pending registrations
-        $pendingAccounts = User::where('role', 'resident')
-            ->where('is_verified', false)
-            ->latest()
-            ->get();
+        // 1. The Laravel Way: Base Query
+        $query = User::where('role', 'resident');
 
-        // 3. I-return ang view kasama ang data
-        // (Gamitin ang 'Admin.dashboard' kung capital A ang folder mo sa resources/views)
-        return view('admin.dashboard', compact('pendingAccounts'));
+        // 2. Search Logic (Hahanapin sa First name, Last name, o Contact)
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('contact_number', 'like', "%{$search}%");
+            });
+        }
+
+        // 3. Sorting Logic
+        if ($request->get('sort') == 'oldest') {
+            $query->oldest();
+        } else {
+            $query->latest(); // Default: Pinakabago
+        }
+
+        $allAccounts = $query->get();
+
+        // 4. Sub-Tab Grouping
+        $pendingAccounts = $allAccounts
+            ->where('is_verified', false)
+            ->where('rejection_count', '<', 5);
+        $approvedAccounts = $allAccounts->where('is_verified', true);
+        $lockedAccounts = $allAccounts
+            ->where('is_verified', false)
+            ->where('rejection_count', '>=', 5);
+
+        return view(
+            'admin.dashboard',
+            compact('pendingAccounts', 'approvedAccounts', 'lockedAccounts'),
+        );
     }
 
     // BAGONG FUNCTION PARA SA AJAX POLLING
