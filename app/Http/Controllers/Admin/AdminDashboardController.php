@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // DAGDAG: Para mabasa ang Auth
 use App\Services\SmsService;
+use App\Models\ServiceRequest;
 
 class AdminDashboardController extends Controller
 {
@@ -47,9 +48,16 @@ class AdminDashboardController extends Controller
             ->where('is_verified', false)
             ->where('rejection_count', '>=', 5);
 
+        // 5. THE LARAVEL WAY: Kunin ang Active Queue (Naka-sort mula sa pinakauna)
+        $activeQueue = ServiceRequest::with(['user', 'documentType'])
+            ->whereIn('status', ['pending', 'received', 'for_interview', 'processing'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // IISANG RETURN LANG DAPAT SA PINAKADULO (Kasama na si $activeQueue)
         return view(
             'admin.dashboard',
-            compact('pendingAccounts', 'approvedAccounts', 'lockedAccounts'),
+            compact('pendingAccounts', 'approvedAccounts', 'lockedAccounts', 'activeQueue'),
         );
     }
 
@@ -133,5 +141,72 @@ class AdminDashboardController extends Controller
         return back()
             ->with('success_title', 'Account Rejected')
             ->with('success_message', 'Na-reject ang registration ni ' . $user->first_name);
+    }
+
+    // ==========================================
+    // QUEUE STATUS UPDATE LOGIC
+    // ==========================================
+    public function updateRequestStatus(
+        Request $request,
+        ServiceRequest $serviceRequest,
+        SmsService $smsService,
+    ) {
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $request->validate(['status' => 'required|string']);
+        $newStatus = $request->status;
+
+        $serviceRequest->status = $newStatus;
+        $message = '';
+
+        // Status Logic & SMS Generation (Pasok sa 160-char limit)
+        if ($newStatus === 'processing') {
+            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
+        } elseif ($newStatus === 'for_interview') {
+            $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
+        } elseif ($newStatus === 'released') {
+            $serviceRequest->released_at = now();
+            $serviceRequest->released_by_admin_id = Auth::id(); // I-record kung sinong Admin ang nag-release
+            $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+        }
+
+        $serviceRequest->save();
+
+        // I-send ang SMS sa mismong may-ari ng request
+        if ($message !== '') {
+            $smsService->sendSms(
+                $serviceRequest->user_id,
+                $serviceRequest->user->contact_number,
+                $message,
+            );
+        }
+
+        // Idinagdag ang 'active_tab' => 'tab-queue'
+        return back()
+            ->with('active_tab', 'tab-queue')
+            ->with('success_title', 'Status Updated')
+            ->with('success_message', 'Queue updated at na-notify na ang residente!');
+    }
+
+    // ==========================================
+    // (ILAGAY ITO SA PINAKAILALIM NG CONTROLLER BAGO ANG HULING "}")
+    // QUEUE AJAX POLLING ENDPOINT
+    // ==========================================
+    public function checkQueueCount()
+    {
+        if (Auth::user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $count = ServiceRequest::whereIn('status', [
+            'pending',
+            'received',
+            'for_interview',
+            'processing',
+        ])->count();
+
+        return response()->json(['count' => $count]);
     }
 }
