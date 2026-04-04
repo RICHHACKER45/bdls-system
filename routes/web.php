@@ -78,6 +78,16 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'rejectAccount',
             ])->name('reject_account');
+            // QUEUE MANAGEMENT ROUTE
+            Route::post('/request/{serviceRequest}/update-status', [
+                AdminDashboardController::class,
+                'updateRequestStatus',
+            ])->name('request.update_status');
+            // AJAX Polling para sa Live Queue
+            Route::get('/api/queue-count', [
+                AdminDashboardController::class,
+                'checkQueueCount',
+            ])->name('api.queue_count');
         });
 
     // ==========================================
