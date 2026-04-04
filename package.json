@@ -6,7 +6,7 @@
     "dev": "bun x --bun vite",
     "build": "bun x --bun vite build",
     "format": "bun x prettier --write .",
-    "start": "concurrently \"php artisan serve\" \"bun run dev\""
+    "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"bun run dev\""
   },
   "devDependencies": {
     "@prettier/plugin-php": "^0.25.0",
