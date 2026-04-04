@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -22,16 +21,16 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->string('house_number');
             $table->string('purok_street');
-            
+
             // Contact & Authentication
             $table->string('contact_number', 20)->unique();
             $table->string('email')->nullable()->unique();
             $table->string('password');
-            
+
             // Attachments (Uploads)
             $table->string('id_photo_path')->nullable();
             $table->string('selfie_photo_path')->nullable();
-            
+
             // Roles & System Flags
             $table->string('role', 20)->default('resident');
             $table->string('otp_code', 10)->nullable();
@@ -40,13 +39,20 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('email_otp_code', 10)->nullable();
             $table->timestamp('email_otp_expires_at')->nullable();
-            
+
             // Preferences & Verification
             $table->tinyInteger('wants_email_notification')->default(1);
-            $table->tinyInteger('is_verified')->default(0); 
+            $table->tinyInteger('is_verified')->default(0);
+
+            // THE LARAVEL WAY: Bagong Rejection Tracking Columns
+            $table->text('rejection_reason')->nullable();
+            $table->integer('rejection_count')->default(0);
+            $table->timestamp('rejected_at')->nullable();
+            $table->timestamp('locked_until')->nullable();
+
             $table->timestamp('terms_accepted_at')->nullable();
             $table->string('signup_ip', 45)->nullable();
-            
+
             $table->timestamps(); // created_at, updated_at
         });
 

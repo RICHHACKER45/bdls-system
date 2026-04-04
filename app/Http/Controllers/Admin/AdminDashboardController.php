@@ -19,25 +19,23 @@ class AdminDashboardController extends Controller
 
         // 2. THE LARAVEL WAY: Kunin ang mga pending registrations
         $pendingAccounts = User::where('role', 'resident')
-                               ->where('is_verified', false)
-                               ->latest()
-                               ->get();
+            ->where('is_verified', false)
+            ->latest()
+            ->get();
 
         // 3. I-return ang view kasama ang data
         // (Gamitin ang 'Admin.dashboard' kung capital A ang folder mo sa resources/views)
         return view('admin.dashboard', compact('pendingAccounts'));
     }
 
-     // BAGONG FUNCTION PARA SA AJAX POLLING
+    // BAGONG FUNCTION PARA SA AJAX POLLING
     public function checkPendingCount()
     {
         if (Auth::user()->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $count = User::where('role', 'resident')
-                     ->where('is_verified', false)
-                     ->count();
+        $count = User::where('role', 'resident')->where('is_verified', false)->count();
 
         return response()->json(['count' => $count]);
     }
@@ -47,43 +45,68 @@ class AdminDashboardController extends Controller
     // ==========================================
     public function approveAccount(User $user, SmsService $smsService)
     {
-        // 1. Security Lens
-        if (Auth::user()->role !== 'admin') abort(403);
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
 
-        // 2. Database Update
-        $user->update(['is_verified' => true]);
+        // Kapag na-approve, i-reset ang lahat ng rejection records
+        $user->update([
+            'is_verified' => true,
+            'rejection_count' => 0,
+            'rejection_reason' => null,
+            'rejected_at' => null,
+            'locked_until' => null,
+        ]);
 
-        // 3. SMS Notification (Idinagdag natin ang $user->id bilang first argument)
-        $message = "Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.";
+        $message =
+            'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
-        // 4. Return with Success Message
-        return back()->with('success_title', 'Account Approved')->with('success_message', 'Matagumpay na na-verify ang account ni ' . $user->first_name);
+        return back()
+            ->with('success_title', 'Account Approved')
+            ->with(
+                'success_message',
+                'Matagumpay na na-verify ang account ni ' . $user->first_name,
+            );
     }
 
     // ==========================================
-    // REJECT & DELETE ACCOUNT LOGIC
+    // REJECT ACCOUNT LOGIC (HINDI NA BUBURAHIN)
     // ==========================================
-    public function rejectAccount(User $user, SmsService $smsService)
+    public function rejectAccount(Request $request, User $user, SmsService $smsService)
     {
-        // 1. Security Lens
-        if (Auth::user()->role !== 'admin') abort(403);
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
 
-        // 2. Kunin ang details bago burahin
-        $userId = $user->id;
-        $contactNumber = $user->contact_number;
-        $name = $user->first_name;
+        // 1. Validation para sa Rason ni Admin (Nilimitahan sa 60 chars para hindi lumampas sa 160 SMS limit)
+        $request->validate([
+            'rejection_reason' => 'required|string|max:60',
+        ]);
 
-        // 3. THE LARAVEL WAY: I-send muna ang SMS BAGO burahin ang user
-        // (Para hindi magka-Foreign Key Error sa notification_logs table mo)
-        $message = "Brgy Dona Lucia: Ang iyong registration ay na-reject. Mangyaring subukan muli at siguraduhing malinaw ang ID.";
-        $smsService->sendSms($userId, $contactNumber, $message);
+        // 2. Dagdagan ang count at i-set ang rason
+        $user->rejection_count += 1;
+        $user->rejection_reason = $request->rejection_reason;
+        $user->rejected_at = now();
 
-        // 4. Saka i-delete ang record para makapag-signup ulit
-        $user->delete();
+        $remaining = 5 - $user->rejection_count;
 
-        // 5. Return with Success Message
-        return back()->with('success_title', 'Account Rejected')->with('success_message', 'Na-reject at nabura ang registration ni ' . $name);
+        // 3. 5-Attempts & 24-Hour Lock Logic
+        if ($user->rejection_count >= 5) {
+            $user->locked_until = now()->addHours(24);
+            $message =
+                'Brgy Dona Lucia: Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
+        } else {
+            $message = "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May {$remaining} attempts ka pa.";
+        }
+
+        $user->save(); // The Laravel Way: I-save ang pagbabago
+
+        // 4. I-send ang SMS
+        $smsService->sendSms($user->id, $user->contact_number, $message);
+
+        return back()
+            ->with('success_title', 'Account Rejected')
+            ->with('success_message', 'Na-reject ang registration ni ' . $user->first_name);
     }
-    
 }

@@ -9,8 +9,5 @@ class Attachment extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'service_request_id',
-        'file_path',
-    ];
+    protected $fillable = ['service_request_id', 'file_path'];
 }

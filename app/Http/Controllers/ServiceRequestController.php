@@ -28,7 +28,7 @@ class ServiceRequestController extends Controller
             'purpose' => 'required|string|max:255',
             'preferred_pickup_time' => 'required|date',
             'additional_details' => 'nullable|string',
-            'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120'
+            'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
 
         // 2. Queue Number Generator
@@ -40,7 +40,6 @@ class ServiceRequestController extends Controller
 
         // THE LARAVEL WAY: I-wrap ang Service Request sa Transaction
         DB::transaction(function () use ($validated, $request, $queueNumber, $user) {
-            
             // 3. I-save ang Request
             $serviceRequest = ServiceRequest::create([
                 'user_id' => $user->id,
@@ -59,7 +58,7 @@ class ServiceRequestController extends Controller
                     $path = $file->store('service_requirements', 'public');
                     Attachment::create([
                         'service_request_id' => $serviceRequest->id,
-                        'file_path' => $path
+                        'file_path' => $path,
                     ]);
                 }
             }
@@ -69,16 +68,22 @@ class ServiceRequestController extends Controller
             // ==========================================
             // (Tinanggal ko na yung unused na $documentName query para bumilis)
             $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
-            
-            $this->smsService->sendSms($user->id, $user->contact_number, $message, $serviceRequest->id);
 
+            $this->smsService->sendSms(
+                $user->id,
+                $user->contact_number,
+                $message,
+                $serviceRequest->id,
+            );
         });
 
         // 6. Ibalik sa Dashboard
-        return redirect()->route('resident.dashboard')->with([
-            'success_title' => 'Request Submitted!',
-            'success_message' => "Ang iyong dokumento ay pinoproseso na. Ang iyong Queue Number ay {$queueNumber}.",
-            'active_tab' => 'dashboard'
-        ]);
+        return redirect()
+            ->route('resident.dashboard')
+            ->with([
+                'success_title' => 'Request Submitted!',
+                'success_message' => "Ang iyong dokumento ay pinoproseso na. Ang iyong Queue Number ay {$queueNumber}.",
+                'active_tab' => 'dashboard',
+            ]);
     }
 }

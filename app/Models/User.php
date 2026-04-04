@@ -17,8 +17,8 @@ class User extends Authenticatable
         'first_name',
         'middle_name',
         'last_name',
-        'suffix', // Ibinalik
-        'sex',    // Dinagdag
+        'suffix',
+        'sex',
         'date_of_birth',
         'house_number',
         'purok_street',
@@ -35,19 +35,20 @@ class User extends Authenticatable
         'email_otp_code',
         'email_otp_expires_at',
         'wants_email_notification',
+        // THE LARAVEL WAY: Bagong Rejection Tracking Columns
+        'rejection_reason',
+        'rejection_count',
+        'rejected_at',
+        'locked_until',
         'is_verified',
         'terms_accepted_at', // Dinagdag para sa Audit
-        'signup_ip',         // Dinagdag para sa Security
+        'signup_ip', // Dinagdag para sa Security
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      */
-    protected $hidden = [
-        'password',
-        'otp_code',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'otp_code', 'remember_token'];
 
     /**
      * Get the attributes that should be cast.
@@ -64,6 +65,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'wants_email_notification' => 'boolean',
             'is_verified' => 'boolean',
+            'rejected_at' => 'datetime',
+            'locked_until' => 'datetime',
         ];
     }
 }
