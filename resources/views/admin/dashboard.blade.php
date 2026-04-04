@@ -89,7 +89,61 @@
     <!-- ===================================== -->
     <!-- MGA BLANGKONG TABS PARA SA IBANG MODULES -->
     <!-- ===================================== -->
-    <div id="tab-queue" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800">Queue & Processing Module (WIP)</h2></div>
+    <!-- ===================================== -->
+    <!-- TAB 2: QUEUE & PROCESSING MODULE -->
+    <!-- ===================================== -->
+    <div id="tab-queue" class="tab-content hidden">
+        <div class="mb-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800">Live Queue Board</h2>
+            <span class="bg-slate-900 text-white px-3 py-1 rounded-full text-sm font-bold">In Line: {{ $activeQueue->count() }}</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                        <th class="p-4 font-bold">Queue #</th>
+                        <th class="p-4 font-bold">Residente</th>
+                        <th class="p-4 font-bold">Dokumento</th>
+                        <th class="p-4 font-bold">Status</th>
+                        <th class="p-4 font-bold text-right">Aksyon</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($activeQueue as $queue)
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-black text-slate-900 text-lg">{{ $queue->queue_number }}</td>
+                        <td class="p-4">
+                            <p class="font-bold text-slate-900 uppercase">{{ $queue->user->last_name }}, {{ $queue->user->first_name }}</p>
+                            <p class="text-xs text-slate-500 font-mono">{{ $queue->user->contact_number }}</p>
+                        </td>
+                        <td class="p-4 font-bold text-slate-700">{{ $queue->documentType->name ?? 'N/A' }}</td>
+                        <td class="p-4">
+                            <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase">{{ $queue->status }}</span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <form action="{{ route('admin.request.update_status', $queue->id) }}" method="POST" class="flex justify-end gap-2">
+                                @csrf
+                                <select name="status" class="border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold bg-slate-50 focus:outline-none">
+                                    <option value="pending" {{ $queue->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="received" {{ $queue->status == 'received' ? 'selected' : '' }}>Received</option>
+                                    <option value="for_interview" {{ $queue->status == 'for_interview' ? 'selected' : '' }}>Interview</option>
+                                    <option value="processing" {{ $queue->status == 'processing' ? 'selected' : '' }}>Processing</option>
+                                    <option value="released" {{ $queue->status == 'released' ? 'selected' : '' }}>Release</option>
+                                </select>
+                                <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1 rounded-lg text-sm transition-all active:scale-95">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-slate-500 font-bold">Walang nakapila ngayon.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div id="tab-walkin" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800">Walk-in Requests Module (WIP)</h2></div>
     <div id="tab-announcements" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800">Announcements Module (WIP)</h2></div>
     <div id="tab-audit" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800">System Audit Logs (WIP)</h2></div>
@@ -114,6 +168,9 @@
     <script>
         window.initialPendingCount = {{ $pendingAccounts->count() }};
         window.pollingUrl = "{{ route('admin.api.pending_count') }}";
+        // MGA BAGONG VARIABLES PARA SA QUEUE POLLING:
+        window.initialQueueCount = {{ $activeQueue->count() }};
+        window.queuePollingUrl = "{{ route('admin.api.queue_count') }}";
         
         // Modal Scripts
         function openModal(imageSrc, title) {
@@ -197,5 +254,21 @@
             document.getElementById('rejectModal').classList.add('hidden');
             document.getElementById('rejectModal').classList.remove('flex');
         }
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // THE LARAVEL WAY: Kunin ang active tab mula sa Session, default ay 'tab-pending'
+            let activeTabId = "{{ session('active_tab', 'tab-pending') }}";
+            
+            // Itago lahat ng tabs muna
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Ipakita ang tab kung saan tayo nanggaling
+            let targetTab = document.getElementById(activeTabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('block');
+            }
+        });
     </script>
 @endsection
