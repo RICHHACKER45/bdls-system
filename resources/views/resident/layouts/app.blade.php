@@ -105,11 +105,25 @@
     </script>
 
     <!-- ========================================== -->
-    <!-- GLOBAL LOADING SCREEN (Hidden by default)  -->
+    <!-- GLOBAL TOAST NOTIFICATION SYSTEM           -->
     <!-- ========================================== -->
-    <div id="global-loader" class="fixed inset-0 z- hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[2] flex flex-col gap-3 w-full max-w-md px-4 pointer-events-none">
+        @if(session('success_message') || session('success'))
+            <div class="toast-alert bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-green-400">
+                <svg class="w-6 h-6 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div>
+                    @if(session('success_title'))<p class="font-bold text-sm">{{ session('success_title') }}</p>@endif
+                    <p class="text-sm font-medium">{{ session('success_message') ?? session('success') }}</p>
+                </div>
+            </div>
+        @endif
+    </div>
+    
+    <!-- ========================================== -->
+    <!-- FIXED GLOBAL LOADING SCREEN (Z-100)        -->
+    <!-- ========================================== -->
+    <div id="global-loader" class="fixed inset-0 z-[1] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
-            <!-- Spinner Icon -->
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -117,6 +131,25 @@
             <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
         </div>
     </div>
+    
+    <!-- TOAST ANIMATION SCRIPT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-alert');
+            toasts.forEach(toast => {
+                // I-slide pababa
+                setTimeout(() => {
+                    toast.classList.remove('-translate-y-20', 'opacity-0');
+                    toast.classList.add('translate-y-0', 'opacity-100');
+                }, 100);
+                // I-slide pabalik (Auto-dismiss after 5 seconds)
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('-translate-y-20', 'opacity-0');
+                }, 5000); 
+            });
+        });
+    </script>
     <!-- GLOBAL FORM SUBMIT LISTENER WITH TIMEOUT -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {

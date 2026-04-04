@@ -1,0 +1,12 @@
+node_modules
+vendor
+storage
+public
+bootstrap/cache
+.env
+.env.*
+*.log
+*.lock
+.vscode
+.idea
+.phpunit.cache

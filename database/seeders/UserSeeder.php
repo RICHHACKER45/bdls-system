@@ -10,34 +10,51 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. GAWA TAYO NG ISANG ADMIN ACCOUNT
+        // 1. ANG IYONG PERSONAL ADMIN ACCOUNT
         User::create([
-            'first_name' => 'Barangay',
-            'last_name' => 'Admin',
-            'date_of_birth' => '1990-01-01',
-            'house_number' => '001',
-            'purok_street' => 'Barangay Hall',
-            'contact_number' => '09000000000',
-            'email' => 'admin@bdls.gov.ph',
-            'password' => Hash::make('admin1234'),
+            'first_name' => 'Jose',
+            'middle_name' => 'Angeles',
+            'last_name' => 'Olinares',
+            'suffix' => 'III',
+            'sex' => 'Male',
+            'date_of_birth' => '2003-12-08',
+            'house_number' => '44',
+            'purok_street' => 'Capalungan st',
+            'contact_number' => '09458275591',
+            'email' => 'joseolinares1443@gmail.com',
+            'password' => Hash::make('Lookatme45'),
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
             'role' => 'admin',
+            'contact_verified_at' => now(),
+            'email_verified_at' => now(),
             'is_verified' => 1,
+            'wants_email_notification' => 1,
+            'terms_accepted_at' => now(),
+            'signup_ip' => '127.0.0.1',
         ]);
 
-        // 2. GAWA TAYO NG 5 DUMMY RESIDENTS GAMIT ANG FOR-LOOP
-        for ($i = 1; $i <= 5; $i++) {
-            User::create([
-                'first_name' => 'Resident',
-                'last_name' => 'Test ' . $i,
-                'date_of_birth' => '2000-01-0' . $i,
-                'house_number' => 'Block ' . $i,
-                'purok_street' => 'Purok ' . $i,
-                'contact_number' => '0911111111' . $i,
-                'email' => 'resident' . $i . '@test.com',
-                'password' => Hash::make('password123'),
-                'role' => 'resident',
-                'is_verified' => 1, // Naka-verify na agad para makapag-test ka ng service requests!
-            ]);
-        }
+        // 2. DUMMY RESIDENT ACCOUNT PARA MAY MA-TEST KA SA FRONTEND
+        User::create([
+            'first_name' => 'Juan',
+            'middle_name' => 'Dela',
+            'last_name' => 'Cruz',
+            'suffix' => null,
+            'sex' => 'Male',
+            'date_of_birth' => '1995-05-15',
+            'house_number' => 'Block 1',
+            'purok_street' => 'Purok 1',
+            'contact_number' => '09000000000',
+            'email' => 'resident@bdls.gov.ph',
+            'password' => Hash::make('password123'),
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'role' => 'resident',
+            'contact_verified_at' => now(),
+            'is_verified' => 1, // Verified na agad para makapag-request
+            'wants_email_notification' => 0,
+            'terms_accepted_at' => now(),
+            'signup_ip' => '127.0.0.1',
+        ]);
     }
 }

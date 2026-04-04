@@ -56,7 +56,7 @@
             <p class="text-slate-600 mt-2">Kumpletuhin ang 4 steps upang magkaroon ng account.</p>
         </div>
 
-        <!-- PROGRESS BAR UI (FIXED ALIGNMENT) -->
+        <!-- PROGRESS BAR UI -->
         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-10 relative">
             <div class="mb-10 relative">
                 <!-- LINES CONTAINER: Nagsisimula sa 12.5% (gitna ng Step 1) at may habang 75% (hanggang gitna ng Step 4) -->
@@ -132,133 +132,113 @@
             <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <!-- ========================================================-->
-                <!-- STEP 1: Personal Na Impormasyon (Personal Information) -->
+                <!-- STEP 1: Personal Na Impormasyon (Personal Information)  -->
                 <!-- ========================================================-->
                 <div id="step1">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                
+                    <!-- GRID 1: PANGALAN (Ginawang 4-Columns para sa Suffix) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <!-- First Name (Required) -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >First Name <span class="text-red-500">*</span></label
-                            >
-                            <input
-                                type="text"
-                                id="first_name"
-                                name="first_name"
-                                maxlength="255"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="first_name" name="first_name" maxlength="255" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                             <p id="error-first_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
-
-                        <!-- Middle Name (Nullable, No Error Tag) -->
+                    
+                        <!-- Middle Name -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Middle Name</label
-                            >
-                            <input
-                                type="text"
-                                id="middle_name"
-                                name="middle_name"
-                                maxlength="255"
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Middle Name</label>
+                            <input type="text" id="middle_name" name="middle_name" maxlength="255" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                         </div>
-
+                    
                         <!-- Last Name (Required) -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1"
-                                >Last Name <span class="text-red-500">*</span></label
-                            >
-                            <input
-                                type="text"
-                                id="last_name"
-                                name="last_name"
-                                maxlength="255"
-                                required
-                                class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                            />
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="last_name" name="last_name" maxlength="255" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200" />
                             <p id="error-last_name" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
                         </div>
+                    
+                        <!-- Suffix (Optional) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Suffix (Optional)</label>
+                            <select id="suffix" name="suffix" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200 cursor-pointer">
+                                <option value="">Wala</option>
+                                <option value="Jr.">Jr.</option>
+                                <option value="Sr.">Sr.</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                            </select>
+                        </div>
                     </div>
+                
+                    <!-- GRID 2: SEX & DATE OF BIRTH -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-                    <!-- Date of Birth (Custom Dropdowns) -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-slate-700 mb-1"
-                            >Date of Birth <span class="text-red-500">*</span></label
-                        >
-                        <div class="grid grid-cols-3 gap-2">
-                            <!-- Month -->
-                            <div>
-                                <select
-                                    id="dob_month"
-                                    name="dob_month"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Month</option>
-                                    <option value="01">January</option>
-                                    <option value="02">February</option>
-                                    <option value="03">March</option>
-                                    <option value="04">April</option>
-                                    <option value="05">May</option>
-                                    <option value="06">June</option>
-                                    <option value="07">July</option>
-                                    <option value="08">August</option>
-                                    <option value="09">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                                <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
-                            </div>
-
-                            <!-- Day (Gamit ang Laravel Blade For Loop) -->
-                            <div>
-                                <select
-                                    id="dob_day"
-                                    name="dob_day"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Day</option>
-                                    @for ($i = 1; $i <= 31; $i++)
-                                        <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
-                                            {{ $i }}
-                                        </option>
-                                    @endfor
-                                </select>
-                                <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
-                            </div>
-
-                            <!-- Year (Gamit ang Laravel Blade For Loop) -->
-                            <div>
-                                <select
-                                    id="dob_year"
-                                    name="dob_year"
-                                    required
-                                    class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
-                                >
-                                    <option value="">Year</option>
-                                    @for ($i = date('Y'); $i >= 1900; $i--)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
-                                <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
+                        <!-- Sex (Required) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Kasarian (Sex) <span class="text-red-500">*</span></label>
+                            <select id="sex" name="sex" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200 cursor-pointer">
+                                <option value="">-- Pumili ng Kasarian --</option>
+                                <option value="Male">Lalaki (Male)</option>
+                                <option value="Female">Babae (Female)</option>
+                            </select>
+                            <p id="error-sex" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
+                        </div>
+                    
+                        <!-- Date of Birth (Custom Dropdowns) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Date of Birth <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <!-- Month -->
+                                <div>
+                                    <select id="dob_month" name="dob_month" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Month</option>
+                                        <option value="01">January</option>
+                                        <option value="02">February</option>
+                                        <option value="03">March</option>
+                                        <option value="04">April</option>
+                                        <option value="05">May</option>
+                                        <option value="06">June</option>
+                                        <option value="07">July</option>
+                                        <option value="08">August</option>
+                                        <option value="09">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <p id="error-dob_month" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
+                            
+                                <!-- Day -->
+                                <div>
+                                    <select id="dob_day" name="dob_day" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Day</option>
+                                        @for ($i = 1; $i <= 31; $i++)
+                                            <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                    <p id="error-dob_day" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
+                            
+                                <!-- Year -->
+                                <div>
+                                    <select id="dob_year" name="dob_year" required class="w-full px-3 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200">
+                                        <option value="">Year</option>
+                                        @for ($i = date('Y'); $i >= 1900; $i--)
+                                            <option value="{{ $i }}">{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                    <p id="error-dob_year" class="hidden text-red-500 text-xs mt-1">Required</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                
                     <!-- BUTTON CONTAINER (Step 1 - Next Only) -->
                     <div class="w-full flex justify-end mt-8">
-                        <!-- NEXT BUTTON (Responsive Width) -->
-                        <button
-                            type="button"
-                            onclick="validateAndGo('step1', 'step2')"
-                            class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200"
-                        >
+                        <button type="button" onclick="validateAndGo('step1', 'step2')" class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 active:bg-slate-700 active:scale-95 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200">
                             Next Step
                         </button>
                     </div>
@@ -328,6 +308,7 @@
                         </button>
                     </div>
                 </div>
+                <!-- CLOSING NG STEP 2 -->
 
                 <!-- ========================================== -->
                 <!-- STEP 3: ACCOUNT DETAILS                    -->
@@ -610,255 +591,18 @@
             </form>
         </div>
     </div>
-
-    <!-- JAVASCRIPT LOGIC PARA SA WIZARD UI -->
-    <script>
-        // 1. Custom function para sa live image preview
-        // 1. Custom function para sa live image preview at size validation
-        function previewImage(event, previewId) {
-            let input = event.target;
-            let previewImg = document.getElementById(previewId);
-            let placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
-
-            // Kunin ang unang file
-            let file = input.files.item(0);
-
-            // DEFENSIVE DESIGN: Kung nag-cancel ang user
-            if (!file) {
-                console.log('Nag-cancel ang user, walang file na napili.');
-                return;
-            }
-
-            // ---> ITO ANG BAGONG FILE SIZE VALIDATION (5MB LIMIT) <---
-            const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSizeInBytes) {
-                // Ipakita ang modal gamit ang custom message
-                showErrorModal(
-                    'Ang file ay masyadong malaki. Paki-upload ng litrato na may maximum size na 5MB.',
-                );
-
-                // I-reset ang input field para hindi ma-submit ang malaking file
-                input.value = '';
-
-                // Ibalik ang preview box sa "No image selected" state kung may dating picture
-                previewImg.classList.add('hidden');
-                previewImg.src = '';
-                placeholder.classList.remove('hidden');
-
-                return; // Patayin ang function dito, wag nang ituloy ang pag-load
-            }
-
-            // Kung nakapasa sa 5MB rule, i-load ang preview
-            console.log('File na nakuha at pasado:', file.name);
-            let reader = new FileReader();
-
-            reader.onload = function (e) {
-                previewImg.src = e.target.result;
-                previewImg.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            };
-
-            // IPASA ANG FILE BLOB NANG LIGTAS
-            reader.readAsDataURL(file);
-        }
-
-        // 2. Tagapag-alaga ng Progress Bar at Indicators
-        function updateProgressBar(stepNumber) {
-            for (let i = 1; i <= 4; i++) {
-                let indicator = document.getElementById('ind-' + i);
-                if (indicator) {
-                    if (i <= stepNumber) {
-                        indicator.classList.remove('bg-slate-200', 'text-slate-500');
-                        indicator.classList.add('bg-red-600', 'text-white', 'shadow-md');
-                    } else {
-                        indicator.classList.add('bg-slate-200', 'text-slate-500');
-                        indicator.classList.remove('bg-red-600', 'text-white', 'shadow-md');
-                    }
-                }
-            }
-            let progressLine = document.getElementById('progress-line');
-            if (progressLine) {
-                let progressPercentage = ((stepNumber - 1) / 3) * 100;
-                progressLine.style.width = progressPercentage + '%';
-            }
-        }
-
-        // 3. Ang "Next" Button Function
-        function validateAndGo(currentStepId, nextStepId) {
-            let currentStepElement = document.getElementById(currentStepId);
-            if (!currentStepElement) return;
-
-            let isValid = true;
-            let inputs = currentStepElement.querySelectorAll('input[required], select[required]');
-
-            inputs.forEach((input) => {
-                let errorMessage = document.getElementById('error-' + input.id);
-                let hasError = false;
-
-                // 1. Check kung blangko
-                if (input.value.trim() === '') {
-                    hasError = true;
-                    if (errorMessage) errorMessage.textContent = 'This field is required.';
-                }
-                // 2. SPECIAL RULE: Kung password field at less than 8 chars
-                else if (
-                    (input.id === 'password' || input.id === 'password_confirmation') &&
-                    input.value.length < 8
-                ) {
-                    hasError = true;
-                    if (errorMessage)
-                        errorMessage.textContent = 'Password must be at least 8 characters.';
-                }
-                // 3. SPECIAL RULE: Kung confirm password at hindi match sa password
-                else if (
-                    input.id === 'password_confirmation' &&
-                    input.value !== document.getElementById('password').value
-                ) {
-                    hasError = true;
-                    if (errorMessage) errorMessage.textContent = 'Passwords do not match.';
-                }
-
-                // Ipakita o itago ang error base sa mga rules sa itaas
-                if (hasError) {
-                    isValid = false;
-                    input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.remove('hidden');
-                } else {
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                }
-            });
-
-            if (isValid) {
-                currentStepElement.classList.add('hidden');
-                let nextElement = document.getElementById(nextStepId);
-                if (nextElement) {
-                    nextElement.classList.remove('hidden');
-                    let stepNum = parseInt(nextStepId.replace('step', ''));
-                    updateProgressBar(stepNum);
-
-                    // ---> ITO ANG BAGONG LINYA: I-save ang step sa memory <---
-                    sessionStorage.setItem('bdls_active_step', nextStepId);
-                }
-            }
-        }
-
-        // 4. Ang "Back" Button Function
-        function goBack(currentStepId, prevStepId) {
-            document.getElementById(currentStepId).classList.add('hidden');
-            document.getElementById(prevStepId).classList.remove('hidden');
-            let stepNum = parseInt(prevStepId.replace('step', ''));
-            updateProgressBar(stepNum);
-        }
-
-        // 5. Real-Time Error Removal
-        document.addEventListener('DOMContentLoaded', function () {
-            let requiredInputs = document.querySelectorAll('input[required], select[required]');
-            requiredInputs.forEach((input) => {
-                input.addEventListener('input', function () {
-                    let errorMessage = document.getElementById('error-' + this.id);
-                    this.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
-                    if (errorMessage) errorMessage.classList.add('hidden');
-                });
-            });
-        });
-
-        // 6. Function para sa Show/Hide Password
-        function togglePassword(inputId) {
-            let input = document.getElementById(inputId);
-            let button = input.nextElementSibling; // Kukunin yung mismong SHOW button
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                button.innerText = 'HIDE';
-            } else {
-                input.type = 'password';
-                button.innerText = 'SHOW';
-            }
-        }
-
-        // 7. Modal Functions
-        function openPrivacyModal() {
-            document.getElementById('privacyModal').classList.remove('hidden');
-        }
-
-        function closePrivacyModal() {
-            document.getElementById('privacyModal').classList.add('hidden');
-        }
-
-        function showErrorModal(message) {
-            document.getElementById('errorModalMessage').innerText = message;
-            document.getElementById('errorModal').classList.remove('hidden');
-        }
-
-        function closeErrorModal() {
-            document.getElementById('errorModal').classList.add('hidden');
-        }
-
-        // 8. Sticky Form with Step 3 Security Fallback
-        document.addEventListener('DOMContentLoaded', function () {
-            const formElements = document.querySelectorAll(
-                'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
-            );
-
-            formElements.forEach((element) => {
-                const key = 'bdls_draft_' + (element.id || element.name);
-                const savedValue = sessionStorage.getItem(key);
-                if (savedValue) {
-                    element.value = savedValue;
-                }
-
-                element.addEventListener('input', function () {
-                    sessionStorage.setItem(key, this.value);
-                });
-                element.addEventListener('change', function () {
-                    sessionStorage.setItem(key, this.value);
-                });
-            });
-
-            // STICKY STEP LOGIC WITH FALLBACK
-            const savedStep = sessionStorage.getItem('bdls_active_step');
-            if (savedStep && savedStep !== 'step1') {
-                document.getElementById('step1').classList.add('hidden');
-
-                // SECURITY FALLBACK: Kung ire-reload at nasa Step 4 pero walang password, IBALIK SA STEP 3
-                if (savedStep === 'step4' && document.getElementById('password').value === '') {
-                    sessionStorage.setItem('bdls_active_step', 'step3');
-                    document.getElementById('step3').classList.remove('hidden');
-                    updateProgressBar(3);
-                } else {
-                    let activeStepElement = document.getElementById(savedStep);
-                    if (activeStepElement) {
-                        activeStepElement.classList.remove('hidden');
-                        let stepNum = parseInt(savedStep.replace('step', ''));
-                        updateProgressBar(stepNum);
-                    }
-                }
-            }
-        });
-    </script>
-
+    
+    
     <!-- ========================================== -->
-    <!-- BAGONG LEGAL MODALS (Privacy & Terms)      -->
+    <!--    LEGAL MODALS (Privacy & Terms)          -->
     <!-- ========================================== -->
-
+    
     <!-- 1. PRIVACY POLICY MODAL -->
-    <div
-        id="privacyModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
-        >
-            <div
-                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
-            >
+    <div id="privacyModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h2 class="text-xl font-bold text-slate-900">Patakaran sa Privacy ng BDLS</h2>
-                <button
-                    type="button"
-                    onclick="closeLegalModal('privacyModal')"
-                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
-                >
+                <button type="button" onclick="closeLegalModal('privacyModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">
                     &times;
                 </button>
             </div>
@@ -881,8 +625,8 @@
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
                 <button
-                    type="button"
-                    onclick="closeLegalModal('privacyModal')"
+                type="button"
+                onclick="closeLegalModal('privacyModal')"
                     class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
                 >
                     Naintindihan Ko
@@ -890,24 +634,13 @@
             </div>
         </div>
     </div>
-
+    
     <!-- 2. TERMS AND CONDITIONS MODAL -->
-    <div
-        id="termsModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
-        >
-            <div
-                class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50"
-            >
+    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h2 class="text-xl font-bold text-slate-900">Mga Tuntunin at Kundisyon</h2>
-                <button
-                    type="button"
-                    onclick="closeLegalModal('termsModal')"
-                    class="text-slate-400 hover:text-slate-800 text-2xl font-bold"
-                >
+                <button type="button" onclick="closeLegalModal('termsModal')" class="text-slate-400 hover:text-slate-800 text-2xl font-bold">
                     &times;
                 </button>
             </div>
@@ -929,86 +662,119 @@
                     6. Patakaran sa Hindi Pagkuha ng Dokumento (No-Show Policy)
                 </h3>
                 <p>Kapag na-aprubahan at na-text ka na ang iyong dokumento ay "Ready for Release", mangyaring kunin ito agad. <br />
-                • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br />
+                    • Kung hindi mo ito makuha sa loob ng <strong>1 linggo</strong>, papadalhan ka namin ng isa pang paalala (2nd attempt).<br />
                 • Kung lumipas ang <strong>2 linggo</strong> at hindi mo pa rin kinukuha, papatawan ang iyong account ng <strong>1-linggong penalty</strong> kung saan hindi ka muna makakapag-request ng bagong dokumento sa system. Gayunpaman, maaari mo pa ring kunin ang iyong nakabinbing dokumento nang personal sa barangay hall.</p>
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-right">
-                <button
-                    type="button"
-                    onclick="closeLegalModal('termsModal')"
-                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95"
-                >
+                <button type="button" onclick="closeLegalModal('termsModal')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all active:scale-95">
                     Naintindihan Ko
                 </button>
             </div>
         </div>
     </div>
-
-    <!-- MODAL JS LOGIC -->
-    <script>
-        function openLegalModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLegalModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-    </script>
-    <!-- GLOBAL ERROR MODAL -->
-    <div
-        id="errorModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
-    >
-        <div
-            class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500"
-        >
-            <!-- Red Warning Icon -->
-            <div
-                class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4"
-            >
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+    
+    <!-- ========================================== -->
+    <!-- 1. GLOBAL LOADING SCREEN (Z-50)            -->
+    <!-- ========================================== -->
+    <div id="global-loader" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
+            <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
+        </div>
+    </div>
+    
+    <!-- ========================================== -->
+    <!-- 2. CRITICAL SERVER ERROR MODAL (TIMEOUT)   -->
+    <!-- ========================================== -->
+    <div id="errorModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center text-center p-8 border-t-4 border-red-500">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Oops! May Mali.</h3>
-            <p id="errorModalMessage" class="text-sm text-slate-600 mb-6">
-                <!-- Dito papasok ang "File must be less than 5MB" via JS -->
-            </p>
-            <button
-                type="button"
-                onclick="closeErrorModal()"
-                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95"
-            >
-                I-try Ulit
+            <h3 class="text-xl font-bold text-slate-800 mb-2">May Problema</h3>
+            <p id="errorModalMessage" class="text-sm text-slate-600 mb-6"></p>
+            <button type="button" onclick="closeErrorModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all active:scale-95">
+                Sige, Susubukan Ulit
             </button>
         </div>
     </div>
-    <!-- LARAVEL BACKEND ERROR CATCHER (Dynamic Modal) -->
+    
+    <!-- ========================================== -->
+    <!-- 3. TOAST NOTIFICATION SYSTEM (Z-60)        -->
+    <!-- ========================================== -->
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[64] flex flex-col gap-3 w-full max-w-md px-4 pointer-events-none">
+
+        <!-- A. Laravel Backend Error Toast (Duplicate Email, etc.) -->
+        @if ($errors->any())
+        <div id="backend-toast" class="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
+                <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div>
+                    <p class="font-bold text-sm">Oops! May nakitang mali.</p>
+                    <p class="text-sm font-medium">{{ $errors->first() }}</p>
+                </div>
+            </div>
+            @endif
+            
+        <!-- B. Javascript Frontend Error Toast (5MB Error) -->
+        <div id="frontend-toast" class="hidden bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-red-500">
+            <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+                <p class="font-bold text-sm">Oops! May nakitang mali.</p>
+                <p id="frontend-toast-message" class="text-sm font-medium"></p>
+            </div>
+        </div>
+
+    </div>
+    
+    <!--signup ui wizard-->
+    <script src="{{ asset('js/signup.js') }}"></script>
+
+    <!-- SMART ERROR ROUTER & TOAST ANIMATION -->
     @if ($errors->any())
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Kunin ang error mula sa backend (hal. Duplicate Account, Invalid Data)
-                let laravelError = '{{ $errors->first() }}';
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Hanapin kung saan nagka-error para doon ibukas ang form
+            let errorStep = 'step1';
+            @if($errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'dob_month', 'dob_day', 'dob_year']))
+                errorStep = 'step1';
+            @elseif($errors->hasAny(['house_number', 'purok_street']))
+                errorStep = 'step2';
+            @elseif($errors->hasAny(['contact_number', 'email', 'password']))
+                errorStep = 'step3';
+            @elseif($errors->hasAny(['id_photo_path', 'selfie_photo_path', 'terms']))
+                errorStep = 'step4';
+            @endif
 
-                // Buksan ang Global Error Modal gamit ang dynamic message
-                showErrorModal(laravelError || 'We have encountered some problems. Please try again.');
+            // 2. Itago lahat ng steps at buksan lamang ang may error
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.add('hidden');
 
-                // Dahil ibinato pabalik ng server ang form, burado ang password at files.
-                // FORCE BACK TO STEP 3 para makapag-type ulit ng password!
-                sessionStorage.setItem('bdls_active_step', 'step3');
-                document.getElementById('step1').classList.add('hidden');
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('step4').classList.add('hidden');
-                document.getElementById('step3').classList.remove('hidden');
-                updateProgressBar(3);
-            });
-        </script>
+            document.getElementById(errorStep).classList.remove('hidden');
+
+            // 3. I-update ang Progress Bar UI
+            let stepNum = parseInt(errorStep.replace('step', ''));
+            updateProgressBar(stepNum);
+            sessionStorage.setItem('bdls_active_step', errorStep);
+
+            // 4. I-trigger ang Toast Animation
+            const toast = document.getElementById('backend-toast');
+            if (toast) {
+                setTimeout(() => {
+                    toast.classList.remove('-translate-y-20', 'opacity-0');
+                    toast.classList.add('translate-y-0', 'opacity-100');
+                }, 100);
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('-translate-y-20', 'opacity-0');
+                }, 5000); // Mawawala matapos ang 5 segundo
+            }
+        });
+    </script>
     @endif
 </body>
 </html>

@@ -1,15 +1,21 @@
 {
+    "plugins": ["prettier-plugin-blade", "@prettier/plugin-php", "prettier-plugin-tailwindcss"],
     "semi": true,
     "singleQuote": true,
-    "tabWidth": 4,
-    "trailingComma": "all",
     "printWidth": 100,
-    "plugins": ["prettier-plugin-blade"],
+    "phpVersion": "8.2",
+    "trailingCommaPHP": true,
     "overrides": [
         {
-            "files": ["*.blade.php"],
+            "files": ["*.php", "*.blade.php"],
             "options": {
-                "parser": "blade"
+                "tabWidth": 4
+            }
+        },
+        {
+            "files": ["*.js", "*.html", "*.css", "*.json"],
+            "options": {
+                "tabWidth": 2
             }
         }
     ]

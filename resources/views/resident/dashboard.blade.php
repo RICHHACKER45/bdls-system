@@ -59,10 +59,10 @@
                     </p>
                 </div>
                 <div>
-                    <a href="{{ route('resident.request.create') }}" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg w-full sm:w-auto">
+                    <button onclick="openRequestModal()" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg w-full sm:w-auto focus:outline-none">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Gumawa ng Bagong Request
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -259,5 +259,189 @@
             switchTab("{{ session('active_tab') }}");
         });
     </script>
+@endif
+<!-- ===================================== -->
+<!-- SPA MODAL: SERVICE REQUEST FORM       -->
+<!-- ===================================== -->
+<div id="requestModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+        
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Gumawa ng Request</h2>
+                <p class="text-slate-500 text-sm mt-1">Kumpletuhin ang detalye para sa iyong queue number.</p>
+            </div>
+            <button type="button" onclick="closeRequestModal()" class="text-slate-400 hover:text-red-600 active:scale-95 transition-all p-2 bg-slate-200 hover:bg-red-100 rounded-full focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Modal Body (Form) -->
+        <div class="p-6 overflow-y-auto">
+            <form action="{{ route('resident.request.store') }}" method="POST" id="requestForm" class="space-y-6" enctype="multipart/form-data">
+                @csrf
+                <!-- 0. PRE-FILLED RESIDENT INFORMATION -->
+                <div class="bg-slate-100 p-5 rounded-xl border border-slate-200 shadow-inner">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">Impormasyon ng Nagre-request</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500">Buong Pangalan</label>
+                            <p class="text-sm font-bold text-slate-900">{{ Auth::user()->first_name }} {{ Auth::user()->middle_name }} {{ Auth::user()->last_name }} {{ Auth::user()->suffix }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500">Edad</label>
+                            <!-- The Laravel Way: Carbon Age Calculation -->
+                            <p class="text-sm font-bold text-slate-900">{{ \Carbon\Carbon::parse(Auth::user()->date_of_birth)->age }} taong gulang</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-500">Tirahan</label>
+                            <p class="text-sm font-bold text-slate-900">{{ Auth::user()->house_number }} {{ Auth::user()->purok_street }}, Barangay Doña Lucia</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 1. URI NG DOKUMENTO -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Uri ng Dokumento <span class="text-red-500">*</span></label>
+                    <select name="document_type_id" id="document_type_id" required onchange="showRequirements(this)" class="w-full px-4 py-3 rounded-xl border @error('document_type_id') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                        <option value="">-- Pumili ng Dokumento --</option>
+                        @foreach($documents as $doc)
+                            <!-- Gagamitin natin ang old() para i-retain ang pinili -->
+                            <option value="{{ $doc->id }}" data-reqs="{{ $doc->requirements_description }}" {{ old('document_type_id') == $doc->id ? 'selected' : '' }}>
+                                {{ $doc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('document_type_id')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
+
+                    <!-- UX Dynamic Requirements Box -->
+                    <div id="requirements_box" class="hidden mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-inner transition-all">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p class="text-sm text-blue-800 font-bold">Mga Kinakailangang Dalhin / I-upload:</p>
+                        </div>
+                        <p id="requirements_text" class="text-sm text-blue-700 font-medium ml-7"></p>
+                    </div>
+                </div>
+
+                <!-- 2. PURPOSE -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Layunin (Purpose) <span class="text-red-500">*</span></label>
+                    <!-- I-retain gamit ang value="{{ old('purpose') }}" -->
+                    <input type="text" name="purpose" value="{{ old('purpose') }}" placeholder="Hal. Requirement sa Trabaho, Scholarship..." required class="w-full px-4 py-3 rounded-xl border @error('purpose') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">
+                    @error('purpose')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- 3. PREFERRED PICKUP TIME -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Kailan mo gustong kunin? <span class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="preferred_pickup_time" value="{{ old('preferred_pickup_time') }}" required class="w-full px-4 py-3 rounded-xl border @error('preferred_pickup_time') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer">
+                    @error('preferred_pickup_time')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- 4. ADDITIONAL DETAILS -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-800 mb-2">Karagdagang Detalye (Optional)</label>
+                    <textarea name="additional_details" rows="2" class="w-full px-4 py-3 rounded-xl border @error('additional_details') border-red-500 ring-1 ring-red-500 @else border-slate-300 @enderror focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all">{{ old('additional_details') }}</textarea>
+                    @error('additional_details')
+                        <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- 5. KARAGDAGANG ATTACHMENTS -->
+                <div id="upload_section" class="hidden p-5 bg-white border-2 border-dashed @error('attachments.*') border-red-500 bg-red-50 @else border-slate-300 @enderror rounded-xl">
+                    <label class="block text-sm font-bold text-slate-800 mb-2">I-upload ang mga Karagdagang Dokumento <span class="text-red-500">*</span></label>
+                    <input type="file" name="attachments[]" id="attachments" multiple accept="image/jpeg, image/png, image/jpg, application/pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer transition-all">
+                    @error('attachments.*')
+                        <p class="text-red-600 text-xs mt-2 font-bold">{{ $message }}</p>
+                    @enderror
+                </div>
+        
+        <!-- Modal Footer (Submit Button) -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <button type="button" onclick="closeRequestModal()" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 active:scale-95 transition-all">Kanselahin</button>
+            <!-- Pinindot nito ang form gamit ang ID niya -->
+            <!-- THE LARAVEL / HTML5 WAY: Gamitin ang requestSubmit() -->
+            <button type="button" onclick="document.getElementById('requestForm').requestSubmit()" 
+            class="bg-slate-900 hover:bg-slate-800 
+            active:scale-95 text-white font-bold py-2.5 
+            px-8 rounded-xl transition-all shadow-md"
+            >
+            I-submit Request
+        </button>
+    </div>
+</div>
+
+<!-- Modal Scripts -->
+<script>
+    function openRequestModal() {
+        const modal = document.getElementById('requestModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden'; // Pigilan ang pag-scroll sa background
+    }
+
+    function closeRequestModal() {
+        const modal = document.getElementById('requestModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto'; // Ibalik ang scroll
+    }
+
+    function showRequirements(selectElement) {
+        const box = document.getElementById('requirements_box');
+        const textElement = document.getElementById('requirements_text');
+        const uploadSection = document.getElementById('upload_section');
+        const attachmentInput = document.getElementById('attachments');
+        
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const requirements = selectedOption.getAttribute('data-reqs');
+
+        if (selectElement.value !== "") {
+            textElement.innerText = requirements;
+            box.classList.remove('hidden');
+            box.classList.add('block');
+
+            // UX Logic: Kung ang requirements ay humihingi ng higit pa sa "Valid ID", ilabas ang Upload Box
+            if (requirements && requirements.toLowerCase() !== 'valid id') {
+                uploadSection.classList.remove('hidden');
+                uploadSection.classList.add('block');
+                attachmentInput.required = true; // Gawing required ang upload
+            } else {
+                uploadSection.classList.add('hidden');
+                uploadSection.classList.remove('block');
+                attachmentInput.required = false;
+            }
+        } else {
+            box.classList.add('hidden');
+            box.classList.remove('block');
+            uploadSection.classList.add('hidden');
+            uploadSection.classList.remove('block');
+            attachmentInput.required = false;
+        }
+    }
+</script>
+<!-- SPA ERROR AUTO-OPEN LOGIC -->
+@if ($errors->has('purpose') || $errors->has('document_type_id') || $errors->has('preferred_pickup_time') || $errors->has('attachments.*'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buksan ang modal
+        openRequestModal();
+        
+        // I-trigger ang dropdown event para lumabas ulit ang upload box kung nakapili na sila dati
+        setTimeout(() => {
+            const selectEl = document.getElementById('document_type_id');
+            if(selectEl && selectEl.value !== "") {
+                showRequirements(selectEl);
+            }
+        }, 100);
+    });
+</script>
 @endif
 @endsection
