@@ -132,7 +132,7 @@
             <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <!-- ========================================================-->
-                <!-- STEP 1: Personal Na Impormasyon (Personal Information) -->
+                <!-- STEP 1: Personal Na Impormasyon (Personal Information)  -->
                 <!-- ========================================================-->
                 <div id="step1">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
