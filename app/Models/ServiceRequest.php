@@ -30,4 +30,16 @@ class ServiceRequest extends Model
             'released_at' => 'datetime',
         ];
     }
+
+    // THE LARAVEL WAY: Kunin ang data ng Residente
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // THE LARAVEL WAY: Kunin ang data ng Dokumento
+    public function documentType()
+    {
+        return $this->belongsTo(DocumentType::class);
+    }
 }
