@@ -1,52 +1,61 @@
 // ==========================================
-// ADMIN DASHBOARD: AJAX POLLING & EXPONENTIAL BACKOFF
+// ADMIN DASHBOARD: UNIFIED AJAX POLLING & BACKOFF
 // ==========================================
 
-let currentCount = window.initialPendingCount || 0;
+let pendingCount = window.initialPendingCount || 0;
+let queueCount = window.initialQueueCount || 0;
+
 let pollInterval = 10000; // Magsimula sa 10 seconds
 let unchangedCycles = 0;
 
-function pollRegistrations() {
-  fetch(window.pollingUrl)
-    .then((response) => response.json())
-    .then((data) => {
-      const badge = document.getElementById('pending-badge');
+function pollDashboard() {
+    // Sabay na kukunin ang Pending at Queue para tipid sa server load
+    Promise.all([
+        fetch(window.pollingUrl).then(res => res.json()),
+        fetch(window.queuePollingUrl).then(res => res.json())
+    ])
+    .then(([pendingData, queueData]) => {
+        let hasNewData = false;
 
-      // 1. I-update ang red notification badge sa Sidebar
-      if (data.count > 0) {
-        badge.innerText = data.count;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
-      // 2. Exponential Backoff Logic
-      if (data.count > currentCount) {
-        // MAY BAGONG DATA! Ipakita ang Twitter-style pill button
-        document.getElementById('new-data-pill').classList.remove('hidden');
-
-        // I-reset ang pahinga ng server dahil may aktibidad
-        unchangedCycles = 0;
-        pollInterval = 10000; // Balik sa 10 seconds
-      } else {
-        // WALANG BAGONG DATA.
-        unchangedCycles++;
-        if (unchangedCycles >= 5) {
-          // Kung limang beses (50 seconds) nang walang bago,
-          // pagpahingahin ang MySQL. Gawing 30 seconds ang interval.
-          pollInterval = 30000;
+        // 1. Pending Notification Badge Update
+        const badge = document.getElementById('pending-badge');
+        if (pendingData.count > 0) {
+            if (badge) { badge.innerText = pendingData.count; badge.classList.remove('hidden'); }
+        } else {
+            if (badge) badge.classList.add('hidden');
         }
-      }
 
-      // I-sync ang memory
-      currentCount = data.count;
+        // Check kung may nadagdag sa Pending
+        if (pendingData.count > pendingCount) {
+            hasNewData = true;
+            pendingCount = pendingData.count;
+        }
+
+        // 2. Queue Update Check
+        if (queueData.count > queueCount) {
+            hasNewData = true;
+            queueCount = queueData.count;
+        }
+
+        // 3. Exponential Backoff Logic
+        if (hasNewData) {
+            // Ipakita ang Twitter-style refresh pill
+            document.getElementById('new-data-pill').classList.remove('hidden');
+            unchangedCycles = 0;
+            pollInterval = 10000; // Balik sa 10 seconds
+        } else {
+            unchangedCycles++;
+            if (unchangedCycles >= 5) {
+                // Pagpahingahin ang server (30 seconds)
+                pollInterval = 30000; 
+            }
+        }
     })
-    .catch((err) => console.error('Polling error:', err))
+    .catch(err => console.error('Dashboard Polling error:', err))
     .finally(() => {
-      // Recursive setTimeout (Hindi setInterval para iwas request pile-up)
-      setTimeout(pollRegistrations, pollInterval);
+        setTimeout(pollDashboard, pollInterval);
     });
 }
 
-// Simulan ang unang ikot ng pagmamanman (Polling)
-setTimeout(pollRegistrations, pollInterval);
+// Simulan
+setTimeout(pollDashboard, pollInterval);
