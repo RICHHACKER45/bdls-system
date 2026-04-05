@@ -277,3 +277,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 });
+
+// 11. SMART ERROR ROUTER & TOAST ANIMATION
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.SIGNUP_CONFIG !== 'undefined' && window.SIGNUP_CONFIG.hasErrors) {
+        let errorStep = window.SIGNUP_CONFIG.errorStep;
+
+        // Itago lahat ng steps
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step3').classList.add('hidden');
+        document.getElementById('step4').classList.add('hidden');
+
+        // Ipakita ang may error
+        document.getElementById(errorStep).classList.remove('hidden');
+
+        // I-update progress bar
+        let stepNum = parseInt(errorStep.replace('step', ''));
+        updateProgressBar(stepNum);
+        sessionStorage.setItem('bdls_active_step', errorStep);
+
+        // Toast Animation
+        const toast = document.getElementById('backend-toast');
+        if (toast) {
+            setTimeout(() => {
+                toast.classList.remove('-translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 100);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 5000);
+        }
+    }
+});

@@ -729,52 +729,21 @@
 
     </div>
     
-    <!--signup ui wizard-->
-    <script src="{{ asset('js/signup.js') }}"></script>
-
-    <!-- SMART ERROR ROUTER & TOAST ANIMATION -->
-    @if ($errors->any())
+    <!-- THE LARAVEL CONFIG INJECTOR & SCRIPTS -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // 1. Hanapin kung saan nagka-error para doon ibukas ang form
-            let errorStep = 'step1';
-            @if($errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'dob_month', 'dob_day', 'dob_year']))
-                errorStep = 'step1';
-            @elseif($errors->hasAny(['house_number', 'purok_street']))
-                errorStep = 'step2';
-            @elseif($errors->hasAny(['contact_number', 'email', 'password']))
-                errorStep = 'step3';
-            @elseif($errors->hasAny(['id_photo_path', 'selfie_photo_path', 'terms']))
-                errorStep = 'step4';
-            @endif
-
-            // 2. Itago lahat ng steps at buksan lamang ang may error
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step3').classList.add('hidden');
-            document.getElementById('step4').classList.add('hidden');
-
-            document.getElementById(errorStep).classList.remove('hidden');
-
-            // 3. I-update ang Progress Bar UI
-            let stepNum = parseInt(errorStep.replace('step', ''));
-            updateProgressBar(stepNum);
-            sessionStorage.setItem('bdls_active_step', errorStep);
-
-            // 4. I-trigger ang Toast Animation
-            const toast = document.getElementById('backend-toast');
-            if (toast) {
-                setTimeout(() => {
-                    toast.classList.remove('-translate-y-20', 'opacity-0');
-                    toast.classList.add('translate-y-0', 'opacity-100');
-                }, 100);
-                setTimeout(() => {
-                    toast.classList.remove('translate-y-0', 'opacity-100');
-                    toast.classList.add('-translate-y-20', 'opacity-0');
-                }, 5000); // Mawawala matapos ang 5 segundo
-            }
-        });
+        window.SIGNUP_CONFIG = {
+            hasErrors: {{ $errors->any() ? 'true' : 'false' }},
+            errorStep: 'step1'
+        };
+        @if($errors->hasAny(['house_number', 'purok_street']))
+            window.SIGNUP_CONFIG.errorStep = 'step2';
+        @elseif($errors->hasAny(['contact_number', 'email', 'password']))
+            window.SIGNUP_CONFIG.errorStep = 'step3';
+        @elseif($errors->hasAny(['id_photo_path', 'selfie_photo_path', 'terms']))
+            window.SIGNUP_CONFIG.errorStep = 'step4';
+        @endif
     </script>
-    @endif
+    <script src="{{ asset('js/signup.js') }}"></script>
+    
 </body>
 </html>

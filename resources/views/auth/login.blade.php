@@ -85,11 +85,6 @@
             </div>
         </div>
     </main>
-    <!-- CLEANUP SCRIPT: Burahin ang mga "Sticky Form" drafts mula sa Signup kapag nag-logout o napunta sa Login -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            sessionStorage.clear();
-        });
-    </script>
+    <script src="{{ asset('js/guest-cleanup.js') }}"></script>
 </body>
 </html>

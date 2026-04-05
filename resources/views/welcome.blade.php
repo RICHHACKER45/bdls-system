@@ -101,11 +101,6 @@
             </div>
         </div>
     </main>
-    <!-- CLEANUP SCRIPT: Burahin ang mga "Sticky Form" drafts mula sa Signup kapag bumalik sa Home -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            sessionStorage.clear();
-        });
-    </script>
+    <script src="{{ asset('js/guest-cleanup.js') }}"></script>
 </body>
 </html>
