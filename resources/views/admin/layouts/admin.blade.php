@@ -11,16 +11,13 @@
     <!-- MOBILE OVERLAY -->
     <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
 
-    <!-- SIDEBAR (F-Pattern Left Navigation: Deep Slate Accent) -->
+    <!-- SIDEBAR -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 bg-white w-72 border-r border-slate-200 z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:flex lg:flex-col transition-transform duration-300 ease-in-out">
-        
-        <!-- Logo & Live Status Area -->
         <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold text-xs">BD</div>
                 <span class="font-bold text-lg tracking-tight">Admin Portal</span>
             </div>
-            <!-- THE PULSING GREEN DOT (Zero Overhead CSS) -->
             <div class="flex items-center gap-2" title="System is live and syncing">
                 <span class="relative flex h-3 w-3">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -30,14 +27,12 @@
             </div>
         </div>
 
-        <!-- Navigation TABS (Base sa Use Case Diagram) -->
         <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
             <button onclick="switchTab('pending')" id="nav-pending" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all bg-slate-900 text-white">
                 <div class="flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Pending Registrations
                 </div>
-                <!-- Dito papasok ang AJAX Polling Number mamaya -->
                 <span id="pending-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
             </button>
 
@@ -62,7 +57,6 @@
             </button>
         </nav>
 
-        <!-- SECURE LOGOUT FORM -->
         <div class="p-4 border-t border-slate-100">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
@@ -76,8 +70,6 @@
 
     <!-- MAIN CONTENT WRAPPER -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        
-        <!-- TOPBAR (Mobile Hamburger) -->
         <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar()" class="lg:hidden text-slate-500 hover:text-slate-900 focus:outline-none p-2 -ml-2 rounded-md active:scale-95 transition-all">
@@ -86,7 +78,6 @@
                 <h1 id="topbar-title" class="text-xl font-bold text-slate-800 hidden sm:block">Pending Registrations</h1>
             </div>
 
-            <!-- Admin Profile Tag -->
             <div class="flex items-center gap-3">
                 <span class="text-sm font-bold text-slate-700">Admin</span>
                 <div class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-sm border-2 border-white">
@@ -95,23 +86,32 @@
             </div>
         </header>
 
-        <!-- DYNAMIC PAGE CONTENT -->
         <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
-            
-            <!-- AJAX NEW DATA ALERT PILL (Twitter-style) -->
             <div id="new-data-pill" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 hidden">
                 <button onclick="location.reload()" class="bg-slate-900 text-white px-6 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-800 active:scale-95 transition-all border border-slate-700">
                     <svg class="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    May bagong registration. I-click para i-refresh.
+                    May bagong update. I-click para i-refresh.
                 </button>
             </div>
-
             @yield('content')
         </main>
     </div>
 
-    <!-- GLOBAL LOADING SCREEN -->
-    <div id="global-loader" class="fixed inset-0 z-[11] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+    <!-- TOAST ALERTS (Consistent with Resident UI) -->
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[1] flex flex-col gap-3 w-full max-w-md px-4 pointer-events-none">
+        @if(session('success_message') || session('success'))
+        <div class="toast-alert bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-green-400">
+            <svg class="w-6 h-6 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                @if(session('success_title'))<p class="font-bold text-sm">{{ session('success_title') }}</p>@endif
+                <p class="text-sm font-medium">{{ session('success_message') ?? session('success') }}</p>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <!-- GLOBAL LOADER -->
+    <div id="global-loader" class="fixed inset-0 z-[1] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -121,53 +121,18 @@
         </div>
     </div>
 
-    <!-- VANILLA JS SPA & HAMBURGER LOGIC -->
+    <!-- THE LARAVEL ADMIN CONFIG INJECTOR -->
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
-
-        function switchTab(tabId) {
-            // 1. Itago lahat ng tabs
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            
-            // 2. Ipakita ang piniling tab (kung nage-exist)
-            const selectedTab = document.getElementById('tab-' + tabId);
-            if(selectedTab) selectedTab.classList.remove('hidden');
-
-            // 3. I-reset ang kulay ng lahat ng buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-900', 'text-white');
-                btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
-            });
-
-            // 4. Kulayan ang active na button
-            const activeBtn = document.getElementById('nav-' + tabId);
-            if(activeBtn) {
-                activeBtn.classList.add('bg-slate-900', 'text-white');
-                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
-                
-                // I-update ang Topbar Title
-                document.getElementById('topbar-title').innerText = activeBtn.innerText.trim();
-            }
-
-            // 5. Isara ang sidebar sa mobile
-            if(window.innerWidth < 1024) toggleSidebar();
-        }
-
-        // Global Loader Trigger para sa mga form
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', () => {
-                    document.getElementById('global-loader').classList.remove('hidden');
-                    document.getElementById('global-loader').classList.add('flex');
-                });
-            });
-        });
+        window.BDLS_ADMIN = {
+            activeTab: "{{ session('active_tab', 'pending') }}",
+            initialPendingCount: {{ isset($pendingAccounts) ? $pendingAccounts->count() : 0 }},
+            initialQueueCount: {{ isset($activeQueue) ? $activeQueue->count() : 0 }},
+            pollingUrl: "{{ route('admin.api.pending_count') }}",
+            queuePollingUrl: "{{ route('admin.api.queue_count') }}"
+        };
     </script>
+    
+    <!-- EXTERNAL JAVASCRIPT -->
+    <script src="{{ asset('js/admin.js') }}"></script>
 </body>
 </html>
