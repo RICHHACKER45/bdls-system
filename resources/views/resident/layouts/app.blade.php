@@ -73,7 +73,7 @@
     </div>
 
     <!-- GLOBAL LOADER -->
-    <div id="global-loader" class="fixed inset-0 z-[2] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
+    <div id="global-loader" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -87,6 +87,9 @@
     <script>
         window.BDLS = {
             activeTab: "{{ session('active_tab', 'dashboard') }}",
+            pollingUrl: "{{ route('resident.api.status') }}",
+            isVerified: {{ Auth::user()->is_verified ? 'true' : 'false' }},
+            rejectionCount: {{ Auth::user()->rejection_count }},
             emailCooldown: {{ \Illuminate\Support\Facades\RateLimiter::availableIn('resend_email_otp_' . Auth::id()) ?: 0 }},
             hasFormErrors: {{ ($errors->has('purpose') || $errors->has('document_type_id') || $errors->has('preferred_pickup_time') || $errors->has('attachments.*')) ? 'true' : 'false' }}
         };
