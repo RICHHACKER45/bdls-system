@@ -5,10 +5,42 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
+
+    /**
+     * ACCOUNT FILTERING SCOPES (The Laravel Way)
+     * Upang mailipat ang filtering logic sa Database level sa halip na In-Memory Collection.
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('is_verified', false)->where('rejection_count', '<', 5);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('is_verified', true);
+    }
+
+    public function scopeLocked(Builder $query): Builder
+    {
+        return $query->where('is_verified', false)->where('rejection_count', '>=', 5);
+    }
+
+    /**
+     * VIRTUAL ATTRIBUTE: Age
+     * Inalis ang calculation sa Blade view para sa Better Maintainability.
+     */
+    protected function age(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => \Carbon\Carbon::parse($this->date_of_birth)->age,
+        );
+    }
 
     /**
      * The attributes that are mass assignable.
