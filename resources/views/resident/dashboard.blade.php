@@ -193,7 +193,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-500">Edad</label>
-                            <p class="text-sm font-bold text-slate-900">{{ \Carbon\Carbon::parse(Auth::user()->date_of_birth)->age }} taong gulang</p>
+                            <p class="text-sm font-bold text-slate-900">{{ Auth::user()->age }} taong gulang</p>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-xs font-semibold text-slate-500">Tirahan</label>
