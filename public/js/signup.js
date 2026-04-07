@@ -27,6 +27,13 @@ function previewImage(event, previewId) {
     return; // Patayin ang function dito, wag nang ituloy ang pag-load
   }
 
+  // IF VALID: Clear any existing error messages from validateAndGo
+  let errorMessage = document.getElementById('error-' + input.id);
+  if (errorMessage) {
+    errorMessage.classList.add('hidden');
+    // If you added red borders to a container, remove them here
+  }
+
   // Kung nakapasa sa 5MB rule, i-load ang preview
   let reader = new FileReader();
   reader.onload = function (e) {
@@ -95,21 +102,37 @@ function validateAndGo(currentStepId, nextStepId) {
     let errorMessage = document.getElementById('error-' + input.id);
     let hasError = false;
 
-    // 1. Check kung blangko
-    if (input.value.trim() === '') {
+    // A. CHECK IF EMPTY
+    if (input.type === 'file') {
+      if (!input.files || input.files.length === 0) {
+        hasError = true;
+        if (errorMessage) errorMessage.textContent = 'Please upload the required file.';
+      }
+    } else if (input.value.trim() === '') {
       hasError = true;
       if (errorMessage) errorMessage.textContent = 'This field is required.';
+    }
 
-      // 2. SPECIAL RULE: Kung password field at less than 8 chars
-    } else if (
+    // B. SPECIAL RULE: Mobile Number Format (09XXXXXXXXX)
+    else if (input.id === 'contact_number') {
+      const phPattern = /^09\d{9}$/;
+      if (!phPattern.test(input.value)) {
+        hasError = true;
+        if (errorMessage) errorMessage.textContent = 'Must start with 09 and be 11 digits.';
+      }
+    }
+
+    // C. SPECIAL RULE: Password Length
+    else if (
       (input.id === 'password' || input.id === 'password_confirmation') &&
       input.value.length < 8
     ) {
       hasError = true;
       if (errorMessage) errorMessage.textContent = 'Password must be at least 8 characters.';
+    }
 
-      // 3. SPECIAL RULE: Kung confirm password at hindi match sa password
-    } else if (
+    // D. SPECIAL RULE: Password Matching
+    else if (
       input.id === 'password_confirmation' &&
       input.value !== document.getElementById('password').value
     ) {
@@ -117,7 +140,7 @@ function validateAndGo(currentStepId, nextStepId) {
       if (errorMessage) errorMessage.textContent = 'Passwords do not match.';
     }
 
-    // Ipakita o itago ang error base sa mga rules sa itaas
+    // APPLY UI CHANGES
     if (hasError) {
       isValid = false;
       input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
@@ -280,34 +303,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // 11. SMART ERROR ROUTER & TOAST ANIMATION
 document.addEventListener('DOMContentLoaded', function () {
-    if (typeof window.SIGNUP_CONFIG !== 'undefined' && window.SIGNUP_CONFIG.hasErrors) {
-        let errorStep = window.SIGNUP_CONFIG.errorStep;
+  if (typeof window.SIGNUP_CONFIG !== 'undefined' && window.SIGNUP_CONFIG.hasErrors) {
+    let errorStep = window.SIGNUP_CONFIG.errorStep;
 
-        // Itago lahat ng steps
-        document.getElementById('step1').classList.add('hidden');
-        document.getElementById('step2').classList.add('hidden');
-        document.getElementById('step3').classList.add('hidden');
-        document.getElementById('step4').classList.add('hidden');
+    // Itago lahat ng steps
+    document.getElementById('step1').classList.add('hidden');
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step3').classList.add('hidden');
+    document.getElementById('step4').classList.add('hidden');
 
-        // Ipakita ang may error
-        document.getElementById(errorStep).classList.remove('hidden');
+    // Ipakita ang may error
+    document.getElementById(errorStep).classList.remove('hidden');
 
-        // I-update progress bar
-        let stepNum = parseInt(errorStep.replace('step', ''));
-        updateProgressBar(stepNum);
-        sessionStorage.setItem('bdls_active_step', errorStep);
+    // I-update progress bar
+    let stepNum = parseInt(errorStep.replace('step', ''));
+    updateProgressBar(stepNum);
+    sessionStorage.setItem('bdls_active_step', errorStep);
 
-        // Toast Animation
-        const toast = document.getElementById('backend-toast');
-        if (toast) {
-            setTimeout(() => {
-                toast.classList.remove('-translate-y-20', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
-            }, 100);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('-translate-y-20', 'opacity-0');
-            }, 5000);
-        }
+    // Toast Animation
+    const toast = document.getElementById('backend-toast');
+    if (toast) {
+      setTimeout(() => {
+        toast.classList.remove('-translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+      }, 100);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-20', 'opacity-0');
+      }, 5000);
     }
+  }
 });
