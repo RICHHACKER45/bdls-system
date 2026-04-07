@@ -85,7 +85,7 @@
 <!-- ===================================== -->
 <!-- TAB 2: QUEUE & PROCESSING MODULE -->
 <!-- ===================================== -->
-<div id="tab-queue" class="tab-content hidden">
+<div id="tab-queue" class="tab-content {{ session('active_tab') == 'queue' ? 'block' : 'hidden' }}">
     <div class="mb-4 flex justify-between items-center">
         <h2 class="text-xl font-bold text-slate-800">Live Queue Board</h2>
         <span class="bg-slate-900 text-white px-3 py-1 rounded-full text-sm font-bold">In Line: {{ $activeQueue->count() }}</span>
@@ -185,5 +185,4 @@
         </form>
     </div>
 </div>
-
 @endsection
