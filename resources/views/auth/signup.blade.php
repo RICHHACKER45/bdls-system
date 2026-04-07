@@ -129,7 +129,7 @@
                 </div>
             </div>
             <!-- Registration Form -->
-            <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('signup.post') }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
                 <!-- ========================================================-->
                 <!-- STEP 1: Personal Na Impormasyon (Personal Information)  -->
@@ -326,10 +326,12 @@
                                 type="tel"
                                 id="contact_number"
                                 name="contact_number"
+                                inputmode="numeric"
                                 required
                                 maxlength="11"
                                 pattern="09{9}"
                                 placeholder="09XXXXXXXXX"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
                             <p id="error-contact_number" class="hidden text-red-500 text-sm mt-1">This field is required.</p>
