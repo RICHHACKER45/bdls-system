@@ -20,6 +20,16 @@ class ServiceRequestController extends Controller
         $this->smsService = $smsService;
     }
 
+    /**
+     * Display the Resident Dashboard.
+     * Inalis ang logic sa routes/web.php.
+     */
+    public function index()
+    {
+        $documents = DocumentType::where('is_active', 1)->get();
+        return view('resident.dashboard', compact('documents'));
+    }
+
     public function store(Request $request)
     {
         // 1. Validation Check
