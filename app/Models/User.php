@@ -18,7 +18,7 @@ class User extends Authenticatable
      */
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('is_verified', false)->where('rejection_count', '<', 5);
+        return $query->where('is_verified', false)->where('rejection_count', 0);
     }
 
     public function scopeApproved(Builder $query): Builder
@@ -26,9 +26,9 @@ class User extends Authenticatable
         return $query->where('is_verified', true);
     }
 
-    public function scopeLocked(Builder $query): Builder
+    public function scopeRejected(Builder $query): Builder
     {
-        return $query->where('is_verified', false)->where('rejection_count', '>=', 5);
+        return $query->where('is_verified', false)->where('rejection_count', '>', 0);
     }
 
     /**
@@ -37,9 +37,7 @@ class User extends Authenticatable
      */
     protected function age(): Attribute
     {
-        return Attribute::make(
-            get: fn() => \Carbon\Carbon::parse($this->date_of_birth)->age,
-        );
+        return Attribute::make(get: fn() => \Carbon\Carbon::parse($this->date_of_birth)->age);
     }
 
     /**
