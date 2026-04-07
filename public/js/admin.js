@@ -14,7 +14,10 @@ function toggleSidebar() {
 
 // 2. TAB SWITCHING (SPA ILLUSION)
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+    });
     
     const selectedTab = document.getElementById('tab-' + tabId);
     if(selectedTab) {
