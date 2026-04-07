@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Services\SmsService;
 
+use App\Http\Requests\RegisterRequest;
+
 class AuthController extends Controller
 {
     protected $smsService;
@@ -21,42 +23,12 @@ class AuthController extends Controller
         $this->smsService = $smsService;
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        // STEP 1: I-validate ang lahat ng pumapasok na data mula sa signup form
-        $validatedData = $request->validate(
-            [
-                'first_name' => 'required|string|max:255',
-                'middle_name' => 'nullable|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'suffix' => 'nullable|string|max:10',
-                'sex' => 'required|string|in:Male,Female',
-
-                'dob_month' => 'required|numeric|min:1|max:12',
-                'dob_day' => 'required|numeric|min:1|max:31',
-                'dob_year' => 'required|numeric',
-
-                'house_number' => 'required|string|max:255',
-                'purok_street' => 'required|string|max:255',
-
-                'contact_number' => 'required|string|max:20|unique:users,contact_number',
-                'email' => 'nullable|email|max:255|unique:users,email',
-                'password' => 'required|string|min:8|confirmed',
-
-                'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-                'selfie_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-                // SECURITY: Ito lang ang dapat nandito, wala nang 'privacy'
-                'terms' => 'accepted',
-            ],
-            [
-                // Custom error message kung sinubukan nilang i-bypass ang HTML
-                'terms.accepted' =>
-                    'Kailangan mong sumang-ayon sa Privacy Policy at Terms & Conditions.',
-            ],
-        );
+        // STEP 1: Get validated data
+        $validatedData = $request->validated();
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
-        // Gumagamit tayo ng str_pad para maging "01" kapag "1" lang ang buwan/araw
         $dateOfBirth =
             $validatedData['dob_year'] .
             '-' .
@@ -68,8 +40,7 @@ class AuthController extends Controller
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'public');
         $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
 
-        // STEP 4 & 5: Gagamit tayo ng Database Transaction para safe!
-        // Kung may mag-error sa loob nito (tulad ng sirang SMS API), hindi mase-save ang User sa database.
+        // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (
             $validatedData,
             $dateOfBirth,
