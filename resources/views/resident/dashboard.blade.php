@@ -25,13 +25,25 @@
     <h1 class="text-2xl font-bold text-slate-900 mb-6">Resident Dashboard</h1>
 
     @if(!Auth::user()->is_verified)
-    <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-xl shadow-sm mb-6">
-        <div class="flex items-center gap-3 text-amber-800 font-bold text-lg mb-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Account is Under Review
-        </div>
-        <p class="text-amber-700 text-sm">Kasalukuyang sinusuri ng Barangay Administrator ang iyong Valid ID at Selfie. Hindi ka pa maaaring mag-request ng dokumento hangga't hindi ito naaaprubahan.</p>
-    </div>
+        @if(Auth::user()->rejection_count > 0)
+            <!-- TASK 3: Red Rejection Alert -->
+            <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-xl shadow-sm mb-6">
+                <div class="flex items-center gap-3 text-red-800 font-bold text-lg mb-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Registration Rejected
+                </div>
+                <p class="text-red-700 text-sm mb-4">Your request is rejected. Reason: <span class="font-bold underline">{{ Auth::user()->rejection_reason }}</span>. You still have {{ 5 - Auth::user()->rejection_count }} attempts to request.</p>
+                <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 shadow-sm uppercase tracking-widest">Re-upload Requirements</button>
+            </div>
+        @else
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-xl shadow-sm mb-6">
+                <div class="flex items-center gap-3 text-amber-800 font-bold text-lg mb-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Account is Under Review
+                </div>
+                <p class="text-amber-700 text-sm">Kasalukuyang sinusuri ng Barangay Administrator ang iyong Valid ID at Selfie. Hindi ka pa maaaring mag-request ng dokumento hangga't hindi ito naaaprubahan.</p>
+            </div>
+        @endif
     @else
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="col-span-1 lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col justify-between">
