@@ -41,30 +41,80 @@ function switchTab(tabId) {
     if(window.innerWidth < 1024) toggleSidebar();
 }
 
-// 3. SUB-TAB LOGIC (Pending/Approved/Locked)
+// 3. SUB-TAB LOGIC
 function showSubTab(tabId, btnElement) {
-    document.querySelectorAll('.sub-tab-content').forEach(el => el.classList.add('hidden'));
+    // Determine the container context (sub-tab buttons are grouped per main tab)
+    const subTabContainer = btnElement.closest('.tab-content') || document.body;
+    
+    // Hide all sub-tab contents within this context
+    subTabContainer.querySelectorAll('.sub-tab-content').forEach(el => el.classList.add('hidden'));
+    
+    // Show target sub-tab
     const targetTab = document.getElementById(tabId);
     if(targetTab) targetTab.classList.remove('hidden');
 
-    document.querySelectorAll('.sub-tab-btn').forEach(btn => {
-        btn.classList.remove('bg-slate-900', 'text-white', 'bg-red-100', 'text-red-700');
-        btn.classList.add('bg-slate-200', 'text-slate-700');
+    // Handle button highlights based on which sub-tab group it belongs to
+    const siblingButtons = btnElement.parentElement.querySelectorAll('.sub-tab-btn');
+    
+    siblingButtons.forEach(btn => {
+        // Reset to default (Pending tab logic)
+        btn.classList.remove('bg-slate-900', 'text-white', 'bg-red-100', 'text-red-700', 'border-slate-900');
+        btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent');
+        
+        // Queue tab specific reset (border-b logic)
+        btn.classList.remove('text-slate-900');
+        btn.classList.add('text-slate-400');
     });
 
-    if(tabId === 'sub-pending') {
-        btnElement.classList.add('bg-slate-900', 'text-white');
-        btnElement.classList.remove('bg-slate-200', 'text-slate-700');
-    } else if(tabId === 'sub-locked') {
-        btnElement.classList.add('bg-red-100', 'text-red-700');
-        btnElement.classList.remove('bg-slate-200', 'text-slate-700');
+    if (tabId.startsWith('queue-')) {
+        // Queue Sub-tab logic (Underline style)
+        btnElement.classList.add('text-slate-900', 'border-slate-900');
+        btnElement.classList.remove('text-slate-400', 'border-transparent', 'bg-slate-200');
     } else {
-        btnElement.classList.add('bg-slate-900', 'text-white');
+        // Registration Sub-tab logic (Pill style)
+        if(tabId === 'sub-pending') {
+            btnElement.classList.add('bg-slate-900', 'text-white');
+        } else if(tabId === 'sub-rejected') {
+            btnElement.classList.add('bg-red-100', 'text-red-700');
+        } else {
+            btnElement.classList.add('bg-slate-900', 'text-white');
+        }
         btnElement.classList.remove('bg-slate-200', 'text-slate-700');
     }
 }
 
-// 4. MODALS (Reject & Image Preview)
+// 4. TASK 2: STATUS MODAL LOGIC
+function openStatusModal(requestId, currentStatus) {
+    const modal = document.getElementById('statusModal');
+    const form = document.getElementById('statusForm');
+    const input = document.getElementById('targetStatusInput');
+    
+    if(modal && form && input) {
+        input.value = ''; // Reset
+        form.action = `/admin/request/${requestId}/update-status`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeStatusModal() {
+    const modal = document.getElementById('statusModal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function confirmStatus(status) {
+    const input = document.getElementById('targetStatusInput');
+    const form = document.getElementById('statusForm');
+    if(input && form) {
+        input.value = status;
+        form.submit();
+    }
+}
+
+// 5. MODALS (Reject & Image Preview)
 function openRejectModal(userId, userName) {
     const modal = document.getElementById('rejectModal');
     if(modal) {
@@ -87,14 +137,16 @@ function openModal(imageSrc, title) {
     document.getElementById('modalImg').src = imageSrc;
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('imageModal').classList.remove('hidden');
+    document.getElementById('imageModal').classList.add('flex');
 }
 
 function closeModal() {
     document.getElementById('imageModal').classList.add('hidden');
+    document.getElementById('imageModal').classList.remove('flex');
     document.getElementById('modalImg').src = '';
 }
 
-// 5. TOAST NOTIFICATIONS & GLOBAL LOADER
+// 6. TOAST NOTIFICATIONS & GLOBAL LOADER
 function initUI() {
     const toasts = document.querySelectorAll('.toast-alert');
     toasts.forEach(toast => {
@@ -110,18 +162,19 @@ function initUI() {
 
     const forms = document.querySelectorAll('form');
     const loader = document.getElementById('global-loader');
-    if(!loader) return;
     
     forms.forEach(form => {
-        if(form.method.toUpperCase() === 'GET') return; // Skip search bars
+        if(form.method.toUpperCase() === 'GET') return;
         form.addEventListener('submit', () => {
-            loader.classList.remove('hidden');
-            loader.classList.add('flex');
+            if(loader) {
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+            }
         });
     });
 }
 
-// 6. UNIFIED AJAX POLLING WITH EXPONENTIAL BACKOFF
+// 7. UNIFIED AJAX POLLING WITH EXPONENTIAL BACKOFF
 let pendingCount = 0;
 let queueCount = 0;
 let pollInterval = 10000;
@@ -138,20 +191,24 @@ function pollDashboard() {
         let hasNewData = false;
 
         // Pending Badge Update
-        const badge = document.getElementById('pending-badge');
+        const pBadge = document.getElementById('pending-badge');
         if (pendingData.count > 0) {
-            if (badge) { badge.innerText = pendingData.count; badge.classList.remove('hidden'); }
+            if (pBadge) { pBadge.innerText = pendingData.count; pBadge.classList.remove('hidden'); }
         } else {
-            if (badge) badge.classList.add('hidden');
+            if (pBadge) pBadge.classList.add('hidden');
         }
 
-        if (pendingData.count > pendingCount) {
+        // TASK 2: Queue Badge Update
+        const qBadge = document.getElementById('queue-badge');
+        if (queueData.count > 0) {
+            if (qBadge) { qBadge.innerText = queueData.count; qBadge.classList.remove('hidden'); }
+        } else {
+            if (qBadge) qBadge.classList.add('hidden');
+        }
+
+        if (pendingData.count > pendingCount || queueData.count > queueCount) {
             hasNewData = true;
             pendingCount = pendingData.count;
-        }
-
-        if (queueData.count > queueCount) {
-            hasNewData = true;
             queueCount = queueData.count;
         }
 
@@ -163,7 +220,7 @@ function pollDashboard() {
         } else {
             unchangedCycles++;
             if (unchangedCycles >= 5) {
-                pollInterval = 30000; // Backoff to 30s
+                pollInterval = 30000;
             }
         }
     })
