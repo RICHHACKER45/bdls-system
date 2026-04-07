@@ -36,9 +36,13 @@
                 <span id="pending-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
             </button>
 
-            <button onclick="switchTab('queue')" id="nav-queue" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                Queue & Processing
+            <!-- TASK 2: Queue sidebar nav button with badge container -->
+            <button onclick="switchTab('queue')" id="nav-queue" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'queue' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    Queue & Processing
+                </div>
+                <span id="queue-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
             </button>
 
             <button onclick="switchTab('walkin')" id="nav-walkin" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all text-slate-600 hover:bg-slate-100 hover:text-slate-900">
@@ -75,7 +79,9 @@
                 <button onclick="toggleSidebar()" class="lg:hidden text-slate-500 hover:text-slate-900 focus:outline-none p-2 -ml-2 rounded-md active:scale-95 transition-all">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
-                <h1 id="topbar-title" class="text-xl font-bold text-slate-800 hidden sm:block">Pending Registrations</h1>
+                <h1 id="topbar-title" class="text-xl font-bold text-slate-800 hidden sm:block">
+                    {{ session('active_tab') == 'queue' ? 'Queue & Processing' : 'Pending Registrations' }}
+                </h1>
             </div>
 
             <div class="flex items-center gap-3">
@@ -97,7 +103,7 @@
         </main>
     </div>
 
-    <!-- TOAST ALERTS (Consistent with Resident UI) -->
+    <!-- TOAST ALERTS -->
     <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[1] flex flex-col gap-3 w-full max-w-md px-4 pointer-events-none">
         @if(session('success_message') || session('success'))
         <div class="toast-alert bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-auto border-l-4 border-green-400">
@@ -110,14 +116,14 @@
         @endif
     </div>
 
-    <!-- GLOBAL LOADER -->
-    <div id="global-loader" class="fixed inset-0 z-[1] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
+    <!-- TASK 1: Fix z-index so it appears above everything -->
+    <div id="global-loader" class="fixed inset-0 z-[200] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-sm font-bold text-slate-800">Pinoproseso...</p>
+            <p class="text-sm font-bold text-slate-800 uppercase tracking-widest">Pinoproseso...</p>
         </div>
     </div>
 
