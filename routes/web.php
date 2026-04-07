@@ -2,27 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Auth;
-use App\Models\DocumentType;
 use App\Http\Controllers\Admin\AdminDashboardController;
 
 // ==========================================
 // 1. THE SMART TRAFFIC DIRECTOR (Welcome Page)
 // ==========================================
-Route::get('/', function () {
-    if (Auth::check()) {
-        // THE LARAVEL WAY: Admin Check
-        if (Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
-        // Resident Fallback
-        return redirect()->route('resident.dashboard');
-    }
-    // Kung guest, ipakita ang welcome page
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // ==========================================
 // 2. GUEST ROUTES (Para lang sa mga HINDI pa naka-login)
@@ -56,9 +45,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // ==========================================
-    // ADMIN DASHBOARD GROUP
+    // ADMIN DASHBOARD GROUP (Protected by Middleware)
     // ==========================================
-    Route::prefix('admin')
+    Route::middleware(['admin'])
+        ->prefix('admin')
         ->name('admin.')
         ->group(function () {
             // Wala nang mahabang logic dito.
@@ -97,10 +87,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('resident.')
         ->group(function () {
             // Dashboard
-            Route::get('/dashboard', function () {
-                $documents = DocumentType::where('is_active', 1)->get();
-                return view('resident.dashboard', compact('documents'));
-            })->name('dashboard');
+            Route::get('/dashboard', [ServiceRequestController::class, 'index'])->name('dashboard');
 
             // Email & Notification Preferences
             Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name(
