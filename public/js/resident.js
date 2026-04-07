@@ -165,6 +165,22 @@ function initEmailTimer(secondsLeft) {
         }
     }, 1000);
 }
+
+// 7. TASK 3: RESIDENT STATUS POLLING
+function pollResidentStatus() {
+    if(!window.BDLS || !window.BDLS.pollingUrl) return;
+
+    fetch(window.BDLS.pollingUrl)
+        .then(res => res.json())
+        .then(data => {
+            // Reload kung na-verify na (false -> true) o kung nadagdagan ang rejection
+            if(data.is_verified !== window.BDLS.isVerified || data.rejection_count > window.BDLS.rejectionCount) {
+                location.reload();
+            }
+        })
+        .catch(err => console.error('Polling error:', err));
+}
+
 // INITIALIZER (Babasahin ang window.BDLS Config galing sa Laravel Blade)
 document.addEventListener('DOMContentLoaded', () => {
     // I-setup ang UI Utilities
@@ -195,5 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 100);
         }
+
+        // D. TASK 3: Start Status Polling
+        setInterval(pollResidentStatus, 10000); // 10 seconds
     }
 });
