@@ -10,3 +10,5 @@ bootstrap/cache
 .vscode
 .idea
 .phpunit.cache
+.agents
+.ai
