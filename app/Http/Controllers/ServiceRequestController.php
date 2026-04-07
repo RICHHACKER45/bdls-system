@@ -30,6 +30,17 @@ class ServiceRequestController extends Controller
         return view('resident.dashboard', compact('documents'));
     }
 
+    /**
+     * TASK 3: Check Verification Status for Polling
+     */
+    public function checkVerificationStatus()
+    {
+        return response()->json([
+            'is_verified' => Auth::user()->is_verified,
+            'rejection_count' => Auth::user()->rejection_count,
+        ]);
+    }
+
     public function store(Request $request)
     {
         // 1. Validation Check
