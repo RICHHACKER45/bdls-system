@@ -328,7 +328,7 @@
                                 name="contact_number"
                                 required
                                 maxlength="11"
-                                attern="09{9}"
+                                pattern="09{9}"
                                 placeholder="09XXXXXXXXX"
                                 class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-colors duration-200"
                             />
