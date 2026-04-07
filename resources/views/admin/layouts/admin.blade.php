@@ -28,7 +28,7 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-            <button onclick="switchTab('pending')" id="nav-pending" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all bg-slate-900 text-white">
+            <button onclick="switchTab('pending')" id="nav-pending" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab', 'pending') == 'pending' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                 <div class="flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Pending Registrations
