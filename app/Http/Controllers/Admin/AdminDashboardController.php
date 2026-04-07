@@ -96,6 +96,7 @@ class AdminDashboardController extends Controller
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         return back()
+            ->with('active_tab', 'pending')
             ->with('success_title', 'Account Approved')
             ->with(
                 'success_message',
@@ -139,6 +140,7 @@ class AdminDashboardController extends Controller
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         return back()
+            ->with('active_tab', 'pending')
             ->with('success_title', 'Account Rejected')
             ->with('success_message', 'Na-reject ang registration ni ' . $user->first_name);
     }
@@ -183,9 +185,9 @@ class AdminDashboardController extends Controller
             );
         }
 
-        // Idinagdag ang 'active_tab' => 'tab-queue'
+        // Inalis ang 'tab-' prefix para mag-match sa JS logic
         return back()
-            ->with('active_tab', 'tab-queue')
+            ->with('active_tab', 'queue')
             ->with('success_title', 'Status Updated')
             ->with('success_message', 'Queue updated at na-notify na ang residente!');
     }
