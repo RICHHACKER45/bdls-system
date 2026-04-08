@@ -61,8 +61,8 @@ class AdminDashboardController extends Controller
 
     public function checkPendingCount()
     {
-        $count = User::where('role', 'resident')->where('is_verified', false)->count();
-        return response()->json(['count' => $count]);
+        // TASK 1: Use pending scope for accurate count
+        return response()->json(['count' => User::pending()->count()]);
     }
 
     public function approveAccount(User $user, SmsService $smsService)
@@ -75,17 +75,10 @@ class AdminDashboardController extends Controller
             'locked_until' => null,
         ]);
 
-        $message =
-            'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
+        $message = 'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
-        return back()
-            ->with('active_tab', 'pending')
-            ->with('success_title', 'Account Approved')
-            ->with(
-                'success_message',
-                'Matagumpay na na-verify ang account ni ' . $user->first_name,
-            );
+        return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
     }
 
     public function rejectAccount(Request $request, User $user, SmsService $smsService)
@@ -101,26 +94,26 @@ class AdminDashboardController extends Controller
             $message =
                 'Brgy Dona Lucia: Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
         } else {
-            $message =
-                "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May " .
-                (5 - $user->rejection_count) .
-                ' attempts ka pa.';
+            $message = "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May " . (5 - $user->rejection_count) . " attempts ka pa.";
         }
 
         $user->save();
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
-        return back()
-            ->with('active_tab', 'pending')
-            ->with('success_title', 'Account Rejected')
-            ->with('success_message', 'Na-reject ang registration ni ' . $user->first_name);
+        return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
     }
 
-    public function updateRequestStatus(
-        Request $request,
-        ServiceRequest $serviceRequest,
-        SmsService $smsService,
-    ) {
+    /**
+     * TASK 1: Admin Delete Functionality
+     */
+    public function destroyAccount(User $user)
+    {
+        $user->delete();
+        return back()->with('active_tab', 'pending')->with('success_message', 'Resident account deleted permanently.');
+    }
+
+    public function updateRequestStatus(Request $request, ServiceRequest $serviceRequest, SmsService $smsService)
+    {
         $request->validate(['status' => 'required|string']);
         $newStatus = $request->status;
         $serviceRequest->status = $newStatus;
@@ -138,29 +131,16 @@ class AdminDashboardController extends Controller
 
         $serviceRequest->save();
 
+        // TASK 2: Skip SMS if marked as received
         if ($message !== '' && $newStatus !== 'received') {
-            $smsService->sendSms(
-                $serviceRequest->user_id,
-                $serviceRequest->user->contact_number,
-                $message,
-            );
+            $smsService->sendSms($serviceRequest->user_id, $serviceRequest->user->contact_number, $message);
         }
 
-        return back()
-            ->with('active_tab', 'queue')
-            ->with('success_title', 'Status Updated')
-            ->with('success_message', 'Queue updated at na-notify na ang residente!');
+        return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
 
     public function checkQueueCount()
     {
-        $count = ServiceRequest::whereIn('status', [
-            'pending',
-            'for_interview',
-            'processing',
-            'released',
-        ])->count();
-
-        return response()->json(['count' => $count]);
+        return response()->json(['count' => ServiceRequest::whereIn('status', ['pending', 'for_interview', 'processing', 'released'])->count()]);
     }
 }
