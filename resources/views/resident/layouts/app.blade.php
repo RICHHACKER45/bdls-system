@@ -72,8 +72,8 @@
         @endif
     </div>
 
-    <!-- GLOBAL LOADER -->
-    <div id="global-loader" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
+    <!-- GLOBAL LOADER (Increased z-index) -->
+    <div id="global-loader" class="fixed inset-0 z-[200] hidden bg-slate-900/60 backdrop-blur-sm items-center justify-center transition-opacity">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-bounce-slight">
             <svg class="w-10 h-10 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -95,7 +95,6 @@
         };
     </script>
     
-    <!-- ANG ATING BAGONG EXTERNAL JAVASCRIPT -->
     <script src="{{ asset('js/resident.js') }}"></script>
 </body>
 </html>
