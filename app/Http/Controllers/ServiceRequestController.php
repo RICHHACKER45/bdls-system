@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ServiceRequest;
 use App\Models\Attachment;
 use App\Models\DocumentType;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Services\SmsService; // 1. TINAWAG NATIN ANG SERVICE MO
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,35 @@ class ServiceRequestController extends Controller
             'is_verified' => Auth::user()->is_verified,
             'rejection_count' => Auth::user()->rejection_count,
         ]);
+    }
+
+    /**
+     * TASK 4: Resubmit Registration Logic
+     */
+    public function resubmitRegistration(Request $request)
+    {
+        $request->validate([
+            'id_photo_path' => 'required|image|max:5120',
+            'selfie_photo_path' => 'required|image|max:5120',
+        ]);
+
+        $user = Auth::user();
+        
+        // Store new photos
+        $idPath = $request->file('id_photo_path')->store('verification_ids', 'public');
+        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
+
+        // Reset rejection data
+        $user->update([
+            'id_photo_path' => $idPath,
+            'selfie_photo_path' => $selfiePath,
+            'rejection_count' => 0,
+            'rejection_reason' => null,
+            'rejected_at' => null,
+            'locked_until' => null,
+        ]);
+
+        return back()->with('success_message', 'Requirements resubmitted. Your account is back under review.');
     }
 
     public function store(Request $request)
