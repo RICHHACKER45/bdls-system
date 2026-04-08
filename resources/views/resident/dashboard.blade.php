@@ -26,14 +26,14 @@
 
     @if(!Auth::user()->is_verified)
         @if(Auth::user()->rejection_count > 0)
-            <!-- TASK 3: Red Rejection Alert -->
+            <!-- TASK 4: Functional Rejection Alert -->
             <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-xl shadow-sm mb-6">
                 <div class="flex items-center gap-3 text-red-800 font-bold text-lg mb-2">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     Registration Rejected
                 </div>
                 <p class="text-red-700 text-sm mb-4">Your request is rejected. Reason: <span class="font-bold underline">{{ Auth::user()->rejection_reason }}</span>. You still have {{ 5 - Auth::user()->rejection_count }} attempts to request.</p>
-                <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 shadow-sm uppercase tracking-widest">Re-upload Requirements</button>
+                <button type="button" onclick="openResubmitModal()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all active:scale-95 shadow-sm uppercase tracking-widest">Re-upload Requirements</button>
             </div>
         @else
             <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-xl shadow-sm mb-6">
@@ -179,6 +179,33 @@
                 @endif
             </div>
         </div>
+    </div>
+</div>
+
+<!-- TASK 4: RESUBMIT REQUIREMENTS MODAL -->
+<div id="resubmitModal" class="hidden fixed inset-0 z-[110] bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-red-100">
+        <div class="bg-red-50 border-b border-red-100 p-4 flex justify-between items-center text-red-700">
+            <h3 class="text-lg font-black uppercase tracking-tight">Resubmit Requirements</h3>
+            <button onclick="closeResubmitModal()" class="text-red-300 hover:text-red-700 font-bold text-2xl transition-all">&times;</button>
+        </div>
+        <form action="{{ route('resident.resubmit_registration') }}" method="POST" enctype="multipart/form-data" class="p-6">
+            @csrf
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Upload Valid ID</label>
+                    <input type="file" name="id_photo_path" required class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-slate-900 file:text-white hover:file:bg-slate-800 transition-all cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Upload Selfie with ID</label>
+                    <input type="file" name="selfie_photo_path" required class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-slate-900 file:text-white hover:file:bg-slate-800 transition-all cursor-pointer">
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button type="submit" class="w-full bg-slate-900 text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-slate-800 transition-all active:scale-95 shadow-md">Submit for Re-review</button>
+                <button type="button" onclick="closeResubmitModal()" class="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest py-2">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
