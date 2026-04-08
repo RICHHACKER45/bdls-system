@@ -13,8 +13,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * ACCOUNT FILTERING SCOPES (The Laravel Way)
-     * Upang mailipat ang filtering logic sa Database level sa halip na In-Memory Collection.
+     * TASK 1: Fixed Scopes for zero-tolerance pending and multi-attempt rejection
      */
     public function scopePending(Builder $query): Builder
     {
@@ -33,7 +32,6 @@ class User extends Authenticatable
 
     /**
      * VIRTUAL ATTRIBUTE: Age
-     * Inalis ang calculation sa Blade view para sa Better Maintainability.
      */
     protected function age(): Attribute
     {
@@ -65,14 +63,13 @@ class User extends Authenticatable
         'email_otp_code',
         'email_otp_expires_at',
         'wants_email_notification',
-        // THE LARAVEL WAY: Bagong Rejection Tracking Columns
         'rejection_reason',
         'rejection_count',
         'rejected_at',
         'locked_until',
         'is_verified',
-        'terms_accepted_at', // Dinagdag para sa Audit
-        'signup_ip', // Dinagdag para sa Security
+        'terms_accepted_at',
+        'signup_ip',
     ];
 
     /**
