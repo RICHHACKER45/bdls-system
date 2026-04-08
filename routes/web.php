@@ -68,6 +68,10 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'rejectAccount',
             ])->name('reject_account');
+            
+            // TASK 1: Admin Delete Functionality
+            Route::delete('/account/{user}', [AdminDashboardController::class, 'destroyAccount'])->name('delete_account');
+
             // QUEUE MANAGEMENT ROUTE
             Route::post('/request/{serviceRequest}/update-status', [
                 AdminDashboardController::class,
@@ -94,6 +98,9 @@ Route::middleware(['auth'])->group(function () {
                 ServiceRequestController::class,
                 'checkVerificationStatus',
             ])->name('api.status');
+
+            // TASK 4: Resubmit Registration
+            Route::post('/request/resubmit', [ServiceRequestController::class, 'resubmitRegistration'])->name('resubmit_registration');
 
             // Email & Notification Preferences
             Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name(
