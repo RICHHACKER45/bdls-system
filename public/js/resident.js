@@ -12,7 +12,7 @@ function toggleSidebar() {
     }
 }
 
-// 2. TAB SWITCHING (SPA ILLUSION)
+// 2. TAB SWITCHING
 function switchTab(tabId) {
     // Itago lahat ng tabs
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -24,14 +24,14 @@ function switchTab(tabId) {
     // I-reset ang kulay ng lahat ng buttons sa sidebar
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('bg-red-50', 'text-red-700');
-        btn.classList.add('text-slate-600', 'hover:bg-slate-50', 'hover:text-slate-900');
+        btn.classList.add('text-slate-600', 'hover:bg-slate-50');
     });
 
     // Kulayan ng pula ang active na button
     const activeBtn = document.getElementById('nav-' + tabId);
     if(activeBtn) {
         activeBtn.classList.add('bg-red-50', 'text-red-700');
-        activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50', 'hover:text-slate-900');
+        activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50');
     }
 
     // Kung nasa mobile, isara ang sidebar pagkatapos pumili
@@ -41,7 +41,26 @@ function switchTab(tabId) {
     }
 }
 
-// 3. TOAST NOTIFICATION ANIMATION
+// 3. TASK 4: RESUBMIT MODAL LOGIC
+function openResubmitModal() {
+    const modal = document.getElementById('resubmitModal');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeResubmitModal() {
+    const modal = document.getElementById('resubmitModal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// 4. TOASTS & LOADER
 function initToasts() {
     const toasts = document.querySelectorAll('.toast-alert');
     toasts.forEach(toast => {
@@ -63,55 +82,26 @@ function initGlobalLoader() {
     const forms = document.querySelectorAll('form');
     const loader = document.getElementById('global-loader');
     if(!loader) return;
-    const loaderText = loader.querySelector('p');
 
     forms.forEach(form => {
         // Skip kung id is resendOtpForm o ayaw mong mag-load
         if(form.id === 'resendOtpForm') return; 
-
-        form.addEventListener('submit', function (e) {
+        form.addEventListener('submit', function () {
             loader.classList.remove('hidden');
             loader.classList.add('flex');
-            loaderText.innerText = "Pinoproseso...";
-            loaderText.classList.replace('text-red-600', 'text-slate-800');
-
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('cursor-not-allowed', 'opacity-70');
-            }
-
-            // SAFETY NET (30 seconds)
-            setTimeout(() => {
-                loaderText.innerText = "Masyadong matagal ang server. Paki-refresh ang page.";
-                loaderText.classList.replace('text-slate-800', 'text-red-600');
-                window.stop();
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('cursor-not-allowed', 'opacity-70');
-                }
-            }, 30000);
         });
     });
 }
 
-// 5. SERVICE REQUEST MODAL LOGIC
+// 5. SERVICE REQUEST MODAL
 function openRequestModal() {
     const modal = document.getElementById('requestModal');
-    if(modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    }
+    if(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden'; }
 }
 
 function closeRequestModal() {
     const modal = document.getElementById('requestModal');
-    if(modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
-    }
+    if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = 'auto'; }
 }
 
 function showRequirements(selectElement) {
@@ -148,25 +138,7 @@ function showRequirements(selectElement) {
     }
 }
 
-// 6. EMAIL OTP TIMER LOGIC
-function initEmailTimer(secondsLeft) {
-    const btn = document.getElementById('resendBtn');
-    const timerDisplay = document.getElementById('timerDisplay');
-    if(!btn || !timerDisplay || secondsLeft <= 0) return;
-
-    btn.disabled = true;
-    const countdown = setInterval(() => {
-        timerDisplay.innerText = `(${secondsLeft}s)`;
-        secondsLeft--;
-        if (secondsLeft < 0) { 
-            clearInterval(countdown); 
-            btn.disabled = false; 
-            timerDisplay.innerText = ''; 
-        }
-    }, 1000);
-}
-
-// 7. TASK 3: RESIDENT STATUS POLLING
+// 6. TASK 3: RESIDENT STATUS POLLING
 function pollResidentStatus() {
     if(!window.BDLS || !window.BDLS.pollingUrl) return;
 
@@ -192,27 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // A. Tab Retention State
         if (window.BDLS.activeTab) {
             switchTab(window.BDLS.activeTab);
-        } else {
-            switchTab('dashboard'); // Default
         }
 
-        // B. OTP Cooldown Timer
-        if (window.BDLS.emailCooldown > 0) {
-            initEmailTimer(window.BDLS.emailCooldown);
-        }
-
-        // C. Form Error Auto-Open Modal
         if (window.BDLS.hasFormErrors) {
             openRequestModal();
-            setTimeout(() => {
-                const selectEl = document.getElementById('document_type_id');
-                if(selectEl && selectEl.value !== "") {
-                    showRequirements(selectEl);
-                }
-            }, 100);
         }
 
-        // D. TASK 3: Start Status Polling
-        setInterval(pollResidentStatus, 10000); // 10 seconds
+        setInterval(pollResidentStatus, 10000);
     }
 });
