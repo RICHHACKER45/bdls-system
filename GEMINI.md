@@ -81,7 +81,7 @@ Ang system ay gumagamit ng 3rd Party SMS API Provider na may mahigpit na limitas
 - **Separation of Concerns:** JS logic is extracted to `public/js/` (e.g., `resident.js`, `admin.js`, `otp.js`) para ma-cache ng browser at luminis ang Blade files [56, 57].
 - **Database Transactions:** Ang mga critical na save (tulad ng pag-save ng Service Request + pag-text ng SMS) ay nakabalot sa `DB::transaction()`. Kung mag-fail ang SMS, hindi mase-save ang request sa database (Data Integrity) [56].
 - **Middleware Security:** Ang mga admin functions ay protektado hindi lang sa level ng UI, kundi sa level ng Routes gamit ang `AdminMiddleware` upang maiwasan ang "Authorization Leakage" [58].
-- **Performance (Query Scopes):** Pagkuha ng data gamit ang Database-level filtering (SQL) sa halip na In-Memory Collection filtering (`->where()`) upang maiwasan ang Memory Exhaustion sa Vercel [59].
+- **Performance (Query Scopes):** Pagkuha ng data gamit ang Database-level filtering (SQL) sa halip na In-Memory Collection filtering (`->where()`) upang maiwasan ang Memory Exhaustion.
 - **AJAX Polling with Exponential Backoff:** Ang Admin Queue Board ay may live polling na ginagamitan ng `Promise.all()`. Kung walang bagong data matapos ang 5 cycles, magba-backoff ang interval mula 10s papuntang 30s para hindi ma-spam ang server [60].
 - **HMR for Cross-Platform Dev:** Naka-setup ang Vite HMR gamit ang local IP (`192.168.1.4`) para sa real-time testing ng desktop at Samsung A06 5G (Mobile) [60, 61].
 
