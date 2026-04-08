@@ -49,7 +49,8 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'terms.accepted' => 'Kailangan mong sumang-ayon sa Privacy Policy at Terms & Conditions.',
+            'terms.accepted' =>
+                'Kailangan mong sumang-ayon sa Privacy Policy at Terms & Conditions.',
         ];
     }
 }

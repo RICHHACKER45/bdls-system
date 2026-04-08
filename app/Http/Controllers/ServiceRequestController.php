@@ -53,7 +53,7 @@ class ServiceRequestController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         // Store new photos
         $idPath = $request->file('id_photo_path')->store('verification_ids', 'public');
         $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
@@ -68,7 +68,10 @@ class ServiceRequestController extends Controller
             'locked_until' => null,
         ]);
 
-        return back()->with('success_message', 'Requirements resubmitted. Your account is back under review.');
+        return back()->with(
+            'success_message',
+            'Requirements resubmitted. Your account is back under review.',
+        );
     }
 
     public function store(Request $request)

@@ -75,7 +75,8 @@ class AdminDashboardController extends Controller
             'locked_until' => null,
         ]);
 
-        $message = 'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
+        $message =
+            'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
@@ -94,7 +95,10 @@ class AdminDashboardController extends Controller
             $message =
                 'Brgy Dona Lucia: Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
         } else {
-            $message = "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May " . (5 - $user->rejection_count) . " attempts ka pa.";
+            $message =
+                "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May " .
+                (5 - $user->rejection_count) .
+                ' attempts ka pa.';
         }
 
         $user->save();
@@ -109,11 +113,16 @@ class AdminDashboardController extends Controller
     public function destroyAccount(User $user)
     {
         $user->delete();
-        return back()->with('active_tab', 'pending')->with('success_message', 'Resident account deleted permanently.');
+        return back()
+            ->with('active_tab', 'pending')
+            ->with('success_message', 'Resident account deleted permanently.');
     }
 
-    public function updateRequestStatus(Request $request, ServiceRequest $serviceRequest, SmsService $smsService)
-    {
+    public function updateRequestStatus(
+        Request $request,
+        ServiceRequest $serviceRequest,
+        SmsService $smsService,
+    ) {
         $request->validate(['status' => 'required|string']);
         $newStatus = $request->status;
         $serviceRequest->status = $newStatus;
@@ -133,7 +142,11 @@ class AdminDashboardController extends Controller
 
         // TASK 2: Skip SMS if marked as received
         if ($message !== '' && $newStatus !== 'received') {
-            $smsService->sendSms($serviceRequest->user_id, $serviceRequest->user->contact_number, $message);
+            $smsService->sendSms(
+                $serviceRequest->user_id,
+                $serviceRequest->user->contact_number,
+                $message,
+            );
         }
 
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
@@ -141,6 +154,13 @@ class AdminDashboardController extends Controller
 
     public function checkQueueCount()
     {
-        return response()->json(['count' => ServiceRequest::whereIn('status', ['pending', 'for_interview', 'processing', 'released'])->count()]);
+        return response()->json([
+            'count' => ServiceRequest::whereIn('status', [
+                'pending',
+                'for_interview',
+                'processing',
+                'released',
+            ])->count(),
+        ]);
     }
 }
