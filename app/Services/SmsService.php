@@ -102,7 +102,7 @@ class SmsService
 
                 foreach ($chunks as $index => $chunk) {
                     $partNum = $index + 1;
-                    $segmentMessage = "({$partNum}/{$totalChunks}) " . $chunk;
+                    $segmentMessage = $chunk . " ({$partNum}/{$totalChunks})";
                     $this->executeSend(
                         $userId,
                         $recipientContact,

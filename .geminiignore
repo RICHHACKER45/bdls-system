@@ -1,0 +1,31 @@
+# ==========================================
+# BDLS AI IGNORE LIST
+# ==========================================
+
+# 1. SECURITY (Huwag ipabasa sa AI ang mga passwords at database keys)
+.env
+.env.*
+*.key
+
+# 2. HEAVY DEPENDENCIES (Mga files ng Laravel at Node na sobrang laki)
+/vendor/
+/node_modules/
+
+# 3. COMPILED ASSETS & CACHE (Mga hindi nababasang files)
+/public/build/
+/public/hot
+/bootstrap/cache/
+
+# 4. STORAGE & LOGS (Mga pictures ng user at error logs)
+/storage/
+*.log
+
+# 5. LOCK FILES (Milyong linya ng code na hindi kailangang intindihin ng AI)
+composer.lock
+package-lock.json
+yarn.lock
+
+# 6. IDE & OS FILES
+.vscode/
+.idea/
+.DS_Store

@@ -5,10 +5,38 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
+
+    /**
+     * TASK 1: Fixed Scopes for zero-tolerance pending and multi-attempt rejection
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('is_verified', false)->where('rejection_count', 0);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('is_verified', true);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('is_verified', false)->where('rejection_count', '>', 0);
+    }
+
+    /**
+     * VIRTUAL ATTRIBUTE: Age
+     */
+    protected function age(): Attribute
+    {
+        return Attribute::make(get: fn() => \Carbon\Carbon::parse($this->date_of_birth)->age);
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -35,14 +63,13 @@ class User extends Authenticatable
         'email_otp_code',
         'email_otp_expires_at',
         'wants_email_notification',
-        // THE LARAVEL WAY: Bagong Rejection Tracking Columns
         'rejection_reason',
         'rejection_count',
         'rejected_at',
         'locked_until',
         'is_verified',
-        'terms_accepted_at', // Dinagdag para sa Audit
-        'signup_ip', // Dinagdag para sa Security
+        'terms_accepted_at',
+        'signup_ip',
     ];
 
     /**

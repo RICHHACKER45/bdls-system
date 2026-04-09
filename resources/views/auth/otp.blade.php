@@ -73,54 +73,12 @@
             </form>
         </div>
 
-        <!-- FRONTEND TIMER SCRIPT -->
-        @if($cooldown > 0)
+        <!-- THE LARAVEL CONFIG INJECTOR -->
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                let secondsLeft = {{ $cooldown }};
-                const btn = document.getElementById('resendBtn');
-                const timerDisplay = document.getElementById('timerDisplay');
-
-                btn.disabled = true;
-
-                const countdown = setInterval(() => {
-                    timerDisplay.innerText = `(${secondsLeft}s)`;
-                    secondsLeft--;
-
-                    if (secondsLeft < 0) {
-                        clearInterval(countdown);
-                        btn.disabled = false;
-                        timerDisplay.innerText = '';
-                    }
-                }, 1000);
-            });
+            window.OTP_CONFIG = {
+            cooldown: {{ $cooldown }}
+            };
         </script>
-        @endif
-
-    </div>
-
-    <!-- JAVASCRIPT PARA SA AUTO-ADVANCE UX -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const otpBoxes = document.querySelectorAll('.otp-box');
-
-            otpBoxes.forEach((box, index) => {
-                // Kapag nag-type, lipat sa next box
-                box.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, ''); // Numbers only
-                    if (e.target.value !== '' && index < otpBoxes.length - 1) {
-                        otpBoxes[index + 1].focus();
-                    }
-                });
-
-                // Kapag nag-backspace at walang laman, balik sa prev box
-                box.addEventListener('keydown', (e) => {
-                    if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
-                        otpBoxes[index - 1].focus();
-                    }
-                });
-            });
-        });
-    </script>
+        <script src="{{ asset('js/otp.js') }}"></script>
 </body>
 </html>

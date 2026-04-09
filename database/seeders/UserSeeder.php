@@ -36,7 +36,7 @@ class UserSeeder extends Seeder
 
         // 2. DUMMY RESIDENT ACCOUNT PARA MAY MA-TEST KA SA FRONTEND
         User::create([
-            'first_name' => 'Juan',
+            'first_name' => 'Mark',
             'middle_name' => 'Dela',
             'last_name' => 'Cruz',
             'suffix' => null,
@@ -45,13 +45,36 @@ class UserSeeder extends Seeder
             'house_number' => 'Block 1',
             'purok_street' => 'Purok 1',
             'contact_number' => '09000000000',
-            'email' => 'resident@bdls.gov.ph',
+            'email' => 'markdela@gmail.com',
             'password' => Hash::make('password123'),
             'id_photo_path' => 'verification_ids/dummy_id.jpg',
             'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
             'role' => 'resident',
             'contact_verified_at' => now(),
             'is_verified' => 1, // Verified na agad para makapag-request
+            'wants_email_notification' => 0,
+            'terms_accepted_at' => now(),
+            'signup_ip' => '127.0.0.1',
+        ]);
+
+        // 3. DUMMY RESIDENT ACCOUNT FOR UNREGISTERED
+        User::create([
+            'first_name' => 'Juan',
+            'middle_name' => 'Dela',
+            'last_name' => 'Cruz',
+            'suffix' => 'Jr.',
+            'sex' => 'Male',
+            'date_of_birth' => '1995-05-15',
+            'house_number' => '44',
+            'purok_street' => 'Purok 2, Capalungan St.',
+            'contact_number' => '09000000001',
+            'email' => 'Juandela@bdls.gov.ph',
+            'password' => Hash::make('password123'),
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'role' => 'resident',
+            'contact_verified_at' => now(),
+            'is_verified' => 0, // not verified
             'wants_email_notification' => 0,
             'terms_accepted_at' => now(),
             'signup_ip' => '127.0.0.1',

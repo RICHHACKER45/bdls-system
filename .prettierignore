@@ -1,7 +1,12 @@
 node_modules
 vendor
 storage
-public
+public/build
+public/storage
+public/vendor
+public/.htaccess
+public/.hot
+public/robots.txt
 bootstrap/cache
 .env
 .env.*
@@ -10,3 +15,5 @@ bootstrap/cache
 .vscode
 .idea
 .phpunit.cache
+.agents
+.ai
