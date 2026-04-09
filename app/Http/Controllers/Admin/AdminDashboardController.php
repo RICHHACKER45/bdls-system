@@ -76,7 +76,7 @@ class AdminDashboardController extends Controller
         ]);
 
         $message =
-            'Brgy Dona Lucia: Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
+            'Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
@@ -93,10 +93,10 @@ class AdminDashboardController extends Controller
         if ($user->rejection_count >= 5) {
             $user->locked_until = now()->addHours(24);
             $message =
-                'Brgy Dona Lucia: Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
+                'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
         } else {
             $message =
-                "Brgy Dona Lucia: Registration rejected. Rason: {$request->rejection_reason}. May " .
+                "Registration rejected. Rason: {$request->rejection_reason}. May " .
                 (5 - $user->rejection_count) .
                 ' attempts ka pa.';
         }
