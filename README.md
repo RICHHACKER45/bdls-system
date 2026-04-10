@@ -1,59 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Web-Based Service Request Queuing and Notification System for Local Communities Using SMS Technology [1]
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Capstone Project developed for **Barangay Doña Lucia, Quezon, Nueva Ecija** [2]. This system modernizes the traditional barangay service request process by providing a unified digital queue, real-time request tracking, and automated SMS notifications compliant with Philippine NTC regulations [2-5].
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Core Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+*   **Unified Digital Queuing:** Seamlessly manages both Walk-in and Online service requests in a single, fair queuing dashboard [3, 4].
+*   **Shadow Profiles for Walk-ins:** Utilizes Single Table Inheritance (STI) to instantly register walk-in residents with a prefix queue number (e.g., `W-001`) without requiring an email or complex password setup [6].
+*   **NTC-Compliant SMS Engine:** Integrates a robust SMS notification system featuring a 160-character limit optimizer, Unicode (Emoji) trap filtering, Link Blocker, and a Night Curfew (9 PM to 7 AM) safeguard to prevent spam [5, 7-9].
+*   **13 Supported Document Types:** Strictly follows the Citizen's Charter ("Ang Barangay Requests"), supporting documents like Barangay Clearance, Certificate of Indigency, and First Time Jobseekers (FTJ) [10-14].
+*   **"Human-in-the-Loop" Workflow:** Includes functional status markers like `For Interview` and `Ready for Release` to accommodate required physical appearances and physical signatures as mandated by the barangay [15-17].
+*   **F-Pattern & 60/30/10 UI/UX:** Built with a strict Tailwind v4 design system to ensure a clean, accessible, and fast-loading interface on both mobile and desktop devices [18-20].
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Technology Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+*   **Backend:** Laravel 12 (PHP 8.2) [21]
+*   **Frontend:** Blade Templates, Tailwind CSS v4, Vanilla JavaScript (Separated Logic) [21-23]
+*   **Database:** MySQL [24]
+*   **SMS Provider:** 3rd Party API (Fortmed/Custom) [25]
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🗄️ Database Architecture (ERD Summary)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+The system uses a highly optimized relational database structure [24, 26]:
 
-### Premium Partners
+1.  `users`: The core table using Single Table Inheritance for Admins, Online Residents, and Walk-in Residents [6]. Includes soft-locking and rejection tracking [27].
+2.  `document_types`: Seeded with the 13 official barangay request types and their descriptions [28].
+3.  `service_requests`: The central transaction table linking `user_id` and `document_type_id` [29, 30].
+4.  `attachments`: Stores extra uploaded requirements via a 1:N relationship [31, 32].
+5.  `audit_logs`: Tracks administrative actions (Approvals, Rejections, Deletions) [33].
+6.  `notification_logs`: A fail-safe database log of every SMS/Email sent, including delivery status [34, 35].
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 🛡️ Security & Enterprise Architecture
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+This system has passed a strict Laravel 12 Architecture and Security Audit [36]:
+*   **Centralized Authorization:** Uses a custom `AdminMiddleware` registered in `bootstrap/app.php` to protect administrative routes from unauthorized access [37-40].
+*   **Memory Protection:** Implements Eloquent Query Scopes (`scopePending`, `scopeApproved`) in the `User` model to filter records at the database level, preventing Memory Exhaustion (OOM) [41, 42].
+*   **Atomic Database Transactions:** Critical operations (like creating a request and sending an SMS) are wrapped in `DB::transaction()`. If the SMS API fails, the database rolls back to maintain data integrity [22, 43, 44].
+*   **Rate Limiting & Cooldowns:** Protects the SMS API budget by rate-limiting OTP resends and applying IP-based temporary blocks for spam attempts [45, 46].
+*   **Form Requests:** Extracts complex validation logic into dedicated classes like `RegisterRequest` [47, 48].
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 💻 Installation & Setup Guide
 
-## Security Vulnerabilities
+Follow these steps to clone, install, and run the BDLS project on your local machine.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Prerequisites
+*   PHP 8.2 or higher [21]
+*   Composer
+*   Node.js & npm
+*   MySQL Database
 
-## License
+### 1. Clone the Repository
+```bash
+git clone https://github.com/RICHHACKER45/bdls-system.git
+cd bdls-system
+2. Install Backend & Frontend Dependencies
+composer install
+npm install
+3. Environment Configuration
+Copy the example environment file and generate your application key.
+cp .env.example .env
+php artisan key:generate
+Open your .env file and configure your Database and SMS API credentials:
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bdls_db
+DB_USERNAME=root
+DB_PASSWORD=
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# SMS API Configuration
+SMS_DRIVER=api
+SMS_API_URL=your_api_url_here
+SMS_API_KEY=your_api_key_here
+SMS_SENDER_NAME=your_sender_name
+SMS_FROM_NUMBER=your_number
+SMS_PREFIX="Brgy Dona Lucia: "
+4. Run Migrations & Seeders
+This will build the database tables and populate them with the 13 Document Types and default test accounts
+.
+php artisan migrate:fresh --seed
+5. Compile Assets & Run the Server
+Because we are using Vite and Tailwind v4, you must compile the frontend assets before running the PHP server
+.
+npm run build
+# OR for live development: npm run dev
+
+php artisan serve
+Access the application at: http://localhost:8000
