@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\SmsService;
 use App\Models\ServiceRequest;
+use App\Models\DocumentType;
 
 class AdminDashboardController extends Controller
 {
@@ -47,14 +48,17 @@ class AdminDashboardController extends Controller
 
         $receivedQueue = (clone $queueBase)->where('status', 'received')->get();
 
+        $documents = DocumentType::where('is_active', 1)->get();
+
         return view(
-            'admin.dashboard',
+            'admin.admin-panel',
             compact(
                 'pendingAccounts',
                 'approvedAccounts',
                 'rejectedAccounts',
                 'activeQueue',
                 'receivedQueue',
+                'documents'
             ),
         );
     }
@@ -124,13 +128,17 @@ class AdminDashboardController extends Controller
         SmsService $smsService,
     ) {
         $request->validate(['status' => 'required|string']);
-        $newStatus = $request->status;
+        
+        // THE LARAVEL WAY FIX: I-force sa lowercase bago i-save sa database
+        $newStatus = strtolower($request->status);
+        
         $serviceRequest->status = $newStatus;
         $message = '';
 
         if ($newStatus === 'processing') {
             $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
         } elseif ($newStatus === 'for_interview') {
+            // Ito ay magte-text lang kapag naging "For Interview" ang papel
             $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
         } elseif ($newStatus === 'released') {
             $serviceRequest->released_at = now();
@@ -140,7 +148,7 @@ class AdminDashboardController extends Controller
 
         $serviceRequest->save();
 
-        // TASK 2: Skip SMS if marked as received
+        // I-skip ang pag-text kung marked as received na para hindi masayang ang SMS API Budget
         if ($message !== '' && $newStatus !== 'received') {
             $smsService->sendSms(
                 $serviceRequest->user_id,
@@ -163,4 +171,94 @@ class AdminDashboardController extends Controller
             ])->count(),
         ]);
     }
+
+    /**
+     * PHASE 1: Walk-In Search-First Logic
+     */
+    public function searchWalkinAccount(Request $request)
+    {
+        $request->validate([
+            'contact_number' => 'required|string|max:20',
+        ]);
+
+        // Hanapin ang user gamit ang unique contact number
+        $walkinUser = User::where('contact_number', $request->contact_number)->first();
+
+        // Ibalik sa Walk-in Tab kasama ang resulta
+        return back()->with([
+            'active_tab' => 'walkin',
+            'walkin_searched' => true,
+            'walkin_search_number' => $request->contact_number,
+            'walkin_user' => $walkinUser,
+        ]);
+    }
+
+    /**
+     * PHASE 2: Walk-in Shadow Profile & Request Creation
+     */
+    public function storeWalkinRequest(Request $request, SmsService $smsService)
+    {
+        // 1. Validation (Pinagsamang Resident Data at Request Data)
+        $request->validate([
+            'contact_number' => 'required|string|max:20',
+            'is_new_user' => 'required|boolean',
+            'document_type_id' => 'required|exists:document_types,id',
+            'purpose' => 'required|string|max:255',
+            
+            // Required lang kung gagawa ng Shadow Profile:
+            'first_name' => 'required_if:is_new_user,1|string|max:255',
+            'last_name' => 'required_if:is_new_user,1|string|max:255',
+            'sex' => 'required_if:is_new_user,1|string|in:Male,Female',
+            'date_of_birth' => 'required_if:is_new_user,1|date',
+            'house_number' => 'required_if:is_new_user,1|string|max:255',
+            'purok_street' => 'required_if:is_new_user,1|string|max:255',
+        ]);
+
+        // 2. I-wrap sa Transaction para ligtas ang pera sa SMS
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $smsService) {
+            
+            // A. Hanapin o Gumawa ng Shadow Profile
+            if ($request->is_new_user) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'sex' => $request->sex,
+                    'date_of_birth' => $request->date_of_birth,
+                    'house_number' => $request->house_number,
+                    'purok_street' => $request->purok_street,
+                    'contact_number' => $request->contact_number,
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'role' => 'resident',
+                    'is_verified' => true, // Walk-ins are physically verified by Admin
+                    'terms_accepted_at' => now(),
+                ]);
+            } else {
+                $user = User::where('contact_number', $request->contact_number)->firstOrFail();
+            }
+
+            // B. Gumawa ng W-XXX Queue Number (W para sa Walk-in)
+            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')->latest('id')->first();
+            $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
+            $queueNumber = 'W-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+            // C. I-save ang Request sa Database
+            $serviceRequest = ServiceRequest::create([
+                'user_id' => $user->id,
+                'document_type_id' => $request->document_type_id,
+                'request_channel' => 'Walk-in',
+                'queue_number' => $queueNumber,
+                'purpose' => $request->purpose,
+                'preferred_pickup_time' => now()->addDay(), // Default pick-up time
+                'status' => 'pending',
+            ]);
+
+            // D. Magpadala ng SMS Ticket
+            $message = "Brgy Dona Lucia: Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
+            $smsService->sendSms($user->id, $user->contact_number, $message, $serviceRequest->id);
+        });
+
+        // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
+        return redirect()->route('admin.dashboard')->with('active_tab', 'queue')->with('success_message', 'Walk-in Request at Queue Number ay matagumpay na nagawa!');
+    }
+
 }

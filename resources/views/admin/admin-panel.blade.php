@@ -179,49 +179,61 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-                @forelse($activeQueue as $queue)
-                @php
-                    $nextStatus = ''; $btnLabel = '';
-                    $interviewDocs = [3, 4, 5, 6, 8, 11, 12, 13];
-                    if($queue->status == 'pending') { $nextStatus = 'processing'; $btnLabel = 'Process Request'; }
-                    elseif($queue->status == 'processing') {
-                        if(in_array($queue->document_type_id, $interviewDocs)) { $nextStatus = 'for_interview'; $btnLabel = 'Set for Interview'; }
-                        else { $nextStatus = 'released'; $btnLabel = 'Release Document'; }
-                    }
-                    elseif($queue->status == 'for_interview') { $nextStatus = 'released'; $btnLabel = 'Release Document'; }
-                    elseif($queue->status == 'released') { $nextStatus = 'received'; $btnLabel = 'Mark as Received'; }
-                @endphp
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 font-black text-slate-900 text-xl tracking-tighter">{{ $queue->queue_number }}</td>
-                    <td class="p-4">
-                        <p class="font-bold text-slate-900 uppercase leading-none mb-1 text-sm">{{ $queue->user->last_name }}, {{ $queue->user->first_name }}</p>
-                        <p class="text-[10px] text-slate-500 font-mono tracking-tight">{{ $queue->user->contact_number }}</p>
-                    </td>
-                    <td class="p-4 font-bold text-slate-700 text-xs uppercase">{{ $queue->documentType->name ?? 'N/A' }}</td>
-                    <td class="p-4">
-                        <!-- TASK 2: Status Colors -->
-                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm
-                            {{ $queue->status == 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
-                            {{ $queue->status == 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
-                            {{ $queue->status == 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
-                            {{ $queue->status == 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
-                        ">
-                            {{ str_replace('_', ' ', $queue->status) }}
-                        </span>
-                    </td>
-                    <td class="p-4 text-right">
-                        <!-- TASK 2: SMART ONE-WAY BUTTON -->
-                        <button type="button" onclick="openStatusModal('{{ $queue->id }}', '{{ $nextStatus }}', '{{ $btnLabel }}')" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm">
-                            {{ $btnLabel }}
-                        </button>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">Walang aktibong nakapila.</td>
-                </tr>
-                @endforelse
-            </tbody>
+    @forelse($activeQueue as $queue)
+    @php
+        // THE LARAVEL WAY FIX: I-force sa lowercase ang pagbasa para hindi maguluhan ang logic
+        $rawStatus = strtolower($queue->status);
+        $nextStatus = ''; $btnLabel = '';
+        
+        // Mga Dokumento na kailangan ng "Probing Interview" (Face-to-Face)
+        $interviewDocs = [1-8];
+        
+        if($rawStatus == 'pending') { $nextStatus = 'processing'; $btnLabel = 'Process Request'; }
+        elseif($rawStatus == 'processing') {
+            if(in_array($queue->document_type_id, $interviewDocs)) { 
+                $nextStatus = 'for_interview'; $btnLabel = 'Set for Interview'; 
+            } else { 
+                $nextStatus = 'released'; $btnLabel = 'Release Document'; 
+            }
+        }
+        elseif($rawStatus == 'for_interview') { $nextStatus = 'released'; $btnLabel = 'Release Document'; }
+        elseif($rawStatus == 'released') { $nextStatus = 'received'; $btnLabel = 'Mark as Received'; }
+    @endphp
+    <tr class="hover:bg-slate-50 transition-colors">
+        <td class="p-4 font-black text-slate-900 text-xl tracking-tighter">{{ $queue->queue_number }}</td>
+        <td class="p-4">
+            <p class="font-bold text-slate-900 uppercase leading-none mb-1 text-sm">{{ $queue->user->last_name }}, {{ $queue->user->first_name }}</p>
+            <p class="text-[10px] text-slate-500 font-mono tracking-tight">{{ $queue->user->contact_number }}</p>
+        </td>
+        <td class="p-4 font-bold text-slate-700 text-xs uppercase">{{ $queue->documentType->name ?? 'N/A' }}</td>
+        <td class="p-4">
+            <!-- FIXED STATUS COLORS -->
+            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm
+                {{ $rawStatus == 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
+                {{ $rawStatus == 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
+                {{ $rawStatus == 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
+                {{ $rawStatus == 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
+            ">
+                {{ str_replace('_', ' ', $rawStatus) }}
+            </span>
+        </td>
+        <td class="p-4 text-right">
+            <!-- FIXED ONE-WAY BUTTON -->
+            @if($btnLabel !== '')
+            <button type="button" onclick="openStatusModal('{{ $queue->id }}', '{{ $nextStatus }}', '{{ $btnLabel }}')" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm">
+                {{ $btnLabel }}
+            </button>
+            @else
+            <span class="text-xs text-slate-400 font-bold italic">No Action</span>
+            @endif
+        </td>
+    </tr>
+    @empty
+    <tr>
+        <td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">Walang aktibong nakapila.</td>
+    </tr>
+    @endforelse
+</tbody>
         </table>
     </div>
 
@@ -264,9 +276,122 @@
 </div>
 
 <!-- ... other WIP tabs remain hidden ... -->
-<div id="tab-walkin" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800 italic">Walk-in Requests Module (WIP)</h2></div>
-<div id="tab-announcements" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800 italic">Announcements Module (WIP)</h2></div>
-<div id="tab-audit" class="tab-content hidden"><h2 class="text-xl font-bold text-slate-800 italic">System Audit Logs (WIP)</h2></div>
+<!-- ===================================== -->
+<!-- TAB 3: WALK-IN REQUESTS MODULE        -->
+<!-- ===================================== -->
+<div id="tab-walkin" class="tab-content {{ session('active_tab') == 'walkin' ? 'block' : 'hidden' }}">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 max-w-3xl mx-auto">
+        <div class="text-center mb-6">
+            <div class="w-14 h-14 bg-slate-100 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight uppercase">Walk-in Search</h2>
+            <p class="text-sm text-slate-500 font-medium mt-1">Hanapin ang contact number bago gumawa ng request.</p>
+        </div>
+
+        <form action="{{ route('admin.walkin.search') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+            @csrf
+            <div class="flex-1">
+                <!-- THE UI FIX: Binawasan ang tracking para hindi maghiwalay ang numbers at ginawang text-xl -->
+                <input type="text" name="contact_number" value="{{ session('walkin_search_number') }}" required placeholder="09XXXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '');" maxlength="11" class="w-full px-5 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none transition-all font-mono font-bold tracking-widest text-center sm:text-left text-xl">
+            </div>
+            <button type="submit" class="shrink-0 whitespace-nowrap bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-lg transition-all active:scale-95 shadow-sm">
+                I-Search
+            </button>
+        </form>
+
+        <!-- SEARCH RESULTS & FORMS -->
+        @if(session('walkin_searched'))
+            <div class="mt-8 pt-6 border-t border-slate-100">
+                @if(session('walkin_user'))
+                    <!-- FOUND: Existing Resident Form -->
+                    <form action="{{ route('admin.walkin.store') }}" method="POST" class="bg-green-50 border border-green-200 p-5 rounded-xl">
+                        @csrf
+                        <input type="hidden" name="contact_number" value="{{ session('walkin_search_number') }}">
+                        <input type="hidden" name="is_new_user" value="0">
+                        
+                        <div class="mb-4">
+                            <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Record Found</p>
+                            <p class="font-bold text-slate-900 uppercase text-lg leading-none mb-1">{{ session('walkin_user')->last_name }}, {{ session('walkin_user')->first_name }}</p>
+                            <p class="text-xs text-slate-500 font-bold">{{ session('walkin_user')->sex }} | {{ session('walkin_user')->age }} YRS OLD</p>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <select name="document_type_id" required class="flex-1 min-w-0 px-4 py-3 rounded-lg border border-green-300 focus:ring-2 focus:ring-green-600 outline-none text-sm font-bold text-slate-700 bg-white">
+                                <option value="">-- Piliin ang Dokumento --</option>
+                                @foreach($documents as $doc)
+                                    <option value="{{ $doc->id }}">{{ $doc->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="purpose" placeholder="Layunin (Purpose)" required class="flex-1 min-w-0 px-4 py-3 rounded-lg border border-green-300 focus:ring-2 focus:ring-green-600 outline-none text-sm font-bold text-slate-700 bg-white">
+                            <!-- THE UI FIX: Nagdagdag ng shrink-0 at whitespace-nowrap para hindi mapisa ang button -->
+                            <button type="submit" class="shrink-0 whitespace-nowrap bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-lg shadow-sm transition-all active:scale-95">Create Request</button>
+                        </div>
+                    </form>
+                @else
+                    <!-- NOT FOUND: New Shadow Profile Form (Streamlined for fast typing) -->
+                    <form action="{{ route('admin.walkin.store') }}" method="POST" class="bg-amber-50 border border-amber-200 p-5 md:p-6 rounded-xl">
+                        @csrf
+                        <input type="hidden" name="contact_number" value="{{ session('walkin_search_number') }}">
+                        <input type="hidden" name="is_new_user" value="1">
+                        
+                        <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">Walang Record: I-rehistro bilang Walk-in</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                            <input type="text" name="first_name" placeholder="First Name *" required class="w-full px-4 py-2.5 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold bg-white">
+                            <input type="text" name="last_name" placeholder="Last Name *" required class="w-full px-4 py-2.5 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold bg-white">
+                            <select name="sex" required class="w-full px-4 py-2.5 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold bg-white">
+                                <option value="">-- Kasarian * --</option>
+                                <option value="Male">Lalaki</option>
+                                <option value="Female">Babae</option>
+                            </select>
+                            <div class="flex items-center bg-white border border-amber-300 rounded-lg px-3 focus-within:ring-2 focus-within:ring-amber-600">
+                                <span class="text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">DOB*</span>
+                                <input type="date" name="date_of_birth" required class="w-full py-2.5 outline-none text-sm font-bold bg-transparent">
+                            </div>
+                            <input type="text" name="house_number" placeholder="House No. *" required class="w-full px-4 py-2.5 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold bg-white">
+                            <input type="text" name="purok_street" placeholder="Purok/Street *" required class="w-full px-4 py-2.5 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold bg-white">
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 border-t border-amber-200 pt-4 mt-2">
+                            <select name="document_type_id" required class="flex-1 min-w-0 px-4 py-3 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold text-slate-700 bg-white">
+                                <option value="">-- Piliin ang Dokumento --</option>
+                                @foreach($documents as $doc)
+                                    <option value="{{ $doc->id }}">{{ $doc->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="purpose" placeholder="Layunin (Purpose)" required class="flex-1 min-w-0 px-4 py-3 rounded-lg border border-amber-300 focus:ring-2 focus:ring-amber-600 outline-none text-sm font-bold text-slate-700 bg-white">
+                            <!-- THE UI FIX: Nagdagdag ng shrink-0 at whitespace-nowrap -->
+                            <button type="submit" class="shrink-0 whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-lg shadow-sm transition-all active:scale-95">Register & Create</button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+        @endif
+    </div>
+</div>
+
+<!-- ===================================== -->
+<!-- TAB 4: ANNOUNCEMENTS MODULE (WIP)     -->
+<!-- ===================================== -->
+<div id="tab-announcements" class="tab-content hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto mt-8">
+        <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Announcements Module</h2>
+        <p class="text-slate-500 font-bold">This module is still in development...</p>
+    </div>
+</div>
+
+<!-- ===================================== -->
+<!-- TAB 5: SYSTEM AUDIT LOGS (WIP)        -->
+<!-- ===================================== -->
+<div id="tab-audit" class="tab-content hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto mt-8">
+        <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">System Audit Logs</h2>
+        <p class="text-slate-500 font-bold">This module is still in development...</p>
+    </div>
+</div>
 
 <!-- TASK 2: UPDATED STATUS CONFIRMATION MODAL -->
 <div id="statusModal" class="hidden fixed inset-0 z-[110] bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4">
