@@ -62,14 +62,21 @@ Follow these steps to clone, install, and run the BDLS project on your local mac
 ```bash
 git clone https://github.com/RICHHACKER45/bdls-system.git
 cd bdls-system
+```
 2. Install Backend & Frontend Dependencies
+```bash
 composer install
 npm install
+```
 3. Environment Configuration
 Copy the example environment file and generate your application key.
+```
 cp .env.example .env
 php artisan key:generate
+```
+
 Open your .env file and configure your Database and SMS API credentials:
+```
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -84,15 +91,18 @@ SMS_API_KEY=your_api_key_here
 SMS_SENDER_NAME=your_sender_name
 SMS_FROM_NUMBER=your_number
 SMS_PREFIX="Brgy Dona Lucia: "
+```
 4. Run Migrations & Seeders
 This will build the database tables and populate them with the 13 Document Types and default test accounts
-.
+```
 php artisan migrate:fresh --seed
+```
 5. Compile Assets & Run the Server
 Because we are using Vite and Tailwind v4, you must compile the frontend assets before running the PHP server
-.
-npm run build
-# OR for live development: npm run dev
 
-php artisan serve
+RUN:
+```
+npm start
+```
+to start the php artisan engine & npm dev concurrently
 Access the application at: http://localhost:8000
