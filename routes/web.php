@@ -85,6 +85,16 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'checkQueueCount',
             ])->name('api.queue_count');
+            // WALK-IN MODULE ROUTES
+            Route::post('/walkin/search', [
+                AdminDashboardController::class,
+                'searchWalkinAccount',
+            ])->name('walkin.search');
+            // IDAGDAG ITO PARA SA PHASE 2:
+            Route::post('/walkin/store', [
+                AdminDashboardController::class,
+                'storeWalkinRequest',
+            ])->name('walkin.store');
         });
 
     // ==========================================
