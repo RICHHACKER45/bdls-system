@@ -382,6 +382,44 @@
     </div>
 </div>
 
+<script>
+    function updateCharCount(textarea) {
+        const counter = document.getElementById('char_counter');
+        const warning = document.getElementById('char_warning');
+        const btn = document.getElementById('broadcastBtn');
+        let length = textarea.value.length;
+
+        // Front-end Link Blocker UI
+        if(/(http|https|www\.)/i.test(textarea.value)) {
+            warning.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            textarea.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+        } else {
+            warning.classList.add('hidden');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            textarea.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+        }
+
+        // Character counting logic based on NTC Guidelines
+        let credits = 1;
+        if(length > 160) {
+            credits = Math.ceil(length / 153);
+        }
+
+        counter.innerText = `Characters: ${length} (Est. ${credits} Credit/s per user)`;
+        
+        if(length > 160) {
+            counter.classList.add('text-amber-600');
+            counter.classList.remove('text-slate-500');
+        } else {
+            counter.classList.remove('text-amber-600');
+            counter.classList.add('text-slate-500');
+        }
+    }
+</script>
+
 <!-- ===================================== -->
 <!-- TAB 5: SYSTEM AUDIT LOGS (WIP)        -->
 <!-- ===================================== -->
