@@ -51,8 +51,6 @@ return new class extends Migration {
             $table->timestamp('locked_until')->nullable();
 
             $table->timestamp('terms_accepted_at')->nullable();
-            $table->string('signup_ip', 45)->nullable();
-
             $table->timestamps(); // created_at, updated_at
         });
 
