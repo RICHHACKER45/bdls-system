@@ -69,7 +69,6 @@ class User extends Authenticatable
         'locked_until',
         'is_verified',
         'terms_accepted_at',
-        'signup_ip',
     ];
 
     /**
