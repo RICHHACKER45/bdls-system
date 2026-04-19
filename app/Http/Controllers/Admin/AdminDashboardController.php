@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Services\EmailService;
 
 class AdminDashboardController extends Controller
 {
@@ -157,6 +158,7 @@ class AdminDashboardController extends Controller
         Request $request,
         ServiceRequest $serviceRequest,
         SmsService $smsService,
+        EmailService $emailService,
     ) {
         $request->validate(['status' => 'required|string']);
 
@@ -186,6 +188,20 @@ class AdminDashboardController extends Controller
                 $serviceRequest->user->contact_number,
                 $message,
             );
+
+            // 2. Ipadala ang Email (Kung verified at naka-opt-in ang residente)
+            if (
+                $serviceRequest->user->email_verified_at &&
+                $serviceRequest->user->wants_email_notification
+            ) {
+                $emailService->sendEmail(
+                    $serviceRequest->user_id,
+                    $serviceRequest->user->email,
+                    'BDLS Request Update: ' . strtoupper($newStatus),
+                    $message,
+                    $serviceRequest->id,
+                );
+            }
         }
 
         // SYSTEM AUDIT LOG RECORDER (Process 6.0)
@@ -335,8 +351,11 @@ class AdminDashboardController extends Controller
     /**
      * MODULE: Announcements Broadcast
      */
-    public function broadcastAnnouncement(Request $request, SmsService $smsService)
-    {
+    public function broadcastAnnouncement(
+        Request $request,
+        SmsService $smsService,
+        EmailService $emailService,
+    ) {
         //THE LARAVEL WAY: Harangin agad sa controller bago pa mag-process
         $currentHour = (int) now()->format('H');
         if ($currentHour >= 21 || $currentHour < 7) {
@@ -383,6 +402,17 @@ class AdminDashboardController extends Controller
                     null,
                     true,
                 );
+
+                // 2. Ipadala ang Email Broadcast (Kung verified at naka-opt-in ang residente)
+                if ($resident->email_verified_at && $resident->wants_email_notification) {
+                    $emailService->sendEmail(
+                        $resident->id,
+                        $resident->email,
+                        'BDLS Barangay Announcement',
+                        $request->message_body
+                    );
+                }
+                
                 $sentCount++;
             } catch (\Exception $e) {
                 // I-log lang kung may pumalyang isa, wag i-crash ang buong loop
