@@ -54,7 +54,6 @@ class UserSeeder extends Seeder
             'is_verified' => 1, // Verified na agad para makapag-request
             'wants_email_notification' => 0,
             'terms_accepted_at' => now(),
-            'signup_ip' => '127.0.0.1',
         ]);
 
         // 3. DUMMY RESIDENT ACCOUNT FOR UNREGISTERED
@@ -77,7 +76,6 @@ class UserSeeder extends Seeder
             'is_verified' => 0, // not verified
             'wants_email_notification' => 0,
             'terms_accepted_at' => now(),
-            'signup_ip' => '127.0.0.1',
         ]);
     }
 }
