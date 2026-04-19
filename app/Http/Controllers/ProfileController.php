@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Services\EmailService; // 1. TINAWAG NATIN ANG BAGONG SERVICE
 
 class ProfileController extends Controller
 {
+    protected $emailService;
+
+    // 2. THE LARAVEL WAY: Dependency Injection sa Constructor
+    public function __construct(EmailService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
     /**
-     * Mag-generate at magpadala ng Dummy Email OTP
+     * Mag-generate at magpadala ng Email OTP
      */
     public function sendEmailOtp(Request $request)
     {
@@ -46,9 +54,12 @@ class ProfileController extends Controller
         // I-lock ang user ng 60 seconds bago makapag-send ulit
         RateLimiter::hit($rateLimitKey, 60);
 
-        // DUMMY EMAIL INTEGRATION
-        Log::info(
-            "DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}",
+        // 3. THE FIX: Pinalitan ang Log::info ng pormal na Service Call
+        $this->emailService->sendEmail(
+            $user->id,
+            $user->email,
+            'BDLS Email Verification',
+            "Ang iyong BDLS Email Verification Code ay {$otp}"
         );
 
         return back()->with([
@@ -136,9 +147,12 @@ class ProfileController extends Controller
             'email_otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        // DUMMY EMAIL INTEGRATION
-        Log::info(
-            "DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}",
+        // 4. THE FIX: Pinalitan ang Log::info ng pormal na Service Call
+        $this->emailService->sendEmail(
+            $user->id,
+            $user->email,
+            'BDLS Email Verification',
+            "Ang iyong BDLS Email Verification Code ay {$otp}"
         );
 
         return back()->with([
