@@ -475,13 +475,44 @@
 </script>
 
 <!-- ===================================== -->
-<!-- TAB 5: SYSTEM AUDIT LOGS (WIP)        -->
+<!-- TAB 5: SYSTEM AUDIT LOGS              -->
 <!-- ===================================== -->
-<div id="tab-audit" class="tab-content hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto mt-8">
-        <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">System Audit Logs</h2>
-        <p class="text-slate-500 font-bold">This module is still in development...</p>
+<div id="tab-audit" class="tab-content {{ session('active_tab') == 'audit' ? 'block' : 'hidden' }}">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-6">
+        <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">System Audit Logs</h2>
+                <p class="text-sm text-slate-500 font-medium mt-1">Lahat ng aksyon na ginawa ng mga Admin (View-Only).</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-100 border-b border-slate-200 text-slate-500 text-[10px] uppercase tracking-[0.15em]">
+                        <th class="p-4 font-black">Petsa & Oras</th>
+                        <th class="p-4 font-black">Admin</th>
+                        <th class="p-4 font-black">Aksyon</th>
+                        <th class="p-4 font-black w-1/2">Detalye</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($auditLogs as $log)
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-bold text-slate-600 text-xs">{{ \Carbon\Carbon::parse($log->created_at)->format('M d, Y h:i A') }}</td>
+                        <td class="p-4 font-bold text-slate-900 uppercase text-xs">{{ $log->admin->first_name ?? 'System' }} {{ $log->admin->last_name ?? '' }}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 bg-slate-900 text-white rounded text-[9px] font-black uppercase tracking-widest shadow-sm">{{ $log->action }}</span>
+                        </td>
+                        <td class="p-4 text-xs font-medium text-slate-600">{{ $log->description }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">Wala pang naitalang galaw sa system.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
