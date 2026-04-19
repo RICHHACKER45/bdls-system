@@ -72,7 +72,6 @@ class AuthController extends Controller
                 'otp_expires_at' => $otpExpiresAt,
                 // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
                 'terms_accepted_at' => now(), // Kukunin ng Laravel ang petsa at oras ngayon
-                'signup_ip' => $request->ip(), // Kukunin ng Laravel ang IP address nila
             ]);
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)
