@@ -276,7 +276,6 @@ class AdminDashboardController extends Controller
                     'terms_accepted_at' => now(),
                 ]);
             } else {
-                    
                 $user = User::where('contact_number', $request->contact_number)->firstOrFail();
             }
 
@@ -320,9 +319,7 @@ class AdminDashboardController extends Controller
                 );
             } catch (\Exception $e) {
                 // I-log lang ang error para makita mo, pero HINDI magka-crash ang system. Ligtas ang data sa taas.
-                Log::error(
-                    "Walk-in SMS Failed (Queue: {$queueNumber}): " . $e->getMessage(),
-                );
+                Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): " . $e->getMessage());
             }
 
             // ========================================================

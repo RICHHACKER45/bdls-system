@@ -10,11 +10,7 @@ class AuditLog extends Model
     const UPDATED_AT = null;
 
     // 2. SECURITY: Mass Assignment Protection
-    protected $fillable = [
-        'admin_id',
-        'action',
-        'description',
-    ];
+    protected $fillable = ['admin_id', 'action', 'description'];
 
     // 3. ELOQUENT RELATIONSHIP: Kunin ang data ng Admin na gumawa ng action
     public function admin()

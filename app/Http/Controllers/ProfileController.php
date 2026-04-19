@@ -59,7 +59,7 @@ class ProfileController extends Controller
             $user->id,
             $user->email,
             'BDLS Email Verification',
-            "Ang iyong BDLS Email Verification Code ay {$otp}"
+            "Ang iyong BDLS Email Verification Code ay {$otp}",
         );
 
         return back()->with([
@@ -152,7 +152,7 @@ class ProfileController extends Controller
             $user->id,
             $user->email,
             'BDLS Email Verification',
-            "Ang iyong BDLS Email Verification Code ay {$otp}"
+            "Ang iyong BDLS Email Verification Code ay {$otp}",
         );
 
         return back()->with([

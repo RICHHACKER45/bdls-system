@@ -16,7 +16,7 @@ class EmailService
         $recipientEmail,
         $subject,
         $messageContent,
-        $serviceRequestId = null
+        $serviceRequestId = null,
     ) {
         // 1. Poka-Yoke: Haharangin agad kung walang email na ipinasa
         if (!$recipientEmail) {
@@ -31,21 +31,23 @@ class EmailService
         // ==========================================
         try {
             // TODO (Future): Dito ilalagay ang totoong Mail::to($recipientEmail)->send(...)
-            
+
             // DUMMY EMAIL INTEGRATION (For current development phase)
-            Log::info("====================================");
+            Log::info('====================================');
             Log::info("EMAIL SEND INITIATED [To: {$recipientEmail}]");
             Log::info("Subject: {$subject}");
             Log::info("Message: {$messageContent}");
-            Log::info("====================================");
+            Log::info('====================================');
 
             $status = 'Sent (Mock)';
             $providerResponse = 'Simulated via Laravel Log';
-
         } catch (Exception $e) {
             $status = 'Failed (Exception)';
             $providerResponse = $e->getMessage();
-            Log::error("EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: " . $e->getMessage());
+            Log::error(
+                "EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: " .
+                    $e->getMessage(),
+            );
         }
 
         // ==========================================
@@ -63,7 +65,10 @@ class EmailService
             ]);
         } catch (Exception $e) {
             // Ligtas ang system kahit mag-crash ang database
-            Log::critical("DATABASE ERROR: Hindi na-save sa notification_logs ang Email para kay {$recipientEmail}. Error: " . $e->getMessage());
+            Log::critical(
+                "DATABASE ERROR: Hindi na-save sa notification_logs ang Email para kay {$recipientEmail}. Error: " .
+                    $e->getMessage(),
+            );
         }
 
         return $status === 'Sent (Mock)';
