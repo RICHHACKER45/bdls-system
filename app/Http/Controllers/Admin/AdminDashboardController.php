@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\SmsService;
 use App\Models\ServiceRequest;
 use App\Models\DocumentType;
+use App\Models\Announcement;
+use App\Models\AuditLog;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AdminDashboardController extends Controller
 {
@@ -50,6 +56,9 @@ class AdminDashboardController extends Controller
 
         $documents = DocumentType::where('is_active', 1)->get();
 
+        // 6. SYSTEM AUDIT LOGS (Process 6.0)
+        $auditLogs = AuditLog::with('admin')->latest()->get();
+
         return view(
             'admin.admin-panel',
             compact(
@@ -58,7 +67,8 @@ class AdminDashboardController extends Controller
                 'rejectedAccounts',
                 'activeQueue',
                 'receivedQueue',
-                'documents'
+                'documents',
+                'auditLogs', // <--- IDINAGDAG NATIN ITO
             ),
         );
     }
@@ -79,10 +89,15 @@ class AdminDashboardController extends Controller
             'locked_until' => null,
         ]);
 
-        $message =
-            'Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
+        $message = 'Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
+        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'ACCOUNT_APPROVAL',
+            'description' => "Inaprubahan ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
+        ]);
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
     }
 
@@ -96,8 +111,7 @@ class AdminDashboardController extends Controller
 
         if ($user->rejection_count >= 5) {
             $user->locked_until = now()->addHours(24);
-            $message =
-                'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
+            $message = 'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
         } else {
             $message =
                 "Registration rejected. Rason: {$request->rejection_reason}. May " .
@@ -108,15 +122,32 @@ class AdminDashboardController extends Controller
         $user->save();
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
+        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'ACCOUNT_REJECTION',
+            'description' => "Ni-reject ang account ni {$user->first_name} {$user->last_name}. Rason: {$request->rejection_reason}.",
+        ]);
+
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
     }
 
     /**
-     * TASK 1: Admin Delete Functionality
+     * TASK 1: Admin Delete Functionality (Secured with Audit Trail)
      */
     public function destroyAccount(User $user)
     {
+        // 1. THE LARAVEL WAY: I-record muna sa CCTV bago burahin ang ebidensya
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'ACCOUNT_DELETION',
+            'description' => "Permanenteng binura ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
+        ]);
+
+        // 2. I-execute ang deletion (Magka-cascade ito sa service_requests)
         $user->delete();
+
+        // 3. Ibalik sa UI
         return back()
             ->with('active_tab', 'pending')
             ->with('success_message', 'Resident account deleted permanently.');
@@ -128,10 +159,10 @@ class AdminDashboardController extends Controller
         SmsService $smsService,
     ) {
         $request->validate(['status' => 'required|string']);
-        
+
         // THE LARAVEL WAY FIX: I-force sa lowercase bago i-save sa database
         $newStatus = strtolower($request->status);
-        
+
         $serviceRequest->status = $newStatus;
         $message = '';
 
@@ -156,6 +187,16 @@ class AdminDashboardController extends Controller
                 $message,
             );
         }
+
+        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'STATUS_UPDATE',
+            'description' =>
+                "Binago ang status ng request {$serviceRequest->queue_number} papuntang '" .
+                strtoupper($newStatus) .
+                "'.",
+        ]);
 
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
@@ -196,6 +237,9 @@ class AdminDashboardController extends Controller
     /**
      * PHASE 2: Walk-in Shadow Profile & Request Creation
      */
+    /**
+     * PHASE 2: Walk-in Shadow Profile & Request Creation
+     */
     public function storeWalkinRequest(Request $request, SmsService $smsService)
     {
         // 1. Validation (Pinagsamang Resident Data at Request Data)
@@ -204,7 +248,7 @@ class AdminDashboardController extends Controller
             'is_new_user' => 'required|boolean',
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-            
+
             // Required lang kung gagawa ng Shadow Profile:
             'first_name' => 'required_if:is_new_user,1|string|max:255',
             'last_name' => 'required_if:is_new_user,1|string|max:255',
@@ -215,8 +259,7 @@ class AdminDashboardController extends Controller
         ]);
 
         // 2. I-wrap sa Transaction para ligtas ang pera sa SMS
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $smsService) {
-            
+        DB::transaction(function () use ($request, $smsService) {
             // A. Hanapin o Gumawa ng Shadow Profile
             if ($request->is_new_user) {
                 $user = User::create([
@@ -227,17 +270,20 @@ class AdminDashboardController extends Controller
                     'house_number' => $request->house_number,
                     'purok_street' => $request->purok_street,
                     'contact_number' => $request->contact_number,
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'password' => Hash::make(Str::random(12)),
                     'role' => 'resident',
                     'is_verified' => true, // Walk-ins are physically verified by Admin
                     'terms_accepted_at' => now(),
                 ]);
             } else {
+                    
                 $user = User::where('contact_number', $request->contact_number)->firstOrFail();
             }
 
             // B. Gumawa ng W-XXX Queue Number (W para sa Walk-in)
-            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')->latest('id')->first();
+            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')
+                ->latest('id')
+                ->first();
             $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
             $queueNumber = 'W-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
@@ -252,13 +298,114 @@ class AdminDashboardController extends Controller
                 'status' => 'pending',
             ]);
 
-            // D. Magpadala ng SMS Ticket
-            $message = "Brgy Dona Lucia: Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
-            $smsService->sendSms($user->id, $user->contact_number, $message, $serviceRequest->id);
-        });
+            // ========================================================
+            // THE FIX: AUDIT LOG AT TRY-CATCH NA NASA LOOB NG TRANSACTION
+            // ========================================================
+
+            // 1. THE LARAVEL WAY: I-record agad sa Audit Log ang ginawa ni Admin
+            AuditLog::create([
+                'admin_id' => Auth::id(),
+                'action' => 'WALKIN_ENCODED',
+                'description' => "Nag-encode ng walk-in request ({$queueNumber}) para kay {$user->first_name} {$user->last_name}.",
+            ]);
+
+            // 2. DEFENSIVE SECURITY: I-wrap ang SMS sa Try-Catch para hindi mag-rollback ang DB kapag Curfew
+            try {
+                $message = "Brgy Dona Lucia: Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
+                $smsService->sendSms(
+                    $user->id,
+                    $user->contact_number,
+                    $message,
+                    $serviceRequest->id,
+                );
+            } catch (\Exception $e) {
+                // I-log lang ang error para makita mo, pero HINDI magka-crash ang system. Ligtas ang data sa taas.
+                Log::error(
+                    "Walk-in SMS Failed (Queue: {$queueNumber}): " . $e->getMessage(),
+                );
+            }
+
+            // ========================================================
+        }); // <-- Dito nagtatapos ang DB::transaction()
 
         // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
-        return redirect()->route('admin.dashboard')->with('active_tab', 'queue')->with('success_message', 'Walk-in Request at Queue Number ay matagumpay na nagawa!');
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('active_tab', 'queue')
+            ->with('success_message', 'Walk-in Request at Queue Number ay matagumpay na nagawa!');
     }
 
+    /**
+     * MODULE: Announcements Broadcast
+     */
+    public function broadcastAnnouncement(Request $request, SmsService $smsService)
+    {
+        //THE LARAVEL WAY: Harangin agad sa controller bago pa mag-process
+        $currentHour = (int) now()->format('H');
+        if ($currentHour >= 21 || $currentHour < 7) {
+            return back()
+                ->withErrors([
+                    'curfew' =>
+                        'NTC Curfew Active: Bawal mag-text blast mula 9:00 PM hanggang 7:00 AM.',
+                ])
+                ->with('active_tab', 'announcements');
+        }
+        // 1. The Laravel Way: Validation + NTC Anti-Spam Link Blocker
+        $request->validate(
+            [
+                'message_body' => [
+                    'required',
+                    'string',
+                    'not_regex:/(http|https|www\.)/i', // Pinipigilan agad ang links sa backend
+                ],
+            ],
+            [
+                'message_body.not_regex' =>
+                    'Bawal mag-send ng links o website URLs ayon sa NTC Anti-Spam rules.',
+            ],
+        );
+
+        // 2. I-save ang kopya sa Database
+        Announcement::create([
+            'admin_id' => Auth::id(),
+            'message_body' => $request->message_body,
+        ]);
+
+        // 3. Kunin LAHAT ng Verified Residents gamit ang ginawa mong scope
+        $verifiedResidents = User::approved()->get();
+        $sentCount = 0;
+
+        // 4. Mag-text Blast
+        foreach ($verifiedResidents as $resident) {
+            try {
+                // Pansinin ang 'true' sa dulo. Ito ay magti-trigger ng Night Curfew at Chunking sa SmsService mo.
+                $smsService->sendSms(
+                    $resident->id,
+                    $resident->contact_number,
+                    $request->message_body,
+                    null,
+                    true,
+                );
+                $sentCount++;
+            } catch (\Exception $e) {
+                // I-log lang kung may pumalyang isa, wag i-crash ang buong loop
+                Log::error(
+                    "Failed to blast SMS to {$resident->contact_number}: " . $e->getMessage(),
+                );
+            }
+        }
+
+        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'BROADCAST_SMS',
+            'description' => "Nagpadala ng text blast announcement sa {$sentCount} verified na residente.",
+        ]);
+
+        // 5. Ibalik sa tab na may success message
+        return back()->with([
+            'active_tab' => 'announcements',
+            'success_message' => "Broadcast Sent! Matagumpay na naipadala ang anunsyo sa {$sentCount} verified na residente.",
+        ]);
+    }
 }
