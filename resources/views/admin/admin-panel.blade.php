@@ -275,7 +275,7 @@
     </div>
 </div>
 
-<!-- ... other WIP tabs remain hidden ... -->
+
 <!-- ===================================== -->
 <!-- TAB 3: WALK-IN REQUESTS MODULE        -->
 <!-- ===================================== -->
@@ -372,13 +372,67 @@
 </div>
 
 <!-- ===================================== -->
-<!-- TAB 4: ANNOUNCEMENTS MODULE (WIP)     -->
+<!-- TAB 4: ANNOUNCEMENTS MODULE           -->
 <!-- ===================================== -->
-<div id="tab-announcements" class="tab-content hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto mt-8">
-        <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-        <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Announcements Module</h2>
-        <p class="text-slate-500 font-bold">This module is still in development...</p>
+<div id="tab-announcements" class="tab-content {{ session('active_tab') == 'announcements' ? 'block' : 'hidden' }}">
+    <div class="max-w-3xl mx-auto mt-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Broadcast Announcement</h2>
+            </div>
+            
+            <p class="text-sm text-slate-500 font-medium mb-6 pb-6 border-b border-slate-100">Magpadala ng text blast sa lahat ng verified residents ng Barangay. <br><span class="text-amber-600 font-bold">Ayon sa NTC: Bawal ang links at bawal mag-send mula 9:00 PM hanggang 7:00 AM.</span></p>
+
+            @php
+                $currentHour = (int) now()->format('H');
+                $isCurfew = ($currentHour >= 21 || $currentHour < 7);
+            @endphp
+
+            @if($isCurfew || $errors->has('curfew'))
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl shadow-sm">
+                    <div class="flex items-center gap-2 text-red-700 font-black mb-1 uppercase tracking-widest text-xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        NTC SMS Curfew Active
+                    </div>
+                    <p class="text-sm font-bold text-red-600">Pansamantalang naka-disable ang Broadcast (9:00 PM - 7:00 AM) upang sumunod sa Anti-Spam rules. Subukan muli bukas.</p>
+                </div>
+            @endif
+
+            <form action="{{ route('admin.announcements.broadcast') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Mensahe (Message Body) <span class="text-red-500">*</span></label>
+                    <textarea 
+                        name="message_body" 
+                        id="announcement_text" 
+                        rows="5" 
+                        required 
+                        {{ $isCurfew ? 'disabled' : '' }}
+                        placeholder="{{ $isCurfew ? 'Naka-disable ang pag-type tuwing curfew...' : 'I-type ang iyong anunsyo dito...' }}" 
+                        class="w-full px-4 py-3 rounded-xl border @error('message_body') border-red-500 bg-red-50 @else border-slate-300 bg-slate-50 @enderror focus:ring-2 focus:ring-slate-900 outline-none transition-all font-medium text-slate-800 resize-none {{ $isCurfew ? 'opacity-60 cursor-not-allowed bg-slate-100' : '' }}"
+                        oninput="updateCharCount(this)"
+                    >{{ old('message_body') }}</textarea>
+                    
+                    @error('message_body') 
+                        <p class="text-red-600 text-xs mt-2 font-bold">{{ $message }}</p> 
+                    @enderror
+
+                    <div class="flex justify-between items-start mt-2">
+                        <p id="char_warning" class="text-xs font-bold text-red-600 hidden mt-1">⚠️ Bawal mag-send ng links (http/www).</p>
+                        <p id="char_counter" class="text-xs font-bold text-slate-500 ml-auto mt-1">Characters: 0/160 (Est. 1 Credit per user)</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" id="broadcastBtn" {{ $isCurfew ? 'disabled' : '' }} class="bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl transition-all active:scale-95 shadow-md flex items-center gap-2 {{ $isCurfew ? 'opacity-50 cursor-not-allowed hover:bg-slate-900 active:scale-100' : '' }}">
+                        Send Broadcast
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
