@@ -95,6 +95,12 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'storeWalkinRequest',
             ])->name('walkin.store');
+
+            // ANNOUNCEMENTS ROUTE
+            Route::post('/announcements/broadcast', [
+                AdminDashboardController::class,
+                'broadcastAnnouncement',
+            ])->name('announcements.broadcast');
         });
 
     // ==========================================
