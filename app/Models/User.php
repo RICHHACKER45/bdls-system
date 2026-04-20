@@ -15,16 +15,17 @@ class User extends Authenticatable
     /**
      * TASK 1: Fixed Scopes for zero-tolerance pending and multi-attempt rejection
      */
-    
+
     /**
      * ACCOUNT FILTERING SCOPES (The Laravel Way)
      */
     public function scopePending(Builder $query): Builder
     {
-        // THE FIX: Dapat verified muna ang OTP bago lumabas sa Admin Dashboard
-        return $query->where('is_verified', false)
-                     ->where('rejection_count', '<', 5)
-                     ->whereNotNull('contact_verified_at');
+        // THE FIX: Dapat 0 ang rejection count para maituring na "Under Review" lang.
+        return $query
+            ->where('is_verified', false)
+            ->where('rejection_count', 0)
+            ->whereNotNull('contact_verified_at');
     }
 
     public function scopeApproved(Builder $query): Builder
