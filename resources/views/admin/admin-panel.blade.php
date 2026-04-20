@@ -623,7 +623,7 @@
 <!-- ===================================== -->
 <!-- IN-APP PDF VIEWER MODAL (SPA Illusion) -->
 <!-- ===================================== -->
-<div id="pdfModal" class="hidden fixed inset-0 z-[500] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
+<div id="pdfModal" class="hidden fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         <!-- Modal Header -->
         <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
