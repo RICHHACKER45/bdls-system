@@ -157,11 +157,11 @@
 <div id="tab-queue" class="tab-content {{ session('active_tab') == 'queue' ? 'block' : 'hidden' }}">
     
     <!-- TASK 2: Horizontal sub-tab for Active vs Received -->
-    <div class="flex gap-4 mb-6 border-b border-slate-200">
-        <button onclick="showSubTab('queue-active', this)" class="sub-tab-btn px-6 py-3 font-black text-[11px] uppercase tracking-[0.2em] border-b-2 border-slate-900 text-slate-900 transition-all">
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2 mt-6">
+        <button onclick="showSubTab('queue-active', this)" class="sub-tab-btn px-5 py-2 rounded-full bg-slate-900 text-white font-bold text-sm whitespace-nowrap transition-all border border-slate-900">
             Active Queue ({{ $activeQueue->count() }})
         </button>
-        <button onclick="showSubTab('queue-received', this)" class="sub-tab-btn px-6 py-3 font-black text-[11px] uppercase tracking-[0.2em] border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all">
+        <button onclick="showSubTab('queue-received', this)" class="sub-tab-btn px-5 py-2 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold text-sm whitespace-nowrap transition-all border border-transparent">
             Received History ({{ $receivedQueue->count() }})
         </button>
     </div>
@@ -213,18 +213,29 @@
                 {{ $rawStatus == 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
                 {{ $rawStatus == 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
                 {{ $rawStatus == 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
+                {{ $rawStatus == 'rejected' || $rawStatus == 'canceled' ? 'bg-red-100 text-red-700 border border-red-200' : '' }}
             ">
                 {{ str_replace('_', ' ', $rawStatus) }}
             </span>
         </td>
-        <td class="p-4 text-right">
-            <!-- FIXED ONE-WAY BUTTON -->
+        <td class="p-4 text-right flex justify-end gap-2">
+            <!-- PRIMARY ACTION (Process/Release) -->
             @if($btnLabel !== '')
             <button type="button" onclick="openStatusModal('{{ $queue->id }}', '{{ $nextStatus }}', '{{ $btnLabel }}')" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm">
                 {{ $btnLabel }}
             </button>
-            @else
-            <span class="text-xs text-slate-400 font-bold italic">No Action</span>
+            @endif
+
+            <!-- DANGER ACTION (Reject) - Lilitaw lang kung pending o processing pa -->
+            @if($rawStatus === 'pending' || $rawStatus === 'processing')
+                <button type="button" onclick="openStatusModal('{{ $queue->id }}', 'rejected', 'Reject Request')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm">
+                    Reject
+                </button>
+            @endif
+
+            <!-- NO ACTION STATE -->
+            @if($btnLabel === '' && $rawStatus !== 'pending' && $rawStatus !== 'processing')
+                <span class="text-xs text-slate-400 font-bold italic mt-2">No Action</span>
             @endif
         </td>
     </tr>
