@@ -623,6 +623,7 @@
 <!-- ===================================== -->
 <!-- IN-APP PDF VIEWER MODAL (SPA Illusion) -->
 <!-- ===================================== -->
+<!-- THE FIX 1: Ginawang z-[1] ang z-index para ma-blur ang buong app -->
 <div id="pdfModal" class="hidden fixed inset-0 z-[1] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         <!-- Modal Header -->
@@ -635,11 +636,12 @@
         </div>
         <!-- Modal Body: IFRAME na sasalo ng PDF form submission -->
         <div class="flex-1 w-full bg-slate-200 relative">
-            <!-- Placeholder loading spinner na matatakpan ng iframe kapag nag-load -->
+            <!-- Placeholder loading spinner (Lilitaw habang wala pang PDF) -->
             <div class="absolute inset-0 flex items-center justify-center -z-10">
                 <svg class="w-10 h-10 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </div>
-            <iframe name="pdfViewerFrame" id="pdfViewerFrame" class="w-full h-full bg-white z-10 relative"></iframe>
+            <!-- THE FIX 2: Idinagdag ang onload="hideGlobalLoader()" -->
+            <iframe name="pdfViewerFrame" id="pdfViewerFrame" onload="hideGlobalLoader()" class="w-full h-full bg-white z-10 relative"></iframe>
         </div>
         <!-- Modal Footer -->
         <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
@@ -649,12 +651,13 @@
 </div>
 
 <script>
-    // JS Logic para sa In-App PDF Modal (Maaaring ilipat sa admin.js)
+    // JS Logic para sa In-App PDF Modal (SPA Illusion)
     function openPdfModal() {
         const modal = document.getElementById('pdfModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
+        // Hahayaan nating lumabas ang global loader (z-[2]) dahil automatic itong tini-trigger ng form submit.
     }
 
     function closePdfModal() {
@@ -662,8 +665,17 @@
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         document.body.style.overflow = 'auto';
-        // Clear the iframe para hindi naiipon ang memory
+        // Clear the iframe para hindi naiipon ang memory at mag-reset
         document.getElementById('pdfViewerFrame').src = 'about:blank';
+    }
+
+    // THE FIX 3: Ang function na papatay sa infinite loop ng loader
+    function hideGlobalLoader() {
+        const loader = document.getElementById('global-loader');
+        if (loader) {
+            loader.classList.add('hidden');
+            loader.classList.remove('flex');
+        }
     }
 </script>
 
