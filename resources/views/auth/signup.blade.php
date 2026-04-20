@@ -492,7 +492,7 @@
                         <!-- Selfie with ID Upload -->
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <label class="block text-sm font-semibold text-slate-700 mb-2"
-                                >Upload Selfie with ID <span class="text-red-500">*</span></label
+                                >Upload Selfie <span class="text-red-500">*</span></label
                             >
 
                             <!-- Nakatagong File Input (sr-only) -->
