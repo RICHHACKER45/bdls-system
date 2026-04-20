@@ -101,6 +101,11 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'broadcastAnnouncement',
             ])->name('announcements.broadcast');
+            // REPORTS & LOGS ROUTE (Process 5.0)
+            Route::post('/reports/generate', [
+                AdminDashboardController::class,
+                'generateReport',
+            ])->name('reports.generate');
         });
 
     // ==========================================

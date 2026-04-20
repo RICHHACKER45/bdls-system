@@ -475,19 +475,31 @@
 </script>
 
 <!-- ===================================== -->
-<!-- TAB 5: SYSTEM AUDIT LOGS              -->
+<!-- TAB 5: REPORTS & LOGS (Process 5.0 & 6.0) -->
 <!-- ===================================== -->
 <div id="tab-audit" class="tab-content {{ session('active_tab') == 'audit' ? 'block' : 'hidden' }}">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-6">
-        <div class="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-            <div>
-                <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">System Audit Logs</h2>
-                <p class="text-sm text-slate-500 font-medium mt-1">Lahat ng aksyon na ginawa ng mga Admin (View-Only).</p>
-            </div>
+    
+    <!-- SUB-TAB BUTTONS -->
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2 mt-6">
+        <button onclick="showSubTab('sub-audit-trail', this)" class="sub-tab-btn px-5 py-2 rounded-full bg-slate-900 text-white font-bold text-sm whitespace-nowrap transition-all border border-slate-900">
+            System Audit Trail
+        </button>
+        <button onclick="showSubTab('sub-notif-history', this)" class="sub-tab-btn px-5 py-2 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold text-sm whitespace-nowrap transition-all border border-transparent">
+            Notification History
+        </button>
+        <button onclick="showSubTab('sub-generate-pdf', this)" class="sub-tab-btn px-5 py-2 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold text-sm whitespace-nowrap transition-all border border-transparent">
+            Generate Analytics
+        </button>
+    </div>
+
+    <!-- 1. SYSTEM AUDIT TRAIL -->
+    <div id="sub-audit-trail" class="sub-tab-content block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 bg-slate-50">
+            <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">System Audit Logs</h2>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left border-collapse relative">
+                <thead class="sticky top-0 z-10">
                     <tr class="bg-slate-100 border-b border-slate-200 text-slate-500 text-[10px] uppercase tracking-[0.15em]">
                         <th class="p-4 font-black">Petsa & Oras</th>
                         <th class="p-4 font-black">Admin</th>
@@ -506,15 +518,154 @@
                         <td class="p-4 text-xs font-medium text-slate-600">{{ $log->description }}</td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">Wala pang naitalang galaw sa system.</td>
-                    </tr>
+                    <tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold italic">Wala pang naitalang galaw sa system.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+    <!-- 2. NOTIFICATION HISTORY -->
+    <div id="sub-notif-history" class="sub-tab-content hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 bg-slate-50">
+            <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Notification History</h2>
+        </div>
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left border-collapse relative">
+                <thead class="sticky top-0 z-10">
+                    <tr class="bg-slate-100 border-b border-slate-200 text-slate-500 text-[10px] uppercase tracking-[0.15em]">
+                        <th class="p-4 font-black">Petsa & Oras</th>
+                        <th class="p-4 font-black">Residente</th>
+                        <th class="p-4 font-black">Channel</th>
+                        <th class="p-4 font-black w-2/5">Mensahe</th>
+                        <th class="p-4 font-black text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($notificationLogs as $notif)
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-bold text-slate-600 text-xs">{{ \Carbon\Carbon::parse($notif->created_at)->format('M d, Y h:i A') }}</td>
+                        <td class="p-4">
+                            <p class="font-bold text-slate-900 text-xs uppercase">{{ $notif->user->first_name ?? 'N/A' }} {{ $notif->user->last_name ?? '' }}</p>
+                            <p class="text-[9px] font-mono text-slate-500">{{ $notif->recipient_contact }}</p>
+                        </td>
+                        <td class="p-4">
+                            @if(strtolower($notif->channel) == 'sms')
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 border border-blue-200 rounded text-[9px] font-black uppercase tracking-widest shadow-sm">SMS</span>
+                            @else
+                                <span class="px-2 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded text-[9px] font-black uppercase tracking-widest shadow-sm">EMAIL</span>
+                            @endif
+                        </td>
+                        <td class="p-4 text-[11px] font-medium text-slate-600 line-clamp-2" title="{{ $notif->message_content }}">{{ $notif->message_content }}</td>
+                        <td class="p-4 text-right">
+                            @if(str_contains(strtolower($notif->status), 'sent'))
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[9px] font-black uppercase tracking-widest">{{ $notif->status }}</span>
+                            @else
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-[9px] font-black uppercase tracking-widest" title="{{ $notif->provider_response }}">{{ $notif->status }}</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="5" class="p-12 text-center text-slate-400 font-bold italic">Walang record ng notifications.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. GENERATE ANALYTICS (CUSTOM DROPDOWNS & MODAL TARGET) -->
+    <div id="sub-generate-pdf" class="sub-tab-content hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 bg-slate-50">
+            <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Generate System Analytics</h2>
+        </div>
+        <div class="p-8 max-w-2xl mx-auto my-8">
+            <!-- PANSININ ANG TARGET: Tumuturo ito sa pangalan ng iframe sa loob ng modal natin -->
+            <form action="{{ route('admin.reports.generate') }}" method="POST" target="pdfViewerFrame" onsubmit="openPdfModal()" class="flex flex-col gap-6">
+                @csrf
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Piliin ang Buwan <span class="text-red-500">*</span></label>
+                        <select name="report_month" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-700 bg-white cursor-pointer">
+                            <option value="all">Buong Taon (All Months)</option>
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03" selected>March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Piliin ang Taon <span class="text-red-500">*</span></label>
+                        <select name="report_year" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-700 bg-white cursor-pointer">
+                            @for($y = date('Y'); $y >= 2024; $y--)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl transition-all active:scale-95 shadow-md flex justify-center items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    Tingnan ang Analytics (In-App)
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
+
+<!-- ===================================== -->
+<!-- IN-APP PDF VIEWER MODAL (SPA Illusion) -->
+<!-- ===================================== -->
+<div id="pdfModal" class="hidden fixed inset-0 z-[1] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+        <!-- Modal Header -->
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                System Analytics Report
+            </h2>
+            <button onclick="closePdfModal()" class="text-slate-400 hover:text-red-600 font-bold text-3xl leading-none transition-all">&times;</button>
+        </div>
+        <!-- Modal Body: IFRAME na sasalo ng PDF form submission -->
+        <div class="flex-1 w-full bg-slate-200 relative">
+            <!-- Placeholder loading spinner na matatakpan ng iframe kapag nag-load -->
+            <div class="absolute inset-0 flex items-center justify-center -z-10">
+                <svg class="w-10 h-10 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </div>
+            <iframe name="pdfViewerFrame" id="pdfViewerFrame" class="w-full h-full bg-white z-10 relative"></iframe>
+        </div>
+        <!-- Modal Footer -->
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+            <button onclick="closePdfModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest py-3 px-8 rounded-xl transition-all active:scale-95">Isara ang Report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JS Logic para sa In-App PDF Modal (Maaaring ilipat sa admin.js)
+    function openPdfModal() {
+        const modal = document.getElementById('pdfModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePdfModal() {
+        const modal = document.getElementById('pdfModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        // Clear the iframe para hindi naiipon ang memory
+        document.getElementById('pdfViewerFrame').src = 'about:blank';
+    }
+</script>
 
 <!-- TASK 2: UPDATED STATUS CONFIRMATION MODAL -->
 <div id="statusModal" class="hidden fixed inset-0 z-[110] bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4">

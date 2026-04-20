@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Services\EmailService;
+use App\Models\NotificationLog;
+use Carbon\Carbon;
 
 class AdminDashboardController extends Controller
 {
@@ -59,6 +61,7 @@ class AdminDashboardController extends Controller
 
         // 6. SYSTEM AUDIT LOGS (Process 6.0)
         $auditLogs = AuditLog::with('admin')->latest()->get();
+        $notificationLogs = NotificationLog::with('user')->latest()->get(); // <-- IDINAGDAG NATIN ITO
 
         return view(
             'admin.admin-panel',
@@ -69,7 +72,8 @@ class AdminDashboardController extends Controller
                 'activeQueue',
                 'receivedQueue',
                 'documents',
-                'auditLogs', // <--- IDINAGDAG NATIN ITO
+                'auditLogs',
+                'notificationLogs', // <--- IDINAGDAG NATIN ITO
             ),
         );
     }
@@ -407,7 +411,7 @@ class AdminDashboardController extends Controller
                         $resident->id,
                         $resident->email,
                         'BDLS Barangay Announcement',
-                        $request->message_body
+                        $request->message_body,
                     );
                 }
 
@@ -432,5 +436,41 @@ class AdminDashboardController extends Controller
             'active_tab' => 'announcements',
             'success_message' => "Broadcast Sent! Matagumpay na naipadala ang anunsyo sa {$sentCount} verified na residente.",
         ]);
+    }
+
+    /**
+     * MODULE: Generate Analytics PDF (Process 5.0)
+     */
+    public function generateReport(Request $request)
+    {
+        // 1. Validation ng Dropdowns
+        $request->validate([
+            'report_month' => 'required|string',
+            'report_year' => 'required|numeric|min:2024',
+        ]);
+
+        $year = $request->report_year;
+        $month = $request->report_month;
+
+        // 2. THE LARAVEL WAY: Carbon Date Parsing
+        if ($month === 'all') {
+            $startDate = Carbon::create($year, 1, 1)->startOfYear();
+            $endDate = Carbon::create($year, 1, 1)->endOfYear();
+            $reportTitle = "Taunang Ulat para sa " . $year;
+        } else {
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+            $reportTitle = "Ulat para sa Buwan ng " . $startDate->format('F Y');
+        }
+
+        // 3. PANSAMANTALANG DUMMY HTML (Ito ang lilitaw sa Modal mo habang hindi pa tayo nag-i-install ng DOMPDF)
+        return response("
+            <html><body style='font-family:sans-serif; padding: 2rem; text-align:center;'>
+                <h1 style='color: #0f172a;'>{$reportTitle}</h1>
+                <p><strong>Mula:</strong> {$startDate->format('M d, Y')} &nbsp;|&nbsp; <strong>Hanggang:</strong> {$endDate->format('M d, Y')}</p>
+                <hr style='margin: 2rem 0; border: 1px solid #e2e8f0;'/>
+                <p style='color: #64748b;'><em>Ang DOMPDF library ay i-i-install pa lang natin sa susunod na hakbang para maging totoong PDF ang pahinang ito.</em></p>
+            </body></html>
+        ");
     }
 }
