@@ -225,6 +225,14 @@ class AdminDashboardController extends Controller
                 "'.",
         ]);
 
+         // ==========================================
+        // THE FIX: Soft Delete for Rejected Requests
+        // ==========================================
+        if ($newStatus === 'rejected') {
+            $serviceRequest->delete(); // Ligtas na itatago ng Laravel ang request
+            return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at inalis sa listahan.');
+        }
+
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
 

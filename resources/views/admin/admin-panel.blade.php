@@ -792,7 +792,8 @@
             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-900">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </div>
-            <h3 class="text-xl font-black text-slate-900 uppercase tracking-tight">Move to <span id="nextStatusLabel" class="text-blue-600">...</span>?</h3>
+            <!-- THE FIX: Nilagyan ng id="statusModalTitle" ang h3 tag para makontrol ng JS -->
+            <h3 id="statusModalTitle" class="text-xl font-black text-slate-900 uppercase tracking-tight">Move to <span id="nextStatusLabel" class="text-blue-600">...</span>?</h3>
             <p class="text-sm text-slate-500 font-medium px-4 mt-2">Sigurado ka bang gusto mong i-update ang status ng request na ito?</p>
         </div>
 

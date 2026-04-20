@@ -72,24 +72,27 @@ function showSubTab(tabId, btnElement) {
   }
 }
 
-// 4. TASK 2: UPDATED ONE-WAY STATUS MODAL
+// 4. TASK 2: UPDATED ONE-WAY STATUS MODAL (Grammar & UX Fix)
 function openStatusModal(requestId, nextStatus, nextStatusLabel) {
-  const modal = document.getElementById('statusModal');
-  const label = document.getElementById('nextStatusLabel');
-  const input = document.getElementById('targetStatusInput');
-  const form = document.getElementById('statusForm');
+    const modal = document.getElementById('statusModal');
+    const titleLabel = document.getElementById('statusModalTitle'); // THE FIX: Kinuha ang buong Title
+    const input = document.getElementById('targetStatusInput');
+    const form = document.getElementById('statusForm');
 
-  if (modal && label && input && form) {
-    label.innerText = nextStatusLabel;
-    input.value = nextStatus;
-    form.action = `/admin/request/${requestId}/update-status`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-}
+    if (modal && titleLabel && input && form) {
+        
+        // THE FIX: Smart Grammar Routing
+        if (nextStatus === 'rejected') {
+            titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
+        } else {
+            titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
+        }
 
-function closeStatusModal() {
-  document.getElementById('statusModal').classList.add('hidden');
+        input.value = nextStatus;
+        form.action = `/admin/request/${requestId}/update-status`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 }
 
 // 5. TASK 1: DELETE MODAL LOGIC
