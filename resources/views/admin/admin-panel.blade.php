@@ -242,10 +242,11 @@
         <!-- THE FIX: Logbook Print Header -->
         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Released Records</h3>
-            <a href="{{ route('admin.queue.print_logbook') }}" target="_blank" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm flex items-center gap-2">
+            <!-- THE FIX: Binago from <a> tag papuntang Modal Trigger Button -->
+            <button onclick="openLogbookModal('{{ route('admin.queue.print_logbook') }}')" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                Print Logbook
-            </a>
+                Tingnan ang Logbook
+            </button>
         </div>
     
         <table class="w-full text-left border-collapse">
@@ -744,6 +745,33 @@
             loader.classList.remove('flex');
         }
     }
+
+    // JS Logic para sa Logbook Modal
+    function openLogbookModal(url) {
+        const modal = document.getElementById('logbookModal');
+        const loader = document.getElementById('global-loader');
+        
+        // I-trigger ang loader habang nag-ge-generate pa ng PDF ang server
+        if (loader) {
+            loader.classList.remove('hidden');
+            loader.classList.add('flex');
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        
+        // I-assign ang URL sa iframe para mag-load
+        document.getElementById('logbookViewerFrame').src = url;
+    }
+
+    function closeLogbookModal() {
+        const modal = document.getElementById('logbookModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        document.getElementById('logbookViewerFrame').src = 'about:blank';
+    }
 </script>
 
 <!-- TASK 2: UPDATED STATUS CONFIRMATION MODAL -->
@@ -832,6 +860,37 @@
                 <button type="submit" class="flex-1 bg-red-600 text-white font-black text-[10px] uppercase tracking-widest py-3 rounded-xl hover:bg-red-700 transition-all active:scale-95 shadow-md">I-Submit Reject</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ===================================== -->
+<!-- IN-APP LOGBOOK VIEWER MODAL           -->
+<!-- ===================================== -->
+<div id="logbookModal" class="hidden fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+        <!-- Modal Header -->
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Official Release Logbook
+            </h2>
+            <button onclick="closeLogbookModal()" class="text-slate-400 hover:text-red-600 font-bold text-3xl leading-none transition-all">&times;</button>
+        </div>
+        <!-- Modal Body: IFRAME -->
+        <div class="flex-1 w-full bg-slate-200 relative">
+            <div class="absolute inset-0 flex items-center justify-center -z-10">
+                <svg class="w-10 h-10 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </div>
+            <iframe name="logbookViewerFrame" id="logbookViewerFrame" onload="hideGlobalLoader()" class="w-full h-full bg-white z-10 relative"></iframe>
+        </div>
+        <!-- Modal Footer: WITH DOWNLOAD BUTTON -->
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+            <a href="{{ route('admin.queue.print_logbook') }}?download=1" class="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest py-3 px-6 rounded-xl transition-all active:scale-95 flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                I-Download ang Logbook
+            </a>
+            <button onclick="closeLogbookModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest py-3 px-8 rounded-xl transition-all active:scale-95 shadow-sm">Isara</button>
+        </div>
     </div>
 </div>
 @endsection

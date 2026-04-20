@@ -498,7 +498,7 @@ class AdminDashboardController extends Controller
      * MODULE: Maintain Release Logbook (Use Case Requirement)
      * Nag-ge-generate ng PDF listahan ng lahat ng nai-release na dokumento.
      */
-    public function printReleaseLogbook()
+    public function printReleaseLogbook(Request $request) // <-- THE FIX: Dinagdagan ng Request $request
     {
         // 1. Kunin ang lahat ng tapos nang dokumento
         $receivedRequests = ServiceRequest::with(['user', 'documentType'])
@@ -515,9 +515,15 @@ class AdminDashboardController extends Controller
 
         // 3. I-pasa sa PDF Engine
         $pdf = Pdf::loadView('admin.pdf.release_logbook', compact('receivedRequests'));
+        $filename = 'BDLS_Release_Logbook_' . now()->format('Y_m_d') . '.pdf';
 
-        // 4. Buksan sa bagong tab para ma-print agad ni Admin
-        return $pdf->stream('BDLS_Release_Logbook_' . now()->format('Y_m_d') . '.pdf');
+        // 4. THE FIX: Check kung In-App View ba o Force Download
+        if ($request->has('download') && $request->download == '1') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
+
 
 }
