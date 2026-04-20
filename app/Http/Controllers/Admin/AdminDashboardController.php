@@ -56,7 +56,10 @@ class AdminDashboardController extends Controller
             ->whereIn('status', ['pending', 'processing', 'for_interview', 'released'])
             ->get();
 
-        $receivedQueue = (clone $queueBase)->where('status', 'received')->get();
+        // THE FIX: Isinama ang rejected at canceled sa History
+        $receivedQueue = (clone $queueBase)
+            ->whereIn('status', ['received', 'rejected', 'canceled'])
+            ->get();
 
         $documents = DocumentType::where('is_active', 1)->get();
 
@@ -182,6 +185,9 @@ class AdminDashboardController extends Controller
             $serviceRequest->released_at = now();
             $serviceRequest->released_by_admin_id = Auth::id();
             $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+        } elseif ($newStatus === 'rejected') {
+            // THE FIX: Admin Reject Logic
+            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
         }
 
         $serviceRequest->save();
@@ -455,11 +461,11 @@ class AdminDashboardController extends Controller
         if ($month === 'all') {
             $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
             $endDate = \Carbon\Carbon::create($year, 1, 1)->endOfYear();
-            $reportTitle = "Taunang Ulat para sa " . $year;
+            $reportTitle = 'Taunang Ulat para sa ' . $year;
         } else {
             $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
             $endDate = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
-            $reportTitle = "Ulat para sa Buwan ng " . $startDate->format('F Y');
+            $reportTitle = 'Ulat para sa Buwan ng ' . $startDate->format('F Y');
         }
 
         // 1. THE LARAVEL WAY: Eloquent Analytics Aggregation
@@ -471,14 +477,22 @@ class AdminDashboardController extends Controller
             'totalRequests' => (clone $requestsQuery)->count(),
             'walkinCount' => (clone $requestsQuery)->where('request_channel', 'Walk-in')->count(),
             'onlineCount' => (clone $requestsQuery)->where('request_channel', 'Online')->count(),
-            
+
             'pendingCount' => (clone $requestsQuery)->where('status', 'pending')->count(),
             'processingCount' => (clone $requestsQuery)->where('status', 'processing')->count(),
             'interviewCount' => (clone $requestsQuery)->where('status', 'for_interview')->count(),
-            'releasedCount' => (clone $requestsQuery)->whereIn('status', ['released', 'received'])->count(),
+            'releasedCount' => (clone $requestsQuery)
+                ->whereIn('status', ['released', 'received'])
+                ->count(),
 
-            'smsCount' => (clone $notifsQuery)->where('channel', 'SMS')->where('status', 'like', '%Sent%')->count(),
-            'emailCount' => (clone $notifsQuery)->where('channel', 'Email')->where('status', 'like', '%Sent%')->count(),
+            'smsCount' => (clone $notifsQuery)
+                ->where('channel', 'SMS')
+                ->where('status', 'like', '%Sent%')
+                ->count(),
+            'emailCount' => (clone $notifsQuery)
+                ->where('channel', 'Email')
+                ->where('status', 'like', '%Sent%')
+                ->count(),
             'failedCount' => (clone $notifsQuery)->where('status', 'like', '%Failed%')->count(),
         ];
 
@@ -498,19 +512,20 @@ class AdminDashboardController extends Controller
      * MODULE: Maintain Release Logbook (Use Case Requirement)
      * Nag-ge-generate ng PDF listahan ng lahat ng nai-release na dokumento.
      */
-    public function printReleaseLogbook(Request $request) // <-- THE FIX: Dinagdagan ng Request $request
+    public function printReleaseLogbook(Request $request)
     {
+        // <-- THE FIX: Dinagdagan ng Request $request
         // 1. Kunin ang lahat ng tapos nang dokumento
         $receivedRequests = ServiceRequest::with(['user', 'documentType'])
-                            ->whereIn('status', ['released', 'received'])
-                            ->orderBy('released_at', 'desc')
-                            ->get();
+            ->whereIn('status', ['released', 'received'])
+            ->orderBy('released_at', 'desc')
+            ->get();
 
         // 2. SYSTEM AUDIT LOG RECORDER (Process 6.0)
         AuditLog::create([
             'admin_id' => Auth::id(),
             'action' => 'PRINT_LOGBOOK',
-            'description' => "Nag-generate ng Official Release Logbook PDF."
+            'description' => 'Nag-generate ng Official Release Logbook PDF.',
         ]);
 
         // 3. I-pasa sa PDF Engine
@@ -524,6 +539,4 @@ class AdminDashboardController extends Controller
 
         return $pdf->stream($filename);
     }
-
-
 }
