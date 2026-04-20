@@ -53,7 +53,7 @@
         </tr>
     </table>
 
-    <div class="section-title">3. NOTIFICATION & API USAGE (Process 4.0)</div>
+    <div class="section-title">3. NOTIFICATION & API USAGE</div>
     <table>
         <tr>
             <th>Total SMS Sent</th>
