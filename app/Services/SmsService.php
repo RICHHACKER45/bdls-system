@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Models\NotificationLog;
 use Exception; // Idinagdag para makapagbato tayo ng errors kapag may lumabag sa rules
-use \App\Models\User;
+use App\Models\User;
 
 class SmsService
 {
@@ -21,16 +21,18 @@ class SmsService
         $messageContent,
         $serviceRequestId = null,
         $isAnnouncement = false,
-        $isOtp = false
+        $isOtp = false,
     ) {
         // ==========================================
         // 0. SECURITY: UNVERIFIED NUMBER BLOCKER (Process 1.0)
         // ==========================================
         $user = User::find($userId);
-        
+
         // Kung walang contact_verified_at at HINDI ito OTP message, harangin!
         if ($user && is_null($user->contact_verified_at) && !$isOtp) {
-            Log::warning("SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.");
+            Log::warning(
+                "SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.",
+            );
             return false; // I-abort agad ang proseso
         }
 

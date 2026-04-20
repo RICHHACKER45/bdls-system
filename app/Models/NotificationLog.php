@@ -25,7 +25,7 @@ class NotificationLog extends Model
     /**
      * ELOQUENT RELATIONSHIPS
      */
-    
+
     // 1. Kunin ang impormasyon ng residenteng pinadalhan ng text/email
     public function user()
     {
