@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User; // <-- THE LARAVEL WAY: Clear namespace imports
+use App\Models\ServiceRequest;
 
 class NotificationLog extends Model
 {
@@ -19,4 +21,20 @@ class NotificationLog extends Model
         'status',
         'provider_response',
     ];
+
+    /**
+     * ELOQUENT RELATIONSHIPS
+     */
+    
+    // 1. Kunin ang impormasyon ng residenteng pinadalhan ng text/email
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // 2. Kunin ang impormasyon ng ni-request na dokumento (kung naka-link)
+    public function serviceRequest()
+    {
+        return $this->belongsTo(ServiceRequest::class);
+    }
 }
