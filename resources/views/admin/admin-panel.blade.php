@@ -623,8 +623,7 @@
 <!-- ===================================== -->
 <!-- IN-APP PDF VIEWER MODAL (SPA Illusion) -->
 <!-- ===================================== -->
-<!-- THE FIX 1: Ginawang z-[1] ang z-index para ma-blur ang buong app -->
-<div id="pdfModal" class="hidden fixed inset-0 z-[1] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
+<div id="pdfModal" class="hidden fixed inset-0 z-[2] bg-slate-900/90 backdrop-blur-sm justify-center items-center p-4 sm:p-8 transition-opacity">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         <!-- Modal Header -->
         <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -634,21 +633,80 @@
             </h2>
             <button onclick="closePdfModal()" class="text-slate-400 hover:text-red-600 font-bold text-3xl leading-none transition-all">&times;</button>
         </div>
-        <!-- Modal Body: IFRAME na sasalo ng PDF form submission -->
+        <!-- Modal Body: IFRAME -->
         <div class="flex-1 w-full bg-slate-200 relative">
-            <!-- Placeholder loading spinner (Lilitaw habang wala pang PDF) -->
+            <!-- Loading spinner -->
             <div class="absolute inset-0 flex items-center justify-center -z-10">
                 <svg class="w-10 h-10 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </div>
-            <!-- THE FIX 2: Idinagdag ang onload="hideGlobalLoader()" -->
             <iframe name="pdfViewerFrame" id="pdfViewerFrame" onload="hideGlobalLoader()" class="w-full h-full bg-white z-10 relative"></iframe>
         </div>
-        <!-- Modal Footer -->
-        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-            <button onclick="closePdfModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest py-3 px-8 rounded-xl transition-all active:scale-95">Isara ang Report</button>
+        <!-- Modal Footer: WITH DOWNLOAD BUTTON -->
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+            <button onclick="downloadPdfNow()" class="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-widest py-3 px-6 rounded-xl transition-all active:scale-95 flex items-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                I-Download ang PDF
+            </button>
+            <button onclick="closePdfModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest py-3 px-8 rounded-xl transition-all active:scale-95 shadow-sm">Isara</button>
         </div>
     </div>
 </div>
+
+<script>
+    function openPdfModal() {
+        const modal = document.getElementById('pdfModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePdfModal() {
+        const modal = document.getElementById('pdfModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        document.getElementById('pdfViewerFrame').src = 'about:blank';
+    }
+
+    function hideGlobalLoader() {
+        const loader = document.getElementById('global-loader');
+        if (loader) {
+            loader.classList.add('hidden');
+            loader.classList.remove('flex');
+        }
+    }
+
+    // Gagawa ng invisible form para mag-force download ng PDF
+    function downloadPdfNow() {
+        const month = document.querySelector('select[name="report_month"]').value;
+        const year = document.querySelector('select[name="report_year"]').value;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('admin.reports.generate') }}";
+        form.target = "_blank"; // Magda-download ito sa bagong tab
+
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = "{{ csrf_token() }}";
+        form.appendChild(csrf);
+
+        const mInput = document.createElement('input');
+        mInput.type = 'hidden'; mInput.name = 'report_month'; mInput.value = month;
+        form.appendChild(mInput);
+
+        const yInput = document.createElement('input');
+        yInput.type = 'hidden'; yInput.name = 'report_year'; yInput.value = year;
+        form.appendChild(yInput);
+
+        const dlInput = document.createElement('input');
+        dlInput.type = 'hidden'; dlInput.name = 'is_download'; dlInput.value = '1';
+        form.appendChild(dlInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+</script>
 
 <script>
     // JS Logic para sa In-App PDF Modal (SPA Illusion)

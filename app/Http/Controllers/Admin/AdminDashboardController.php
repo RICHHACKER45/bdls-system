@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\EmailService;
 use App\Models\NotificationLog;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AdminDashboardController extends Controller
 {
@@ -443,7 +444,6 @@ class AdminDashboardController extends Controller
      */
     public function generateReport(Request $request)
     {
-        // 1. Validation ng Dropdowns
         $request->validate([
             'report_month' => 'required|string',
             'report_year' => 'required|numeric|min:2024',
@@ -452,25 +452,45 @@ class AdminDashboardController extends Controller
         $year = $request->report_year;
         $month = $request->report_month;
 
-        // 2. THE LARAVEL WAY: Carbon Date Parsing
         if ($month === 'all') {
-            $startDate = Carbon::create($year, 1, 1)->startOfYear();
-            $endDate = Carbon::create($year, 1, 1)->endOfYear();
+            $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
+            $endDate = \Carbon\Carbon::create($year, 1, 1)->endOfYear();
             $reportTitle = "Taunang Ulat para sa " . $year;
         } else {
-            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+            $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
             $reportTitle = "Ulat para sa Buwan ng " . $startDate->format('F Y');
         }
 
-        // 3. PANSAMANTALANG DUMMY HTML (Ito ang lilitaw sa Modal mo habang hindi pa tayo nag-i-install ng DOMPDF)
-        return response("
-            <html><body style='font-family:sans-serif; padding: 2rem; text-align:center;'>
-                <h1 style='color: #0f172a;'>{$reportTitle}</h1>
-                <p><strong>Mula:</strong> {$startDate->format('M d, Y')} &nbsp;|&nbsp; <strong>Hanggang:</strong> {$endDate->format('M d, Y')}</p>
-                <hr style='margin: 2rem 0; border: 1px solid #e2e8f0;'/>
-                <p style='color: #64748b;'><em>Ang DOMPDF library ay i-i-install pa lang natin sa susunod na hakbang para maging totoong PDF ang pahinang ito.</em></p>
-            </body></html>
-        ");
+        // 1. THE LARAVEL WAY: Eloquent Analytics Aggregation
+        $requestsQuery = ServiceRequest::whereBetween('created_at', [$startDate, $endDate]);
+        $notifsQuery = NotificationLog::whereBetween('created_at', [$startDate, $endDate]);
+
+        $data = [
+            'reportTitle' => $reportTitle,
+            'totalRequests' => (clone $requestsQuery)->count(),
+            'walkinCount' => (clone $requestsQuery)->where('request_channel', 'Walk-in')->count(),
+            'onlineCount' => (clone $requestsQuery)->where('request_channel', 'Online')->count(),
+            
+            'pendingCount' => (clone $requestsQuery)->where('status', 'pending')->count(),
+            'processingCount' => (clone $requestsQuery)->where('status', 'processing')->count(),
+            'interviewCount' => (clone $requestsQuery)->where('status', 'for_interview')->count(),
+            'releasedCount' => (clone $requestsQuery)->whereIn('status', ['released', 'received'])->count(),
+
+            'smsCount' => (clone $notifsQuery)->where('channel', 'SMS')->where('status', 'like', '%Sent%')->count(),
+            'emailCount' => (clone $notifsQuery)->where('channel', 'Email')->where('status', 'like', '%Sent%')->count(),
+            'failedCount' => (clone $notifsQuery)->where('status', 'like', '%Failed%')->count(),
+        ];
+
+        // 2. Generate the PDF
+        $pdf = Pdf::loadView('admin.pdf.analytics', $data);
+
+        // 3. I-check kung "View in App" ba o "Force Download" ang pinindot
+        if ($request->has('is_download') && $request->is_download == '1') {
+            return $pdf->download("BDLS_Analytics_{$year}_{$month}.pdf");
+        }
+
+        // Default: Ipakita sa loob ng iframe (stream)
+        return $pdf->stream("BDLS_Analytics_{$year}_{$month}.pdf");
     }
 }
