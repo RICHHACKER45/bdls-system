@@ -107,13 +107,27 @@
                     <p class="text-slate-400 font-black uppercase tracking-widest mb-1">Address</p>
                     <p class="font-bold text-slate-900 uppercase">{{ $user->house_number }} {{ $user->purok_street }}</p>
                 </div>
-                <div class="lg:col-span-3 pt-2 border-t border-slate-100 flex justify-between items-center">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Terms Accepted: {{ $user->terms_accepted_at ? $user->terms_accepted_at->format('M d, Y h:i A') : 'N/A' }}</p>
-                    <div class="flex gap-2">
-                        <img src="{{ asset('storage/' . $user->id_photo_path) }}" class="w-8 h-8 rounded border border-slate-200 object-cover cursor-pointer" onclick="openModal(this.src, 'ID')">
-                        <img src="{{ asset('storage/' . $user->selfie_photo_path) }}" class="w-8 h-8 rounded border border-slate-200 object-cover cursor-pointer" onclick="openModal(this.src, 'Selfie')">
-                    </div>
-                </div>
+                <!-- THE FIX: Idinagdag ang Delete Button sa Approved Accounts -->
+<div class="lg:col-span-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+        Terms Accepted: {{ $user->terms_accepted_at ? $user->terms_accepted_at->format('M d, Y h:i A') : 'N/A' }}
+    </p>
+    <div class="flex items-center gap-3">
+        <!-- Images -->
+        <div class="flex gap-2">
+            <img src="{{ asset('storage/' . $user->id_photo_path) }}" class="w-8 h-8 rounded border border-slate-200 object-cover cursor-pointer" onclick="openModal(this.src, 'ID')">
+            <img src="{{ asset('storage/' . $user->selfie_photo_path) }}" class="w-8 h-8 rounded border border-slate-200 object-cover cursor-pointer" onclick="openModal(this.src, 'Selfie')">
+        </div>
+        
+        <!-- THE NEW RED DELETE BUTTON -->
+        <div class="border-l border-slate-200 pl-3">
+            <button type="button" onclick="openDeleteModal('{{ $user->id }}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-black text-[9px] uppercase tracking-widest py-1.5 px-3 rounded transition-all active:scale-95 shadow-sm flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
             </div>
         </details>
         @empty
