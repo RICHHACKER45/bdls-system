@@ -493,4 +493,31 @@ class AdminDashboardController extends Controller
         // Default: Ipakita sa loob ng iframe (stream)
         return $pdf->stream("BDLS_Analytics_{$year}_{$month}.pdf");
     }
+
+    /**
+     * MODULE: Maintain Release Logbook (Use Case Requirement)
+     * Nag-ge-generate ng PDF listahan ng lahat ng nai-release na dokumento.
+     */
+    public function printReleaseLogbook()
+    {
+        // 1. Kunin ang lahat ng tapos nang dokumento
+        $receivedRequests = ServiceRequest::with(['user', 'documentType'])
+                            ->whereIn('status', ['released', 'received'])
+                            ->orderBy('released_at', 'desc')
+                            ->get();
+
+        // 2. SYSTEM AUDIT LOG RECORDER (Process 6.0)
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'PRINT_LOGBOOK',
+            'description' => "Nag-generate ng Official Release Logbook PDF."
+        ]);
+
+        // 3. I-pasa sa PDF Engine
+        $pdf = Pdf::loadView('admin.pdf.release_logbook', compact('receivedRequests'));
+
+        // 4. Buksan sa bagong tab para ma-print agad ni Admin
+        return $pdf->stream('BDLS_Release_Logbook_' . now()->format('Y_m_d') . '.pdf');
+    }
+
 }
