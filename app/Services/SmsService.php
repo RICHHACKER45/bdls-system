@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Models\NotificationLog;
 use Exception; // Idinagdag para makapagbato tayo ng errors kapag may lumabag sa rules
+use \App\Models\User;
 
 class SmsService
 {
@@ -20,7 +21,19 @@ class SmsService
         $messageContent,
         $serviceRequestId = null,
         $isAnnouncement = false,
+        $isOtp = false
     ) {
+        // ==========================================
+        // 0. SECURITY: UNVERIFIED NUMBER BLOCKER (Process 1.0)
+        // ==========================================
+        $user = User::find($userId);
+        
+        // Kung walang contact_verified_at at HINDI ito OTP message, harangin!
+        if ($user && is_null($user->contact_verified_at) && !$isOtp) {
+            Log::warning("SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.");
+            return false; // I-abort agad ang proseso
+        }
+
         // ==========================================
         // 1. LINK BLOCKER (NTC Compliance)
         // ==========================================
@@ -170,7 +183,6 @@ class SmsService
                     $providerResponse =
                         'HTTP Error: ' . $response->status() . ' - ' . $response->body();
                     // DAGDAG RESIBO: Isusulat kung nag-fail ang API
-                    // Log::error("API FAILED: " . $providerResponse);
                     // BAGONG LOG: Isusulat nito sa laravel.log kapag nag 400 or 500 error ang Fortmed
                     Log::error(
                         "SMS API HTTP FAILED: Hindi naipadala kay {$recipientContact}. Reason: {$providerResponse}",
@@ -179,7 +191,6 @@ class SmsService
             } catch (Exception $e) {
                 $status = 'Failed (Exception)';
                 $providerResponse = $e->getMessage();
-                // Log::error("SMS API Error: " . $e->getMessage());
                 // BAGONG LOG: Isusulat nito kapag nag-timeout o nawalan ng internet ang server natin
                 Log::error(
                     "SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: " .

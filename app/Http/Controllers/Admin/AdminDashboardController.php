@@ -253,9 +253,6 @@ class AdminDashboardController extends Controller
     /**
      * PHASE 2: Walk-in Shadow Profile & Request Creation
      */
-    /**
-     * PHASE 2: Walk-in Shadow Profile & Request Creation
-     */
     public function storeWalkinRequest(Request $request, SmsService $smsService)
     {
         // 1. Validation (Pinagsamang Resident Data at Request Data)
@@ -288,6 +285,7 @@ class AdminDashboardController extends Controller
                     'contact_number' => $request->contact_number,
                     'password' => Hash::make(Str::random(12)),
                     'role' => 'resident',
+                    'contact_verified_at' => now(),
                     'is_verified' => true, // Walk-ins are physically verified by Admin
                     'terms_accepted_at' => now(),
                 ]);
@@ -412,7 +410,7 @@ class AdminDashboardController extends Controller
                         $request->message_body
                     );
                 }
-                
+
                 $sentCount++;
             } catch (\Exception $e) {
                 // I-log lang kung may pumalyang isa, wag i-crash ang buong loop

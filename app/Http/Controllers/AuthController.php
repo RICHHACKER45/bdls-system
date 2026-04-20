@@ -76,7 +76,7 @@ class AuthController extends Controller
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)
             $message = "Ang iyong OTP code ay {$otpCode}. Ito ay mag-e-expire sa loob ng 10 minuto.";
-            $this->smsService->sendSms($user->id, $user->contact_number, $message, null);
+            $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
             $request->session()->put('registration_contact', $user->contact_number);
         });
@@ -210,7 +210,7 @@ class AuthController extends Controller
 
             // TOTOONG SMS INTEGRATION: Resend (Ligtas: 1 Credit)
             $message = "Ang iyong BAGONG OTP code ay {$newOtp}. Ito ay mag-e-expire sa loob ng 10 minuto.";
-            $this->smsService->sendSms($user->id, $user->contact_number, $message);
+            $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
         });
 
         // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
