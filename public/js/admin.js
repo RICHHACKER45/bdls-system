@@ -41,21 +41,15 @@ function switchTab(tabId) {
   if (window.innerWidth < 1024) toggleSidebar();
 }
 
-// 3. SUB-TAB LOGIC
+// 3. SUB-TAB LOGIC (UNIVERSAL PILL DESIGN)
 function showSubTab(tabId, btnElement) {
-  // Determine the container context (sub-tab buttons are grouped per main tab)
   const subTabContainer = btnElement.closest('.tab-content') || document.body;
-
-  // Hide all sub-tab contents within this context
   subTabContainer.querySelectorAll('.sub-tab-content').forEach((el) => el.classList.add('hidden'));
 
-  // Show target sub-tab
   const targetTab = document.getElementById(tabId);
   if (targetTab) targetTab.classList.remove('hidden');
 
-  // Handle button highlights based on which sub-tab group it belongs to
   const siblingButtons = btnElement.parentElement.querySelectorAll('.sub-tab-btn');
-
   siblingButtons.forEach((btn) => {
     btn.classList.remove(
       'bg-slate-900',
@@ -63,22 +57,18 @@ function showSubTab(tabId, btnElement) {
       'bg-red-100',
       'text-red-700',
       'border-slate-900',
-      'text-slate-900',
     );
-    btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent', 'text-slate-400');
+    btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent');
   });
 
-  if (tabId.startsWith('queue-')) {
-    // Queue Sub-tab logic (Underline style)
-    btnElement.classList.add('text-slate-900', 'border-slate-900');
-    btnElement.classList.remove('text-slate-400', 'border-transparent');
-  } else {
-    if (tabId === 'sub-pending' || tabId === 'sub-approved') {
-      btnElement.classList.add('bg-slate-900', 'text-white');
-    } else if (tabId === 'sub-rejected') {
-      btnElement.classList.add('bg-red-100', 'text-red-700');
-    }
+  // Kung ang pinindot ay mga "History" o "Rejected", gawing red ang pill
+  if (tabId === 'sub-rejected' || tabId === 'queue-received') {
+    btnElement.classList.add('bg-red-100', 'text-red-700');
     btnElement.classList.remove('bg-slate-200', 'text-slate-700');
+  } else {
+    // Default Active Tab
+    btnElement.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+    btnElement.classList.remove('bg-slate-200', 'text-slate-700', 'border-transparent');
   }
 }
 
