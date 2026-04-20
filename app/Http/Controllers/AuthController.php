@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
-use App\Services\SmsService;
-
 use App\Http\Requests\RegisterRequest;
+use App\Models\User;
+use App\Services\SmsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -30,10 +27,10 @@ class AuthController extends Controller
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
         $dateOfBirth =
-            $validatedData['dob_year'] .
-            '-' .
-            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT) .
-            '-' .
+            $validatedData['dob_year'].
+            '-'.
+            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT).
+            '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
         // STEP 3: I-save ang mga Images sa Server Storage (public disk)
@@ -106,7 +103,7 @@ class AuthController extends Controller
 
         // Hanapin kung kaninong session ito naka-link
         $contactNumber = $request->session()->get('registration_contact');
-        if (!$contactNumber) {
+        if (! $contactNumber) {
             return redirect('/signup')->withErrors([
                 'error' => 'Session expired. Mangyaring mag-register muli.',
             ]);
@@ -168,14 +165,13 @@ class AuthController extends Controller
     public function resendOtp(Request $request)
     {
         // 1. I-setup ang dalawang susi (keys) gamit ang IP address ng user
-        $cooldownKey = 'resend_sms_otp_' . $request->ip(); // Para sa 60s timer
-        $blockKey = 'block_sms_otp_' . $request->ip(); // Para sa 3-strike block
+        $cooldownKey = 'resend_sms_otp_'.$request->ip(); // Para sa 60s timer
+        $blockKey = 'block_sms_otp_'.$request->ip(); // Para sa 3-strike block
 
         // 2. CHECK: Naka-3 beses na ba siya? (Naka-lock ng 1 oras kapag spammer)
         if (RateLimiter::tooManyAttempts($blockKey, 3)) {
             return back()->withErrors([
-                'otp_error' =>
-                    'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.',
+                'otp_error' => 'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.',
             ]);
         }
 
@@ -186,7 +182,7 @@ class AuthController extends Controller
             ]);
         }
 
-        /* 
+        /*
         ====================================================
         DITO MO ILALAGAY YUNG LOGIC MO SA PAG-SEND NG SMS
         (e.g., pag-generate ng bagong code, pag-save sa DB)
@@ -195,7 +191,7 @@ class AuthController extends Controller
         // 1. Kuhanin ang number ng user na nagre-request mula sa Session memory
         $contactNumber = $request->session()->get('registration_contact');
 
-        if (!$contactNumber) {
+        if (! $contactNumber) {
             return back()->withErrors([
                 'otp_error' => 'Session expired. Hindi mahanap ang iyong numero.',
             ]);
@@ -264,9 +260,9 @@ class AuthController extends Controller
                 Auth::logout(); // I-kick palabas sa system
                 // I-restore ang session memory para gumana ulit ang OTP page niya
                 $request->session()->put('registration_contact', $user->contact_number);
+
                 return redirect('/otp')->withErrors([
-                    'otp' =>
-                        'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.',
+                    'otp' => 'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.',
                 ]);
             }
 
@@ -295,6 +291,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken(); // CSRF Protection
+
         return redirect('/login');
     }
 }

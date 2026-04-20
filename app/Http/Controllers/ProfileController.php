@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EmailService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use App\Services\EmailService; // 1. TINAWAG NATIN ANG BAGONG SERVICE
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator; // 1. TINAWAG NATIN ANG BAGONG SERVICE
 
 class ProfileController extends Controller
 {
@@ -26,10 +26,11 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         // THE LARAVEL WAY (SECURITY): Rate Limiter (1 request per 60 seconds)
-        $rateLimitKey = 'resend_email_otp_' . $user->id;
+        $rateLimitKey = 'resend_email_otp_'.$user->id;
 
         if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
+
             return back()
                 ->withErrors([
                     'email_otp' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit.",
@@ -37,7 +38,7 @@ class ProfileController extends Controller
                 ->with('active_tab', 'settings');
         }
 
-        if (!$user->email) {
+        if (! $user->email) {
             return back()
                 ->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.'])
                 ->with('active_tab', 'settings');
@@ -160,6 +161,7 @@ class ProfileController extends Controller
             'active_tab' => 'settings',
         ]);
     }
+
     /**
      * I-update kung gusto ng user makatanggap ng Email Notifications (Fallback)
      */

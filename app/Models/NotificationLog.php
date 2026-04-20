@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User; // <-- THE LARAVEL WAY: Clear namespace imports
-use App\Models\ServiceRequest;
+
+// <-- THE LARAVEL WAY: Clear namespace imports
 
 class NotificationLog extends Model
 {

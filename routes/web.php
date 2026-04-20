@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Admin\AdminDashboardController;
+use Illuminate\Support\Facades\Route;
 
 // ==========================================
 // 1. THE SMART TRAFFIC DIRECTOR (Welcome Page)

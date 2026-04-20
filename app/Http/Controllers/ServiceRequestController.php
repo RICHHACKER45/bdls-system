@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\ServiceRequest;
 use App\Models\Attachment;
 use App\Models\DocumentType;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use App\Services\SmsService; // 1. TINAWAG NATIN ANG SERVICE MO
+use App\Models\ServiceRequest;
+use App\Services\SmsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // 1. TINAWAG NATIN ANG SERVICE MO
 use Illuminate\Support\Facades\DB;
 
 class ServiceRequestController extends Controller
@@ -28,6 +27,7 @@ class ServiceRequestController extends Controller
     public function index()
     {
         $documents = DocumentType::where('is_active', 1)->get();
+
         return view('resident.dashboard', compact('documents'));
     }
 
@@ -88,7 +88,7 @@ class ServiceRequestController extends Controller
         // 2. Queue Number Generator
         $latestRequest = ServiceRequest::where('request_channel', 'Online')->latest('id')->first();
         $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
-        $queueNumber = 'O-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $queueNumber = 'O-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         $user = Auth::user();
 

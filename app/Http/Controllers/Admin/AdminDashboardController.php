@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Services\SmsService;
-use App\Models\ServiceRequest;
-use App\Models\DocumentType;
 use App\Models\Announcement;
 use App\Models\AuditLog;
+use App\Models\DocumentType;
+use App\Models\NotificationLog;
+use App\Models\ServiceRequest;
+use App\Models\User;
+use App\Services\EmailService;
+use App\Services\SmsService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use App\Services\EmailService;
-use App\Models\NotificationLog;
-use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class AdminDashboardController extends Controller
 {
@@ -107,6 +107,7 @@ class AdminDashboardController extends Controller
             'action' => 'ACCOUNT_APPROVAL',
             'description' => "Inaprubahan ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
         ]);
+
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
     }
 
@@ -123,8 +124,8 @@ class AdminDashboardController extends Controller
             $message = 'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
         } else {
             $message =
-                "Registration rejected. Rason: {$request->rejection_reason}. May " .
-                (5 - $user->rejection_count) .
+                "Registration rejected. Rason: {$request->rejection_reason}. May ".
+                (5 - $user->rejection_count).
                 ' attempts ka pa.';
         }
 
@@ -208,7 +209,7 @@ class AdminDashboardController extends Controller
                 $emailService->sendEmail(
                     $serviceRequest->user_id,
                     $serviceRequest->user->email,
-                    'BDLS Request Update: ' . strtoupper($newStatus),
+                    'BDLS Request Update: '.strtoupper($newStatus),
                     $message,
                     $serviceRequest->id,
                 );
@@ -219,17 +220,17 @@ class AdminDashboardController extends Controller
         AuditLog::create([
             'admin_id' => Auth::id(),
             'action' => 'STATUS_UPDATE',
-            'description' =>
-                "Binago ang status ng request {$serviceRequest->queue_number} papuntang '" .
-                strtoupper($newStatus) .
+            'description' => "Binago ang status ng request {$serviceRequest->queue_number} papuntang '".
+                strtoupper($newStatus).
                 "'.",
         ]);
 
-         // ==========================================
+        // ==========================================
         // THE FIX: Soft Delete for Rejected Requests
         // ==========================================
         if ($newStatus === 'rejected') {
             $serviceRequest->delete(); // Ligtas na itatago ng Laravel ang request
+
             return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at inalis sa listahan.');
         }
 
@@ -317,7 +318,7 @@ class AdminDashboardController extends Controller
                 ->latest('id')
                 ->first();
             $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
-            $queueNumber = 'W-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+            $queueNumber = 'W-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
             // C. I-save ang Request sa Database
             $serviceRequest = ServiceRequest::create([
@@ -352,7 +353,7 @@ class AdminDashboardController extends Controller
                 );
             } catch (\Exception $e) {
                 // I-log lang ang error para makita mo, pero HINDI magka-crash ang system. Ligtas ang data sa taas.
-                Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): " . $e->getMessage());
+                Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
             }
 
             // ========================================================
@@ -373,13 +374,12 @@ class AdminDashboardController extends Controller
         SmsService $smsService,
         EmailService $emailService,
     ) {
-        //THE LARAVEL WAY: Harangin agad sa controller bago pa mag-process
+        // THE LARAVEL WAY: Harangin agad sa controller bago pa mag-process
         $currentHour = (int) now()->format('H');
         if ($currentHour >= 21 || $currentHour < 7) {
             return back()
                 ->withErrors([
-                    'curfew' =>
-                        'NTC Curfew Active: Bawal mag-text blast mula 9:00 PM hanggang 7:00 AM.',
+                    'curfew' => 'NTC Curfew Active: Bawal mag-text blast mula 9:00 PM hanggang 7:00 AM.',
                 ])
                 ->with('active_tab', 'announcements');
         }
@@ -393,8 +393,7 @@ class AdminDashboardController extends Controller
                 ],
             ],
             [
-                'message_body.not_regex' =>
-                    'Bawal mag-send ng links o website URLs ayon sa NTC Anti-Spam rules.',
+                'message_body.not_regex' => 'Bawal mag-send ng links o website URLs ayon sa NTC Anti-Spam rules.',
             ],
         );
 
@@ -434,7 +433,7 @@ class AdminDashboardController extends Controller
             } catch (\Exception $e) {
                 // I-log lang kung may pumalyang isa, wag i-crash ang buong loop
                 Log::error(
-                    "Failed to blast SMS to {$resident->contact_number}: " . $e->getMessage(),
+                    "Failed to blast SMS to {$resident->contact_number}: ".$e->getMessage(),
                 );
             }
         }
@@ -467,13 +466,13 @@ class AdminDashboardController extends Controller
         $month = $request->report_month;
 
         if ($month === 'all') {
-            $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
-            $endDate = \Carbon\Carbon::create($year, 1, 1)->endOfYear();
-            $reportTitle = 'Taunang Ulat para sa ' . $year;
+            $startDate = Carbon::create($year, 1, 1)->startOfYear();
+            $endDate = Carbon::create($year, 1, 1)->endOfYear();
+            $reportTitle = 'Taunang Ulat para sa '.$year;
         } else {
-            $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
-            $endDate = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
-            $reportTitle = 'Ulat para sa Buwan ng ' . $startDate->format('F Y');
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+            $reportTitle = 'Ulat para sa Buwan ng '.$startDate->format('F Y');
         }
 
         // 1. THE LARAVEL WAY: Eloquent Analytics Aggregation
@@ -538,7 +537,7 @@ class AdminDashboardController extends Controller
 
         // 3. I-pasa sa PDF Engine
         $pdf = Pdf::loadView('admin.pdf.release_logbook', compact('receivedRequests'));
-        $filename = 'BDLS_Release_Logbook_' . now()->format('Y_m_d') . '.pdf';
+        $filename = 'BDLS_Release_Logbook_'.now()->format('Y_m_d').'.pdf';
 
         // 4. THE FIX: Check kung In-App View ba o Force Download
         if ($request->has('download') && $request->download == '1') {

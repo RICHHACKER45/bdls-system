@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
 use App\Models\NotificationLog;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class EmailService
 {
@@ -19,7 +19,7 @@ class EmailService
         $serviceRequestId = null,
     ) {
         // 1. Poka-Yoke: Haharangin agad kung walang email na ipinasa
-        if (!$recipientEmail) {
+        if (! $recipientEmail) {
             return false;
         }
 
@@ -45,7 +45,7 @@ class EmailService
             $status = 'Failed (Exception)';
             $providerResponse = $e->getMessage();
             Log::error(
-                "EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: " .
+                "EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: ".
                     $e->getMessage(),
             );
         }
@@ -66,7 +66,7 @@ class EmailService
         } catch (Exception $e) {
             // Ligtas ang system kahit mag-crash ang database
             Log::critical(
-                "DATABASE ERROR: Hindi na-save sa notification_logs ang Email para kay {$recipientEmail}. Error: " .
+                "DATABASE ERROR: Hindi na-save sa notification_logs ang Email para kay {$recipientEmail}. Error: ".
                     $e->getMessage(),
             );
         }

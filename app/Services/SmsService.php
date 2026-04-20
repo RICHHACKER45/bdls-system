@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use App\Models\NotificationLog;
-use Exception; // Idinagdag para makapagbato tayo ng errors kapag may lumabag sa rules
 use App\Models\User;
+use Exception;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log; // Idinagdag para makapagbato tayo ng errors kapag may lumabag sa rules
+use Illuminate\Support\Str;
 
 class SmsService
 {
@@ -29,10 +29,11 @@ class SmsService
         $user = User::find($userId);
 
         // Kung walang contact_verified_at at HINDI ito OTP message, harangin!
-        if ($user && is_null($user->contact_verified_at) && !$isOtp) {
+        if ($user && is_null($user->contact_verified_at) && ! $isOtp) {
             Log::warning(
                 "SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.",
             );
+
             return false; // I-abort agad ang proseso
         }
 
@@ -78,14 +79,14 @@ class SmsService
         // 4. IDENTITY HEADER (Mandatory NTC Prefix)
         // ==========================================
         $prefix = env('SMS_PREFIX');
-        $fullMessage = $prefix . trim($messageContent);
+        $fullMessage = $prefix.trim($messageContent);
 
         $driver = env('SMS_DRIVER', 'log');
 
         // ==========================================
         // 5. ROUTING: Transactional vs Announcement
         // ==========================================
-        if (!$isAnnouncement) {
+        if (! $isAnnouncement) {
             // TRANSACTIONAL (OTP / Queue Updates) -> STRICTLY 160 CHARACTERS
             if (Str::length($fullMessage) > 160) {
                 $fullMessage = Str::limit($fullMessage, 160, ''); // Puputulin pilit para tipid credit
@@ -117,7 +118,7 @@ class SmsService
 
                 foreach ($chunks as $index => $chunk) {
                     $partNum = $index + 1;
-                    $segmentMessage = $chunk . " ({$partNum}/{$totalChunks})";
+                    $segmentMessage = $chunk." ({$partNum}/{$totalChunks})";
                     $this->executeSend(
                         $userId,
                         $recipientContact,
@@ -151,7 +152,7 @@ class SmsService
         // ==========================================
         Log::info('====================================');
         Log::info("SMS SEND INITIATED [Driver: {$driver}] [To: {$recipientContact}]");
-        Log::info('Length: ' . Str::length($messageContent) . ' chars');
+        Log::info('Length: '.Str::length($messageContent).' chars');
         Log::info("Message: {$messageContent}");
         Log::info('====================================');
 
@@ -183,7 +184,7 @@ class SmsService
                 } else {
                     $status = 'Failed';
                     $providerResponse =
-                        'HTTP Error: ' . $response->status() . ' - ' . $response->body();
+                        'HTTP Error: '.$response->status().' - '.$response->body();
                     // DAGDAG RESIBO: Isusulat kung nag-fail ang API
                     // BAGONG LOG: Isusulat nito sa laravel.log kapag nag 400 or 500 error ang Fortmed
                     Log::error(
@@ -195,7 +196,7 @@ class SmsService
                 $providerResponse = $e->getMessage();
                 // BAGONG LOG: Isusulat nito kapag nag-timeout o nawalan ng internet ang server natin
                 Log::error(
-                    "SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: " .
+                    "SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: ".
                         $e->getMessage(),
                 );
             }
@@ -218,7 +219,7 @@ class SmsService
             // Kung sakaling mag-crash ang MySQL Database mo, hindi sasabog ang screen ng user.
             // Isusulat na lang niya ito sa laravel.log bilang emergency backup.
             Log::critical(
-                "DATABASE ERROR: Hindi na-save sa notification_logs ang SMS para kay {$recipientContact}. Error: " .
+                "DATABASE ERROR: Hindi na-save sa notification_logs ang SMS para kay {$recipientContact}. Error: ".
                     $e->getMessage(),
             );
         }
