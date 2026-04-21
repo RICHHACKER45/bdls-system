@@ -57,20 +57,32 @@
                         <input type="text" id="login_id" name="login_id" placeholder="09123456789 / juan@email.com" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-all outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600" />
                     </div>
 
-                    <!-- Password Input -->
+                    <!-- Password Input with Forgot Password Link -->
                     <div>
-                        <label for="password" class="mb-1 block text-sm font-semibold text-slate-700">Password</label>
+                        <div class="mb-1 flex items-center justify-between">
+                            <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
+                            <!-- THE NEW FORGOT PASSWORD LINK -->
+                            <a href="#" class="text-xs font-bold text-slate-400 transition-all hover:text-slate-900 hover:underline">Nakalimutan ang password?</a>
+                        </div>
                         <input type="password" id="password" name="password" placeholder="••••••••" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-all outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600" />
                     </div>
 
                     <!-- Login Button -->
-                    <button type="submit" class="w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white shadow-md transition-all duration-200 hover:bg-red-700 hover:shadow-lg active:scale-95">Pumasok</button>
+                    <div class="pt-2">
+                        <button type="submit" class="w-full rounded-lg bg-red-600 px-4 py-3.5 font-bold text-white shadow-md transition-all duration-200 hover:bg-red-700 hover:shadow-lg active:scale-95">Pumasok</button>
+                    </div>
                 </form>
 
-                <!-- Signup Link -->
-                <div class="mt-6 text-center text-sm text-slate-600">
-                    Walang account?
-                    <a href="/signup" class="font-bold text-red-600 hover:underline">Mag-signup dito</a>
+                <!-- THE NEW DIVIDER -->
+                <div class="mt-6 flex items-center gap-3 text-sm font-medium text-slate-400">
+                    <div class="h-px flex-1 bg-slate-200"></div>
+                    <span class="text-[10px] tracking-widest uppercase">o kaya</span>
+                    <div class="h-px flex-1 bg-slate-200"></div>
+                </div>
+
+                <!-- THE NEW GHOST BUTTON FOR SIGNUP -->
+                <div class="mt-6">
+                    <a href="/signup" class="flex w-full items-center justify-center rounded-lg border-2 border-slate-200 bg-transparent px-4 py-3.5 font-bold text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-95"> Gumawa ng Bagong Account </a>
                 </div>
             </div>
         </div>
