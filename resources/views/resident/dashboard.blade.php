@@ -117,6 +117,23 @@
                     <button onclick="switchTab('tracking'); setTimeout(() => document.getElementById('btn-track-history').click(), 100);" class="mt-4 w-full rounded-lg bg-slate-100 py-2 text-[10px] font-black tracking-widest text-slate-600 uppercase transition-all hover:bg-slate-200 active:scale-95">Tingnan Lahat</button>
                     @endif
                 </div>
+                <!-- 3. BARANGAY ANNOUNCEMENTS -->
+                <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                    <h3 class="mb-4 flex items-center gap-2 font-bold text-slate-700">
+                        <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                        Mga Anunsyo ng Barangay
+                    </h3>
+                    <div class="space-y-3">
+                        @forelse ($announcements as $announcement)
+                            <div class="rounded-lg border border-red-100 bg-red-50/60 p-4 transition-all hover:bg-red-50">
+                                <p class="mb-1 text-[9px] font-black tracking-widest text-red-600 uppercase">{{ $announcement->created_at->format('M d, Y h:i A') }}</p>
+                                <p class="text-xs font-bold text-slate-800">{{ $announcement->message_body }}</p>
+                            </div>
+                        @empty
+                            <p class="text-xs font-bold text-slate-400 italic">Walang bagong anunsyo.</p>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </div>
     @endif
