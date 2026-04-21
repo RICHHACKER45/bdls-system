@@ -907,4 +907,51 @@
             </form>
         </div>
     </div>
+    <!-- ===================================== -->
+    <!-- TAB 6: ACCOUNT SETTINGS               -->
+    <!-- ===================================== -->
+    <div id="tab-settings" class="tab-content {{ session('active_tab') == 'settings' ? 'block' : 'hidden' }}">
+        <div class="mx-auto mt-8 max-w-2xl">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-black tracking-tight text-slate-900 uppercase">Security Settings</h2>
+                </div>
+
+                <p class="mb-6 text-sm font-medium text-slate-500">Mahalaga: Palitan agad ang iyong default password upang maiwasan ang unauthorized access sa Admin Portal.</p>
+
+                @if ($errors->has('current_password') || $errors->has('password'))
+                    <div class="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-4">
+                        <p class="text-sm font-bold text-red-700">{{ $errors->first() }}</p>
+                    </div>
+                @endif
+
+                <form action="{{ route('password.update') }}" method="POST" class="space-y-5">
+                    @csrf
+                    <div>
+                        <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Kasalukuyang Password <span class="text-red-500">*</span></label>
+                        <input type="password" name="current_password" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                    </div>
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Bagong Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="password" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">I-type Ulit (Confirm) <span class="text-red-500">*</span></label>
+                            <input type="password" name="password_confirmation" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                        </div>
+                    </div>
+                    <div class="flex justify-end border-t border-slate-100 pt-4">
+                        <button type="submit" class="flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                            I-save ang Bagong Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection

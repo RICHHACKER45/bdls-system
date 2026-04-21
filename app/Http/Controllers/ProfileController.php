@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator; // 1. TINAWAG NATIN ANG BAGONG SERVICE
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -178,6 +179,36 @@ class ProfileController extends Controller
         return back()->with([
             'success' => 'Na-update na ang iyong Notification Preferences!',
             'active_tab' => 'settings',
+        ]);
+    }
+
+    /**
+     * UNIVERSAL: Update Password (Admin & Resident)
+     */
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ], [
+            'password.min' => 'Ang password ay dapat hindi bababa sa 8 characters.',
+            'password.confirmed' => 'Hindi tugma ang Confirm Password.'
+        ]);
+
+        $user = Auth::user();
+
+        // I-check kung tama ang lumang password bago payagan
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Mali ang iyong kasalukuyang password.'])->with('active_tab', 'settings');
+        }
+
+        // THE LARAVEL WAY: Ligtas na i-hash ang bagong password
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return back()->with([
+            'success_message' => 'Matagumpay na nabago ang iyong password!',
+            'active_tab' => 'settings'
         ]);
     }
 }

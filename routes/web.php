@@ -40,6 +40,10 @@ Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.rese
 // 4. AUTHENTICATED ROUTES (Bawal ang walang account)
 // ==========================================
 Route::middleware(['auth'])->group(function () {
+
+    // UNIVERSAL PASSWORD UPDATE ROUTE
+    Route::post('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
+    
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
