@@ -27,11 +27,15 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
 
     // ==========================================
-    // SMS FORGOT PASSWORD ROUTES
+    // SMS FORGOT PASSWORD ROUTES (3-Step Flow)
     // ==========================================
     Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetOtp'])->name('password.send_otp');
-
+    
+    Route::get('/forgot-password/otp', [AuthController::class, 'showResetOtpForm'])->name('password.otp.show');
+    Route::post('/forgot-password/otp', [AuthController::class, 'verifyResetOtp'])->name('password.otp.verify');
+    Route::post('/forgot-password/otp/resend', [AuthController::class, 'resendResetOtp'])->name('password.otp.resend');
+    
     Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update.submit');
 });
@@ -40,7 +44,10 @@ Route::middleware(['guest'])->group(function () {
 // 3. OTP ROUTES (Para sa Account Verification)
 // ==========================================
 Route::get('/otp', function () {
-    return view('auth.otp');
+    return view('auth.otp', [
+        'verifyRoute' => route('otp.verify'),
+        'resendRoute' => route('otp.resend')
+    ]);
 })->name('otp.show');
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
 Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend');
