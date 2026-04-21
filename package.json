@@ -6,7 +6,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "format": "npx prettier --write .",
-    "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"npm run dev\"",
+    "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"npm run dev\" \"php artisan queue:work\"",
     "clear-all": "concurrently \"php artisan optimize:clear\" \"php artisan view:clear\" \"php artisan cache:clear\"",
     "dbreset": "php artisan migrate:fresh --seed"
   },
