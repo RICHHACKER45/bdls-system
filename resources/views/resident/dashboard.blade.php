@@ -55,10 +55,19 @@
                 <p class="text-slate-500 mb-8 max-w-md">Mag-request ng Barangay Clearance, Certificate of Indigency, at iba pang legal na papel nang hindi na pumipila nang matagal.</p>
             </div>
             <div>
-                <button onclick="openRequestModal()" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md w-full sm:w-auto focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Gumawa ng Bagong Request
-                </button>
+                @if(Auth::user()->locked_until && Auth::user()->locked_until > now())
+                    <!-- NAKA-LOCK KUNG MAY PENALTY -->
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center">
+                        <p class="text-amber-700 font-bold text-sm">⚠️ Naka-Suspend ang iyong account.</p>
+                        <p class="text-amber-600 text-xs mt-1">Maaari ka muling mag-request sa: <br> <span class="font-black">{{ Auth::user()->locked_until->format('M d, Y h:i A') }}</span></p>
+                    </div>
+                @else
+                    <!-- NORMAL BUTTON KUNG WALANG PENALTY -->
+                    <button onclick="openRequestModal()" class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all active:scale-95 shadow-md w-full sm:w-auto focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Gumawa ng Bagong Request
+                    </button>
+                @endif
             </div>
         </div>
 
