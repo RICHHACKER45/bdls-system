@@ -140,7 +140,7 @@
 </div>
 
 <!-- ===================================== -->
-<!-- TAB 2: SETTINGS CONTENT               -->
+<!-- TAB 2: SETTINGS CONTENT (Modal-Driven)-->
 <!-- ===================================== -->
 <div id="tab-settings" class="tab-content hidden">
     <h1 class="mb-6 text-2xl font-bold text-slate-900">Account Settings</h1>
@@ -153,94 +153,48 @@
         <div class="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
         @endif
 
+        <!-- CONTACT NUMBER BOX -->
         <div>
             <h2 class="mb-3 text-lg font-bold text-slate-900">Primary Contact Number</h2>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <input type="text" value="{{ Auth::user()->contact_number }}" disabled class="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80" />
-                <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span>
+                
+                @if (Auth::user()->contact_verified_at)
+                    <span class="inline-flex items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 w-full sm:w-auto"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span>
+                    <button onclick="openSettingsModal('changeContactModal')" class="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 w-full sm:w-auto">Palitan</button>
+                @else
+                    <span class="inline-flex items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 w-full sm:w-auto">Unverified</span>
+                    <button onclick="openSettingsModal('verifyContactModal')" class="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 w-full sm:w-auto animate-pulse">Verify OTP</button>
+                @endif
             </div>
-            <p class="mt-2 text-xs text-slate-500">Dito ipapadala ang mga pangunahing SMS notifications.</p>
+            <p class="mt-2 text-xs text-slate-500">Ito ang iyong login ID at channel para sa SMS updates.</p>
         </div>
 
         <hr class="border-slate-100" />
 
         <div>
             <h2 class="mb-3 text-lg font-bold text-slate-900">Email Address</h2>
-            @if (!Auth::user()->email)
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                <p class="mb-3 text-xs text-slate-500">Wala kang nakarehistrong email. Magdagdag upang makatanggap ng digital receipts.</p>
-                <form action="{{ route('resident.email.add') }}" method="POST" class="flex flex-col gap-2 sm:flex-row">
-                    @csrf
-                    <input type="email" name="new_email" placeholder="juan@email.com" required class="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 sm:w-64" />
-                    <button type="submit" class="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 active:scale-95">I-save</button>
-                </form>
-            </div>
-            @else
-            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <input type="email" value="{{ Auth::user()->email }}" disabled class="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-700 sm:w-80" />
-                @if (Auth::user()->email_verified_at)
-                <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <input type="email" value="{{ Auth::user()->email ?? 'Walang nakarehistrong email.' }}" disabled class="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm {{ Auth::user()->email ? 'text-slate-700 font-bold' : 'text-slate-400 italic' }} sm:w-80" />
+                
+                @if (Auth::user()->email)
+                    @if (Auth::user()->email_verified_at)
+                        <span class="inline-flex items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 w-full sm:w-auto"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span>
+                    @else
+                        <span class="inline-flex items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 w-full sm:w-auto">Unverified</span>
+                        <button onclick="openSettingsModal('verifyEmailModal')" class="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 w-full sm:w-auto animate-pulse">Verify OTP</button>
+                    @endif
+                    <button onclick="openSettingsModal('changeEmailModal')" class="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 w-full sm:w-auto">Palitan</button>
                 @else
-                <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
+                    <button onclick="openSettingsModal('changeEmailModal')" class="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 active:scale-95 w-full sm:w-auto">Magdagdag ng Email</button>
                 @endif
             </div>
-            @if (!Auth::user()->email_verified_at)
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                <h3 class="mb-2 text-sm font-bold text-slate-800">I-verify ang iyong Email</h3>
-                <form action="{{ route('resident.email.verify') }}" method="POST" class="flex flex-col gap-3 sm:flex-row">
-                    @csrf
-                    <input type="text" name="email_otp" maxlength="6" placeholder="000000" class="block w-full rounded-lg border border-slate-300 bg-white p-2.5 text-center text-lg font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900 sm:w-40" />
-                    <button type="submit" class="w-full rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">Verify</button>
-                </form>
-                <form action="{{ route('resident.email.send') }}" method="POST" id="resendOtpForm" class="mt-3">
-                    @csrf
-                    <button type="submit" id="resendBtn" class="text-xs font-bold text-slate-600 transition-all hover:text-slate-900 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline">
-                        Magpadala ng bagong code
-                        <span id="timerDisplay" class="ml-1 font-mono text-red-600"></span>
-                    </button>
-                </form>
-            </div>
-            @endif
-            @endif
+            <p class="mt-2 text-xs text-slate-500">Optional: Para makatanggap ng kopya ng digital receipts.</p>
         </div>
 
         <hr class="border-slate-100" />
 
-        <div>
-            <h2 class="mb-4 text-lg font-bold text-slate-900">Notification Preferences</h2>
-            <div class="space-y-3">
-                <label class="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800">SMS Notifications</p>
-                        <p class="text-xs text-slate-500">Pangunahing channel para sa mabilis na updates (Required).</p>
-                    </div>
-                    <input type="checkbox" checked disabled class="h-5 w-5 accent-slate-900" />
-                </label>
-
-                @if (Auth::user()->email_verified_at)
-                <form action="{{ route('resident.settings.email_preference') }}" method="POST">
-                    @csrf
-                    <label class="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:bg-slate-50">
-                        <div>
-                            <p class="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
-                            <p class="text-xs text-slate-500">Makatanggap ng kopya ng updates sa iyong email.</p>
-                        </div>
-                        <input type="checkbox" name="wants_email_notification" value="1" onchange="this.form.submit()" {{ Auth::user()->wants_email_notification ? 'checked' : '' }} class="h-5 w-5 cursor-pointer accent-slate-900" />
-                    </label>
-                </form>
-                @else
-                <label class="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
-                        <p class="mt-1 text-xs font-bold text-amber-600">⚠️ I-verify muna ang iyong email sa itaas upang magamit ito.</p>
-                    </div>
-                    <input type="checkbox" disabled class="h-5 w-5 cursor-not-allowed accent-slate-400" />
-                </label>
-                @endif
-            </div>
-        </div>
-        <hr class="my-8 border-slate-100" />
-
+        <!-- PASSWORD SECURITY -->
         <div>
             <h2 class="mb-4 text-lg font-bold text-slate-900">Security Settings</h2>
             <form action="{{ route('password.update') }}" method="POST" class="max-w-md space-y-4">
@@ -267,6 +221,99 @@
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- SETTINGS MODALS (Put these before scripts) -->
+<!-- ========================================== -->
+
+<!-- 1. CHANGE CONTACT MODAL -->
+<div id="changeContactModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Palitan ang Numero</h3>
+        <p class="mb-6 text-sm text-slate-500">I-type ang iyong bagong 11-digit mobile number.</p>
+        <form action="{{ route('resident.settings.update_contact') }}" method="POST">
+            @csrf
+            <input type="tel" name="contact_number" required pattern="09{9}" maxlength="11" placeholder="09XXXXXXXXX" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-xl font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" />
+            <div class="flex gap-2">
+                <button type="button" onclick="closeSettingsModal('changeContactModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                <button type="submit" class="flex-1 rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">I-Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. VERIFY CONTACT OTP MODAL -->
+<div id="verifyContactModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Verify Number</h3>
+        <p class="mb-6 text-sm text-slate-500">I-enter ang 6-digit OTP na ipinadala sa {{ Auth::user()->contact_number }}.</p>
+        <form action="{{ route('resident.settings.verify_contact') }}" method="POST">
+            @csrf
+            <input type="text" name="otp_code" maxlength="6" required placeholder="000000" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
+            <div class="flex gap-2">
+                <button type="button" onclick="closeSettingsModal('verifyContactModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Verify OTP</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. CHANGE EMAIL MODAL -->
+<div id="changeEmailModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">I-setup ang Email</h3>
+        <p class="mb-6 text-sm text-slate-500">Makatatanggap ka ng verification code sa email na ito.</p>
+        <form action="{{ route('resident.email.add') }}" method="POST">
+            @csrf
+            <input type="email" name="new_email" required placeholder="juan@email.com" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-slate-900" />
+            <div class="flex gap-2">
+                <button type="button" onclick="closeSettingsModal('changeEmailModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                <button type="submit" class="flex-1 rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">I-Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. VERIFY EMAIL OTP MODAL -->
+<div id="verifyEmailModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Verify Email</h3>
+        <p class="mb-6 text-sm text-slate-500">I-enter ang 6-digit code na ipinadala sa iyong email.</p>
+        <form action="{{ route('resident.email.verify') }}" method="POST">
+            @csrf
+            <input type="text" name="email_otp" maxlength="6" required placeholder="000000" class="mb-2 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
+            <div class="mb-6 text-center">
+                <form action="{{ route('resident.email.send') }}" method="POST" id="resendOtpForm">
+                    @csrf
+                    <button type="submit" class="text-xs font-bold text-slate-500 hover:text-slate-900 hover:underline">Resend Email Code</button>
+                </form>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeSettingsModal('verifyEmailModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Verify OTP</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openSettingsModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Pigilan ang pag-scroll
+        }
+    }
+    function closeSettingsModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto'; // Ibalik ang scroll
+        }
+    }
+</script>
+
 <!-- ===================================== -->
 <!-- TAB 3: DEDICATED TRACKING TAB         -->
 <!-- ===================================== -->
@@ -277,7 +324,8 @@
     <div class="mb-6 flex gap-2 overflow-x-auto pb-2 border-b border-slate-100">
         <button id="btn-track-pending" onclick="showResidentSubTab('track-pending', this)" class="res-sub-tab-btn rounded-full bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all shadow-sm">Pending ({{ $myRequests->where('status', 'pending')->count() }})</button>
         <button id="btn-track-status" onclick="showResidentSubTab('track-status', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Status ({{ $myRequests->whereIn('status', ['processing', 'for_interview', 'released'])->count() }})</button>
-        <button id="btn-track-history" onclick="showResidentSubTab('track-history', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Received ({{ $historyRequests->count() }})</button>
+        <button id="btn-track-history" onclick="showResidentSubTab('track-history', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Received ({{ $myRequests->where('status', 'received')->count() }})</button>
+        <button id="btn-track-rejected" onclick="showResidentSubTab('track-rejected', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Rejected / Canceled ({{ $myRequests->whereIn('status', ['rejected', 'canceled'])->count() }})</button>
     </div>
 
     <!-- 1. PENDING SUB-TAB (MAY CANCEL BUTTON) -->
