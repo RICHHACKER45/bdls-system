@@ -70,7 +70,7 @@
                     </div>
                 </div>
 
-                !-- THE FIX: Dynamic Resident Dashboard Statistics & Lists -->
+                <!-- THE FIX: Dynamic Resident Dashboard Statistics & Lists -->
                 <div class="flex flex-col gap-6">
                     <!-- PENDING BOX -->
                     <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
