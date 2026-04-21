@@ -213,19 +213,30 @@ class ProfileController extends Controller
     }
 
     /**
-     * Palitan ang Contact Number (NO LOGOUT WAY)
+     * Palitan ang Contact Number (NO LOGOUT WAY + 1-MINUTE COOLDOWN)
      */
     public function updateContactNumber(Request $request, \App\Services\SmsService $smsService)
     {
+        $user = Auth::user();
+
+        // THE FIX: 1-Minute Rate Limiter Security
+        $rateLimitKey = 'update_contact_' . $user->id;
+        
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($rateLimitKey);
+            return back()->withErrors([
+                'contact_number' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit."
+            ])->with('active_tab', 'settings');
+        }
+
         $request->validate([
             'contact_number' => 'required|string|max:20|regex:/^09\d{9}$/|unique:users,contact_number,' . Auth::id()
         ]);
 
-        $user = Auth::user();
         if ($user->contact_number !== $request->contact_number) {
             $user->contact_number = $request->contact_number;
             $user->contact_verified_at = null; // Unverified na ulit
-            
+
             $newOtp = (string) rand(100000, 999999);
             $user->otp_code = $newOtp;
             $user->otp_expires_at = now()->addMinutes(10);
@@ -233,6 +244,9 @@ class ProfileController extends Controller
 
             // Magpadala ng bagong OTP
             $smsService->sendSms($user->id, $user->contact_number, "BDLS: Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
+
+            // THE FIX: I-lock ang button ng 60 seconds (1 minute) bago makapag-send ulit
+            \Illuminate\Support\Facades\RateLimiter::hit($rateLimitKey, 60);
 
             return back()->with(['success' => 'Numero pinalitan! Pakilagay ang 6-digit OTP para ma-verify ito.', 'active_tab' => 'settings']);
         }

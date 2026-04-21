@@ -126,7 +126,7 @@ class ServiceRequestController extends Controller
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
                 'preferred_pickup_time' => $validated['preferred_pickup_time'],
-                'status' => 'Pending',
+                'status' => 'pending',
             ]);
 
             // 4. I-save ang Attachments
