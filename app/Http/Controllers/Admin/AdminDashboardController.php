@@ -416,35 +416,10 @@ class AdminDashboardController extends Controller
         $verifiedResidents = User::approved()->where('role', 'resident')->get();
         $sentCount = 0;
 
-        // 4. Mag-text Blast
+        // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs para hindi mag-hang ang system!
         foreach ($verifiedResidents as $resident) {
-            try {
-                // Pansinin ang 'true' sa dulo. Ito ay magti-trigger ng Night Curfew at Chunking sa SmsService mo.
-                $smsService->sendSms(
-                    $resident->id,
-                    $resident->contact_number,
-                    $request->message_body,
-                    null,
-                    true,
-                );
-
-                // 2. Ipadala ang Email Broadcast (Kung verified at naka-opt-in ang residente)
-                if ($resident->email_verified_at && $resident->wants_email_notification) {
-                    $emailService->sendEmail(
-                        $resident->id,
-                        $resident->email,
-                        'BDLS Barangay Announcement',
-                        $request->message_body,
-                    );
-                }
-
-                $sentCount++;
-            } catch (\Exception $e) {
-                // I-log lang kung may pumalyang isa, wag i-crash ang buong loop
-                Log::error(
-                    "Failed to blast SMS to {$resident->contact_number}: ".$e->getMessage(),
-                );
-            }
+            \App\Jobs\ProcessAnnouncementSms::dispatch($resident, $request->message_body);
+            $sentCount++;
         }
 
         // SYSTEM AUDIT LOG RECORDER (Process 6.0)
