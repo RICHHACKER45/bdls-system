@@ -51,7 +51,8 @@ class ServiceRequestController extends Controller
         // 3. Kasaysayan (Tapos na, na-reject, o na-cancel)
         $historyRequests = $myRequests->whereIn('status', ['received', 'canceled', 'rejected']);
 
-        return view('resident.dashboard', compact('documents', 'pendingRequests', 'readyRequests', 'historyRequests'));
+        // THE FIX: Idinagdag ang myRequests para magamit sa buong Tracking Tab
+        return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests'));
     }
 
     /**
