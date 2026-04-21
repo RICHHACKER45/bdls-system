@@ -171,7 +171,7 @@
     <!-- ===================================== -->
     <!-- TAB 2: SETTINGS CONTENT (Modal-Driven)-->
     <!-- ===================================== -->
-    <div id="tab-settings" class="tab-content hidden">
+    <div id="tab-settings" class="tab-content {{ session('active_tab') == 'settings' ? 'block' : 'hidden' }}">
         <h1 class="mb-6 text-2xl font-bold text-slate-900">Account Settings</h1>
 
         <div class="space-y-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
@@ -186,18 +186,23 @@
             <div>
                 <h2 class="mb-3 text-lg font-bold text-slate-900">Primary Contact Number</h2>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <!-- THE FIX 1: Gumamit ng <div> para hindi patungan ng Chrome Autofill ang number mo -->
                     <div class="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80">{{ Auth::user()->contact_number }}</div>
 
                     @if (Auth::user()->contact_verified_at)
                         <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified
                         </span>
-                        <button onclick="openSettingsModal('changeContactModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                        @if (Auth::user()->contact_verified_at->copy()->addDays(30)->isPast())
+                            <button onclick="openSettingsModal('changeContactModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                        @else
+                            <span class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 italic sm:justify-start">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                Locked hanggang {{ Auth::user()->contact_verified_at->copy()->addDays(30)->format('M d') }}
+                            </span>
+                        @endif
                     @else
                         <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
                         <button onclick="openSettingsModal('verifyContactModal')" class="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto">Verify OTP</button>
-                        <!-- THE FIX 2: Ang "Palitan" button para sa mga nagkamali ng type ng number -->
                         <button onclick="openSettingsModal('changeContactModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
                     @endif
                 </div>
@@ -210,18 +215,25 @@
             <div>
                 <h2 class="mb-3 text-lg font-bold text-slate-900">Email Address</h2>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <input type="email" value="{{ Auth::user()->email ?? 'Walang nakarehistrong email.' }}" disabled class="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm {{ Auth::user()->email ? 'text-slate-700 font-bold' : 'text-slate-400 italic' }} sm:w-80" />
+                    <div class="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm {{ Auth::user()->email ? 'text-slate-700 font-bold' : 'text-slate-400 italic' }} sm:w-80">{{ Auth::user()->email ?? 'Walang nakarehistrong email.' }}</div>
 
                     @if (Auth::user()->email)
                         @if (Auth::user()->email_verified_at)
-                            <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto"
-                                ><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span
-                            >
+                            <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified
+                            </span>
+                            @if (Auth::user()->email_verified_at->copy()->addDays(30)->isPast())
+                                <button onclick="openSettingsModal('changeEmailModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                            @else
+                                <span class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 italic sm:justify-start">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                    Locked hanggang {{ Auth::user()->email_verified_at->copy()->addDays(30)->format('M d') }}
+                                </span>
+                            @endif
                         @else
                             <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
                             <button onclick="openSettingsModal('verifyEmailModal')" class="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto">Verify OTP</button>
                         @endif
-                        <button onclick="openSettingsModal('changeEmailModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
                     @else
                         <button onclick="openSettingsModal('changeEmailModal')" class="w-full rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">Magdagdag ng Email</button>
                     @endif
