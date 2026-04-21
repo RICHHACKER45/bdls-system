@@ -66,6 +66,7 @@
             @empty
                 <p class="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang pending registrations.</p>
             @endforelse
+            <div class="col-span-full mt-4">{{ $pendingAccounts->appends(request()->query())->links() }}</div>
         </div>
 
         <!-- SUB-TAB CONTENT: APPROVED (TASK 3: Expandable Accordion) -->
@@ -125,6 +126,7 @@
             @empty
                 <p class="py-10 text-center font-bold text-slate-500 italic">Walang approved accounts.</p>
             @endforelse
+            <div class="mt-4">{{ $approvedAccounts->appends(request()->query())->links() }}</div>
         </div>
 
         <!-- SUB-TAB CONTENT: REJECTED / LOCKED -->
@@ -152,6 +154,7 @@
             @empty
                 <p class="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang rejected accounts.</p>
             @endforelse
+            <div class="col-span-full mt-4">{{ $rejectedAccounts->appends(request()->query())->links() }}</div>
         </div>
     </div>
     <!-- ===================================== -->
@@ -179,24 +182,24 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($activeQueue as $queue)
                         @php
-        // THE LARAVEL WAY FIX: I-force sa lowercase ang pagbasa para hindi maguluhan ang logic
-        $rawStatus = strtolower($queue->status);
-        $nextStatus = ''; $btnLabel = '';
-        
-        // Mga Dokumento na kailangan ng "Probing Interview" (Face-to-Face)
-        $interviewDocs = [1-8];
-        
-        if($rawStatus == 'pending') { $nextStatus = 'processing'; $btnLabel = 'Process Request'; }
-        elseif($rawStatus == 'processing') {
-            if(in_array($queue->document_type_id, $interviewDocs)) { 
-                $nextStatus = 'for_interview'; $btnLabel = 'Set for Interview'; 
-            } else { 
-                $nextStatus = 'released'; $btnLabel = 'Release Document'; 
-            }
-        }
-        elseif($rawStatus == 'for_interview') { $nextStatus = 'released'; $btnLabel = 'Release Document'; }
-        elseif($rawStatus == 'released') { $nextStatus = 'received'; $btnLabel = 'Mark as Received'; }
-    @endphp
+                            // THE LARAVEL WAY FIX: I-force sa lowercase ang pagbasa para hindi maguluhan ang logic
+                            $rawStatus = strtolower($queue->status);
+                            $nextStatus = ''; $btnLabel = '';
+                                    
+                            // Mga Dokumento na kailangan ng "Probing Interview" (Face-to-Face)
+                            $interviewDocs = [1-8];
+                                    
+                            if($rawStatus == 'pending') { $nextStatus = 'processing'; $btnLabel = 'Process Request'; }
+                            elseif($rawStatus == 'processing') {
+                                if(in_array($queue->document_type_id, $interviewDocs)) { 
+                                    $nextStatus = 'for_interview'; $btnLabel = 'Set for Interview'; 
+                                } else { 
+                                    $nextStatus = 'released'; $btnLabel = 'Release Document'; 
+                                }
+                            }
+                            elseif($rawStatus == 'for_interview') { $nextStatus = 'released'; $btnLabel = 'Release Document'; }
+                            elseif($rawStatus == 'released') { $nextStatus = 'received'; $btnLabel = 'Mark as Received'; }
+                        @endphp
                         <tr class="transition-colors hover:bg-slate-50">
                             <td class="p-4 text-xl font-black tracking-tighter text-slate-900">{{ $queue->queue_number }}</td>
                             <td class="p-4">
@@ -208,12 +211,12 @@
                                 <!-- FIXED STATUS COLORS -->
                                 <span
                                     class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm
-                {{ $rawStatus == 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
-                {{ $rawStatus == 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
-                {{ $rawStatus == 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
-                {{ $rawStatus == 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
-                {{ $rawStatus == 'rejected' || $rawStatus == 'canceled' ? 'bg-red-100 text-red-700 border border-red-200' : '' }}
-            "
+                                        {{ $rawStatus == 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
+                                        {{ $rawStatus == 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
+                                        {{ $rawStatus == 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
+                                        {{ $rawStatus == 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
+                                        {{ $rawStatus == 'rejected' || $rawStatus == 'canceled' ? 'bg-red-100 text-red-700 border border-red-200' : '' }}
+                                    "
                                 >
                                     {{ str_replace('_', ' ', $rawStatus) }}
                                 </span>
@@ -242,6 +245,7 @@
                     @endforelse
                 </tbody>
             </table>
+            <div class="border-t border-slate-200 bg-slate-50 p-4">{{ $activeQueue->appends(request()->query())->links() }}</div>
         </div>
 
         <!-- RECEIVED HISTORY TABLE -->
@@ -287,6 +291,8 @@
                     @endforelse
                 </tbody>
             </table>
+            <!-- IDAGDAG ITO: -->
+            <div class="border-t border-slate-200 bg-slate-50 p-4">{{ $receivedQueue->appends(request()->query())->links() }}</div>
         </div>
     </div>
     <!-- ===================================== -->
