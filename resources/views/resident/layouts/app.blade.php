@@ -16,7 +16,10 @@
     <!-- SIDEBAR -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 -translate-x-full transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col">
         <div class="flex h-16 items-center border-b border-slate-100 px-6">
-            <div class="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">BD</div>
+            <!-- THE FIX: Official Logo in Resident Sidebar -->
+            <div class="mr-3 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
+                <img src="{{ asset('images/bdls-logo-large.png') }}" alt="BDLS Logo" class="h-full w-full object-cover" onerror="this.outerHTML = '<span class=\'text-xs font-bold text-red-600\'>BD</span>'" />
+            </div>
             <span class="text-lg font-bold tracking-tight">BDLS System</span>
         </div>
 

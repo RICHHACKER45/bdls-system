@@ -17,7 +17,10 @@
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 -translate-x-full transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col">
         <div class="flex h-16 items-center justify-between border-b border-slate-100 px-6">
             <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">BD</div>
+                <!-- THE FIX: Official Logo in Admin Sidebar -->
+                <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                    <img src="{{ asset('images/bdls-logo-large.png') }}" alt="BDLS Logo" class="h-full w-full object-cover" onerror="this.outerHTML = '<span class=\'text-xs font-bold text-slate-900\'>BD</span>'" />
+                </div>
                 <span class="text-lg font-bold tracking-tight">Admin Portal</span>
             </div>
             <div class="flex items-center gap-2" title="System is live and syncing">
@@ -73,7 +76,10 @@
             </form>
             <!-- THE FIX: New Settings Tab Button -->
             <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'settings' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
                 Account Settings
             </button>
         </div>
@@ -157,12 +163,12 @@
     <!-- PRETTIER-FRIENDLY JS INJECTOR -->
     <script>
         window.BDLS_ADMIN = @js ([
-                            'activeTab' => session('active_tab', 'pending'),
-                            'pollingUrl' => route('admin.api.pending_count'),
-                            'queuePollingUrl' => route('admin.api.queue_count'),
-                            'initialPendingCount' => isset($pendingAccounts) ? $pendingAccounts->count() : 0,
-                            'initialQueueCount' => isset($activeQueue) ? $activeQueue->count() : 0
-                        ]);
+                                    'activeTab' => session('active_tab', 'pending'),
+                                    'pollingUrl' => route('admin.api.pending_count'),
+                                    'queuePollingUrl' => route('admin.api.queue_count'),
+                                    'initialPendingCount' => isset($pendingAccounts) ? $pendingAccounts->count() : 0,
+                                    'initialQueueCount' => isset($activeQueue) ? $activeQueue->count() : 0
+                                ]);
     </script>
     <script src="{{ asset('js/admin.js') }}"></script>
 </body>
