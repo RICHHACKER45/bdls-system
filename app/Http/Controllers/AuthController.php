@@ -296,4 +296,82 @@ class AuthController extends Controller
 
         return redirect('/login');
     }
+
+    // ==========================================
+    // MODULE: SMS FORGOT PASSWORD LOGIC
+    // ==========================================
+
+    public function forgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetOtp(Request $request)
+    {
+        // 1. I-verify kung nag-e-exist ang number sa database
+        $request->validate([
+            'contact_number' => 'required|string|exists:users,contact_number'
+        ], [
+            'contact_number.exists' => 'Hindi nakarehistro ang numerong ito sa aming system.'
+        ]);
+
+        $user = User::where('contact_number', $request->contact_number)->first();
+        $otpCode = (string) rand(100000, 999999);
+
+        // 2. I-save ang bagong OTP (Soft update)
+        $user->update([
+            'otp_code' => $otpCode,
+            'otp_expires_at' => now()->addMinutes(10)
+        ]);
+
+        // 3. I-send ang SMS (IsOtp = true para makalusot sa Night Curfew at tipid credit)
+        $message = "BDLS: Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
+        $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
+
+        // 4. I-save sa session memory ang number para alam ng next page kung sino ang nagre-reset
+        $request->session()->put('reset_contact', $user->contact_number);
+
+        return redirect()->route('password.reset')->with('success', 'Nagpadala kami ng 6-digit code sa iyong numero.');
+    }
+
+    public function showResetForm(Request $request)
+    {
+        // Poka-yoke: Haharangin kung pumasok dito nang hindi naglalagay ng number sa step 1
+        if (!$request->session()->has('reset_contact')) {
+            return redirect()->route('password.request');
+        }
+        return view('auth.reset-password');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        // 1. Pagsamahin ang 6 na kahon mula sa UI
+        $request->validate([
+            'otp' => 'required|array',
+            'password' => 'required|string|min:8|confirmed'
+        ]);
+
+        $enteredOtp = implode('', $request->input('otp'));
+        $contactNumber = $request->session()->get('reset_contact');
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        // 2. Validation ng OTP
+        if (!$user || $user->otp_code !== $enteredOtp) {
+            return back()->withErrors(['otp' => 'Mali ang 6-digit code. Subukan muli.']);
+        }
+
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return back()->withErrors(['otp' => 'Expired na ang code. Mag-request ng bago.']);
+        }
+
+        // 3. SUCCESS: Palitan ang password at burahin ang ebidensya ng OTP
+        $user->update([
+            'password' => Hash::make($request->password),
+            'otp_code' => null
+        ]);
+
+        $request->session()->forget('reset_contact');
+
+        return redirect()->route('login')->with('success', 'Matagumpay na napalitan ang iyong password. Maaari ka nang mag-login.');
+    }
 }

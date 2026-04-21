@@ -62,7 +62,7 @@
                         <div class="mb-1 flex items-center justify-between">
                             <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
                             <!-- THE NEW FORGOT PASSWORD LINK -->
-                            <a href="#" class="text-xs font-bold text-slate-400 transition-all hover:text-slate-900 hover:underline">Nakalimutan ang password?</a>
+                            <a href="{{ route('password.request') }}" class="text-xs font-bold text-slate-400 transition-all hover:text-slate-900 hover:underline">Nakalimutan ang password?</a>
                         </div>
                         <input type="password" id="password" name="password" placeholder="••••••••" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-all outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600" />
                     </div>

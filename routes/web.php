@@ -25,6 +25,15 @@ Route::middleware(['guest'])->group(function () {
         return view('auth.signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
+
+    // ==========================================
+    // SMS FORGOT PASSWORD ROUTES
+    // ==========================================
+    Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetOtp'])->name('password.send_otp');
+
+    Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update.submit');
 });
 
 // ==========================================
@@ -43,7 +52,7 @@ Route::middleware(['auth'])->group(function () {
 
     // UNIVERSAL PASSWORD UPDATE ROUTE
     Route::post('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
-    
+
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
