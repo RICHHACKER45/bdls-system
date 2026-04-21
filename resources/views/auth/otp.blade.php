@@ -33,7 +33,7 @@
         @endif
 
         <!-- OTP FORM -->
-        <form action="{{ route('otp.verify') }}" method="POST">
+        <form action="{{ $verifyRoute }}" method="POST">
             @csrf
 
             <!-- 6 KAHON (Dynamic Sizes: w-10 h-12 sa mobile, w-14 h-16 sa desktop, justify-center para laging gitna) -->
@@ -60,7 +60,7 @@
             <p class="mb-3 text-sm text-slate-500">Hindi nakuha ang code?</p>
 
             <!-- Palitan ang 'otp.resend' ng totoong pangalan ng route mo para sa resend -->
-            <form action="{{ route('otp.resend') }}" method="POST" id="resendOtpForm">
+            <form action="{{ $resendRoute }}" method="POST" id="resendOtpForm">
                 @csrf
                 <button type="submit" id="resendBtn" class="text-sm font-bold text-slate-900 transition-all hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline">Magpadala ulit ng code <span id="timerDisplay" class="ml-1 font-mono text-red-600"></span></button>
             </form>
