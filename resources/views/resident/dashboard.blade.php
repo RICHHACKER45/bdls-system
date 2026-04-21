@@ -147,10 +147,10 @@
 
     <div class="space-y-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
         @if (session('success') && session('active_tab') == 'settings')
-        <div class="rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-sm font-medium text-green-700 shadow-sm">{{ session('success') }}</div>
+            <div class="rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-sm font-medium text-green-700 shadow-sm">{{ session('success') }}</div>
         @endif
         @if ($errors->any() && session('active_tab') == 'settings')
-        <div class="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
+            <div class="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
         @endif
 
         <!-- CONTACT NUMBER BOX -->
@@ -172,6 +172,7 @@
 
         <hr class="border-slate-100" />
 
+        <!-- EMAIL ADDRESS BOX -->
         <div>
             <h2 class="mb-3 text-lg font-bold text-slate-900">Email Address</h2>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -200,22 +201,20 @@
             <form action="{{ route('password.update') }}" method="POST" class="max-w-md space-y-4">
                 @csrf
                 <div>
-                    <label class="mb-1 block text-sm font-bold text-slate-700">Kasalukuyang Password <span class="text-red-500">*</span></label>
-                    <input type="password" name="current_password" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                    <label class="mb-1 block text-sm font-bold text-slate-700">Kasalukuyang Password</label>
+                    <input type="password" name="current_password" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900" />
                 </div>
-
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="mb-1 block text-sm font-bold text-slate-700">Bagong Password <span class="text-red-500">*</span></label>
-                        <input type="password" name="password" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                        <label class="mb-1 block text-sm font-bold text-slate-700">Bagong Password</label>
+                        <input type="password" name="password" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900" />
                     </div>
                     <div>
-                        <label class="mb-1 block text-sm font-bold text-slate-700">Confirm Password <span class="text-red-500">*</span></label>
-                        <input type="password" name="password_confirmation" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                        <label class="mb-1 block text-sm font-bold text-slate-700">Confirm Password</label>
+                        <input type="password" name="password_confirmation" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900" />
                     </div>
                 </div>
-
-                <button type="submit" class="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">I-save ang Bagong Password</button>
+                <button type="submit" class="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">I-save Password</button>
             </form>
         </div>
     </div>
@@ -320,7 +319,7 @@
 <div id="tab-tracking" class="tab-content hidden">
     <h1 class="mb-6 text-2xl font-bold text-slate-900">Track My Requests</h1>
 
-    <!-- THE FIX: Sub-tab Buttons -->
+    <!-- THE FIX: Sub-tab Buttons (With Rejected) -->
     <div class="mb-6 flex gap-2 overflow-x-auto pb-2 border-b border-slate-100">
         <button id="btn-track-pending" onclick="showResidentSubTab('track-pending', this)" class="res-sub-tab-btn rounded-full bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all shadow-sm">Pending ({{ $myRequests->where('status', 'pending')->count() }})</button>
         <button id="btn-track-status" onclick="showResidentSubTab('track-status', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Status ({{ $myRequests->whereIn('status', ['processing', 'for_interview', 'released'])->count() }})</button>
@@ -390,23 +389,21 @@
         @endforelse
     </div>
 
-    <!-- 3. RECEIVED / HISTORY SUB-TAB (WALANG CANCEL BUTTON) -->
+    <!-- 3. RECEIVED / HISTORY SUB-TAB -->
     <div id="track-history" class="res-sub-tab-content hidden space-y-4">
-        @forelse ($historyRequests as $req)
+        @forelse ($historyRequests->where('status', 'received') as $req)
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 transition-all hover:opacity-100">
+                <!-- (Iwanan ang laman ng div na ito kung paano man yan) -->
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div class="mb-2 flex items-center gap-3">
                             <span class="text-lg font-black tracking-tighter text-slate-600 uppercase">{{ $req->queue_number }}</span>
-                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm
-                                {{ $req->status === 'received' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200' }}
-                            ">
+                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest text-green-700 uppercase shadow-sm border border-green-200 bg-green-100">
                                 {{ $req->status }}
                             </span>
                         </div>
                         <p class="text-sm font-bold text-slate-700">{{ $req->documentType->name ?? 'Dokumento' }}</p>
-                        <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Layunin:</span> {{ $req->purpose }}</p>
-                        <p class="text-xs text-slate-500"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
+                        <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
                     </div>
                 </div>
             </div>
@@ -416,12 +413,36 @@
             </div>
         @endforelse
     </div>
+    <!-- 4. REJECTED / CANCELED SUB-TAB -->
+    <div id="track-rejected" class="res-sub-tab-content hidden space-y-4">
+        @forelse ($myRequests->whereIn('status', ['rejected', 'canceled']) as $req)
+            <div class="rounded-xl border border-red-200 bg-red-50 p-5 transition-all">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div class="mb-2 flex items-center gap-3">
+                            <span class="text-lg font-black tracking-tighter text-slate-600 uppercase">{{ $req->queue_number }}</span>
+                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest text-red-700 uppercase shadow-sm border border-red-300 bg-red-100">
+                                {{ $req->status }}
+                            </span>
+                        </div>
+                        <p class="text-sm font-bold text-red-900">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                        <p class="mt-1 text-xs text-red-700"><span class="font-semibold">Layunin:</span> {{ $req->purpose }}</p>
+                        <p class="text-xs text-red-700"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
+                <p class="font-bold text-slate-500 italic">Wala kang rejected o canceled na request.</p>
+            </div>
+        @endforelse
+    </div>
 </div>
 
 <!-- ===================================== -->
 <!-- TASK 4: RESUBMIT REQUIREMENTS MODAL   -->
 <!-- ===================================== -->
-<div id="resubmitModal" class="fixed inset-0 z-[1] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+<div id="resubmitModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
     <div class="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
         <div class="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
             <h3 class="text-lg font-black tracking-tight uppercase">Resubmit Requirements</h3>
@@ -450,7 +471,7 @@
 <!-- ===================================== -->
 <!-- MODAL: SERVICE REQUEST FORM           -->
 <!-- ===================================== -->
-<div id="requestModal" class="fixed inset-0 z-[1] hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity">
+<div id="requestModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity">
     <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-6">
             <div>
