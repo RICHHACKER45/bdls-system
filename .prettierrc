@@ -10,7 +10,7 @@
             "options": {
                 "parser": "blade",
                 "tabWidth": 4,
-                "sortTailwindcssClasses": true
+                "printWidth": 1200
             }
         },
         {
