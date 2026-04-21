@@ -167,6 +167,8 @@ Route::middleware(['auth'])->group(function () {
                 'email.verify',
             );
             Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
+            Route::post('/settings/update-contact', [ProfileController::class, 'updateContactNumber'])->name('settings.update_contact');
+             Route::post('/settings/verify-contact', [ProfileController::class, 'verifyContactOtp'])->name('settings.verify_contact');
             Route::post('/settings/email-preference', [
                 ProfileController::class,
                 'updateEmailPreference',
