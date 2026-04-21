@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Mail\BdlsNotificationMail;
 use App\Models\NotificationLog;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EmailService
 {
@@ -27,26 +29,43 @@ class EmailService
         $providerResponse = null;
 
         // ==========================================
-        // 2. EMAIL SENDING EXECUTION
+        // 2. EMAIL SENDING EXECUTION (DYNAMIC MOCK/LIVE)
         // ==========================================
         try {
-            // TODO (Future): Dito ilalagay ang totoong Mail::to($recipientEmail)->send(...)
+            // THE LARAVEL WAY: Babasahin ng system ang iyong .env kung 'log' o 'smtp'
+            $driver = env('MAIL_MAILER', 'log');
 
-            // DUMMY EMAIL INTEGRATION (For current development phase)
-            Log::info('====================================');
-            Log::info("EMAIL SEND INITIATED [To: {$recipientEmail}]");
-            Log::info("Subject: {$subject}");
-            Log::info("Message: {$messageContent}");
-            Log::info('====================================');
+            if ($driver === 'log') {
+                // --------------------------------------
+                // A. THE MOCK MODE (For Local Testing)
+                // --------------------------------------
+                Log::info('====================================');
+                Log::info("EMAIL SEND INITIATED [To: {$recipientEmail}]");
+                Log::info("Subject: {$subject}");
+                Log::info("Message: {$messageContent}");
+                Log::info('====================================');
 
-            $status = 'Sent (Mock)';
-            $providerResponse = 'Simulated via Laravel Log';
+                $status = 'Sent (Mock)';
+                $providerResponse = 'Simulated via Laravel Log';
+
+            } else {
+                // --------------------------------------
+                // B. THE LIVE MODE (For Defense/Production)
+                // --------------------------------------
+                Mail::to($recipientEmail)->send(
+                    new BdlsNotificationMail($subject, $messageContent)
+                );
+
+                $status = 'Sent (Live)';
+                $providerResponse = 'Delivered via SMTP';
+                Log::info("EMAIL LIVE SUCCESS: Naipadala kay {$recipientEmail}. Subject: {$subject}");
+            }
+
         } catch (Exception $e) {
             $status = 'Failed (Exception)';
             $providerResponse = $e->getMessage();
             Log::error(
-                "EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: ".
-                    $e->getMessage(),
+                "EMAIL CRITICAL EXCEPTION: Failed to send to {$recipientEmail}. Error: ".$e->getMessage(),
             );
         }
 
