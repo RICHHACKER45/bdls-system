@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // 10. Sticky Form & Fallback Logic
 document.addEventListener('DOMContentLoaded', function () {
   const formElements = document.querySelectorAll(
-    'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select',
+    'input:not([type="password"]):not([type="file"]):not([type="checkbox"]), select'
   );
 
   formElements.forEach((element) => {

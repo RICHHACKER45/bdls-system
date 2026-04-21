@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>System Analytics Report</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; color: #333; }
@@ -16,7 +16,6 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <div class="title">Barangay Doña Lucia Services (BDLS)</div>
         <div class="subtitle">{{ $reportTitle }}</div>
@@ -66,6 +65,5 @@
             <td>{{ $failedCount }}</td>
         </tr>
     </table>
-
 </body>
 </html>

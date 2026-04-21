@@ -56,7 +56,7 @@ function showSubTab(tabId, btnElement) {
       'text-white',
       'bg-red-100',
       'text-red-700',
-      'border-slate-900',
+      'border-slate-900'
     );
     btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent');
   });
@@ -74,25 +74,24 @@ function showSubTab(tabId, btnElement) {
 
 // 4. TASK 2: UPDATED ONE-WAY STATUS MODAL (Grammar & UX Fix)
 function openStatusModal(requestId, nextStatus, nextStatusLabel) {
-    const modal = document.getElementById('statusModal');
-    const titleLabel = document.getElementById('statusModalTitle'); // THE FIX: Kinuha ang buong Title
-    const input = document.getElementById('targetStatusInput');
-    const form = document.getElementById('statusForm');
+  const modal = document.getElementById('statusModal');
+  const titleLabel = document.getElementById('statusModalTitle'); // THE FIX: Kinuha ang buong Title
+  const input = document.getElementById('targetStatusInput');
+  const form = document.getElementById('statusForm');
 
-    if (modal && titleLabel && input && form) {
-        
-        // THE FIX: Smart Grammar Routing
-        if (nextStatus === 'rejected') {
-            titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
-        } else {
-            titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
-        }
-
-        input.value = nextStatus;
-        form.action = `/admin/request/${requestId}/update-status`;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+  if (modal && titleLabel && input && form) {
+    // THE FIX: Smart Grammar Routing
+    if (nextStatus === 'rejected') {
+      titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
+    } else {
+      titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
     }
+
+    input.value = nextStatus;
+    form.action = `/admin/request/${requestId}/update-status`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 // 5. TASK 1: DELETE MODAL LOGIC
@@ -103,33 +102,32 @@ function openDeleteModal(userId) {
     form.action = `/admin/account/${userId}`;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-  } 
+  }
 }
 
 // ==========================================
 // SUSPEND MODAL LOGIC (7-Day Penalty)
 // ==========================================
 function openSuspendModal(userId, userName) {
-    const modal = document.getElementById('suspendModal');
-    const form = document.getElementById('suspendForm');
-    const nameLabel = document.getElementById('suspendUserName');
-    
-    if (modal && form) {
-        if (nameLabel) nameLabel.innerText = userName;
-        form.action = `/admin/account/${userId}/suspend`;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
+  const modal = document.getElementById('suspendModal');
+  const form = document.getElementById('suspendForm');
+  const nameLabel = document.getElementById('suspendUserName');
+
+  if (modal && form) {
+    if (nameLabel) nameLabel.innerText = userName;
+    form.action = `/admin/account/${userId}/suspend`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 function closeSuspendModal() {
-    const modal = document.getElementById('suspendModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+  const modal = document.getElementById('suspendModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
-
 
 function closeDeleteModal() {
   document.getElementById('deleteModal').classList.add('hidden');
