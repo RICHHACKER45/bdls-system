@@ -111,6 +111,11 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'printReleaseLogbook',
             ])->name('queue.print_logbook');
+            // 1-WEEK PENALTY ROUTE
+            Route::post('/account/{user}/suspend', [
+                AdminDashboardController::class,
+                'suspendAccount',
+            ])->name('suspend_account');
         });
 
     // ==========================================
