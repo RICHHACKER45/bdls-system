@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Services\EmailService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash; // 1. TINAWAG NATIN ANG BAGONG SERVICE
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Validator; // 1. TINAWAG NATIN ANG BAGONG SERVICE
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
@@ -192,13 +193,13 @@ class ProfileController extends Controller
             'password' => 'required|min:8|confirmed',
         ], [
             'password.min' => 'Ang password ay dapat hindi bababa sa 8 characters.',
-            'password.confirmed' => 'Hindi tugma ang Confirm Password.'
+            'password.confirmed' => 'Hindi tugma ang Confirm Password.',
         ]);
 
         $user = Auth::user();
 
         // I-check kung tama ang lumang password bago payagan
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Mali ang iyong kasalukuyang password.'])->with('active_tab', 'settings');
         }
 
@@ -208,32 +209,33 @@ class ProfileController extends Controller
 
         return back()->with([
             'success_message' => 'Matagumpay na nabago ang iyong password!',
-            'active_tab' => 'settings'
+            'active_tab' => 'settings',
         ]);
     }
 
     /**
      * Palitan ang Contact Number (NO LOGOUT WAY + 1-MINUTE COOLDOWN)
      */
-    public function updateContactNumber(Request $request, \App\Services\SmsService $smsService)
+    public function updateContactNumber(Request $request, SmsService $smsService)
     {
         $user = Auth::user();
 
         // THE FIX: 1-Minute Rate Limiter Security
-        $rateLimitKey = 'update_contact_' . $user->id;
-        
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
-            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($rateLimitKey);
+        $rateLimitKey = 'update_contact_'.$user->id;
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+
             return back()->withErrors([
-                'contact_number' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit."
+                'contact_number' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit.",
             ])->with('active_tab', 'settings');
         }
 
         $request->validate([
-            'contact_number' => 'required|string|max:20|regex:/^09\d{9}$/|unique:users,contact_number,' . Auth::id()
+            'contact_number' => 'required|string|max:20|regex:/^09\d{9}$/|unique:users,contact_number,'.Auth::id(),
         ]);
 
-        if ($user->contact_number !== $request->contact_number) {
+        if ($user->contact_number !== $request->contact_number || is_null($user->contact_verified_at)) {
             $user->contact_number = $request->contact_number;
             $user->contact_verified_at = null; // Unverified na ulit
 
@@ -246,7 +248,7 @@ class ProfileController extends Controller
             $smsService->sendSms($user->id, $user->contact_number, "BDLS: Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
 
             // THE FIX: I-lock ang button ng 60 seconds (1 minute) bago makapag-send ulit
-            \Illuminate\Support\Facades\RateLimiter::hit($rateLimitKey, 60);
+            RateLimiter::hit($rateLimitKey, 60);
 
             return back()->with(['success' => 'Numero pinalitan! Pakilagay ang 6-digit OTP para ma-verify ito.', 'active_tab' => 'settings']);
         }

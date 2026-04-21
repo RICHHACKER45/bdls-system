@@ -46,67 +46,91 @@
                 </div>
             @endif
         @else
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <!-- LEFT COLUMN: REQUEST CARD -->
-                <div class="col-span-1 flex flex-col justify-between self-start rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8 lg:col-span-2">
-                    <div>
-                        <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        </div>
-                        <h2 class="mb-2 text-2xl font-bold text-slate-900">Kumuha ng Dokumento</h2>
-                        <p class="mb-8 max-w-md text-slate-500">Mag-request ng Barangay Clearance, Certificate of Indigency, at iba pang legal na papel nang hindi na pumipila nang matagal.</p>
-                    </div>
-                    <div>
-                        @if (Auth::user()->locked_until && Auth::user()->locked_until > now())
-                            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
-                                <p class="text-sm font-bold text-amber-700">⚠️ Naka-Suspend ang iyong account.</p>
-                                <p class="mt-1 text-xs text-amber-600">Maaari ka muling mag-request sa: <br />
-                                <span class="font-black">{{ Auth::user()->locked_until->format('M d, Y h:i A') }}</span></p>
+            <!-- THE FIX: Trimmed Dashboard Layout (No Whitespace) -->
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <!-- LEFT COLUMN (Span 2): Request Card + Announcements -->
+                <div class="col-span-1 flex flex-col gap-4 lg:col-span-2">
+                    <!-- 1. REQUEST CARD -->
+                    <div class="flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                        <div>
+                            <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             </div>
-                        @else
-                            <button onclick="openRequestModal()" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-red-700 focus:outline-none active:scale-95 sm:w-auto">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Gumawa ng Bagong Request
-                            </button>
-                        @endif
+                            <h2 class="mb-2 text-2xl font-bold text-slate-900">Kumuha ng Dokumento</h2>
+                            <p class="mb-8 max-w-md text-slate-500">Mag-request ng Barangay Clearance, Certificate of Indigency, at iba pang legal na papel nang hindi na pumipila nang matagal.</p>
+                        </div>
+                        <div>
+                            @if (Auth::user()->locked_until && Auth::user()->locked_until > now())
+                                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+                                    <p class="text-sm font-bold text-amber-700">⚠️ Naka-Suspend ang iyong account.</p>
+                                    <p class="mt-1 text-xs text-amber-600">Maaari ka muling mag-request sa: <br />
+                                    <span class="font-black">{{ Auth::user()->locked_until->format('M d, Y h:i A') }}</span></p>
+                                </div>
+                            @else
+                                <button onclick="openRequestModal()" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-red-700 focus:outline-none active:scale-95 sm:w-auto">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Gumawa ng Bagong Request
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 2. BARANGAY ANNOUNCEMENTS (Isiniksik sa ilalim para walang blank space) -->
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                        <h3 class="mb-4 flex items-center gap-2 font-bold text-slate-700">
+                            <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                            Mga Anunsyo ng Barangay
+                        </h3>
+                        <div class="space-y-3">
+                            @if (isset($announcements) && $announcements->count() > 0)
+                                @foreach ($announcements as $announcement)
+                                    <div class="rounded-lg border border-red-100 bg-red-50/60 p-4 transition-all hover:bg-red-50">
+                                        <p class="mb-1 text-[9px] font-black tracking-widest text-red-600 uppercase">{{ $announcement->created_at->format('M d, Y h:i A') }}</p>
+                                        <p class="text-xs font-bold text-slate-800">{{ $announcement->message_body }}</p>
+                                    </div>
+                                @endforeach
+                            @else
+                                <p class="text-xs font-bold text-slate-400 italic">Walang bagong anunsyo.</p>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
-                <!-- RIGHT COLUMN: QUICK TRACKING BOARD -->
-                <div class="flex flex-col gap-6">
+                <!-- RIGHT COLUMN (Span 1): Active Requests + History -->
+                <div class="flex flex-col gap-4">
                     <!-- 1. COMPRESSED ACTIVE REQUESTS SUMMARY -->
                     <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                         <h3 class="mb-4 font-bold text-slate-700">Active Requests</h3>
-                        <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="grid grid-cols-3 gap-2 text-center">
                             <button
                                 onclick="
                                     switchTab('tracking');
                                     setTimeout(() => document.getElementById('btn-track-pending').click(), 100);
                                 "
-                                class="flex flex-col items-center justify-center rounded-xl border border-yellow-200 bg-yellow-50 p-3 transition-all hover:bg-yellow-100 active:scale-95"
+                                class="flex flex-col items-center justify-center rounded-xl border border-yellow-200 bg-yellow-50 py-3 transition-all hover:bg-yellow-100 active:scale-95"
                             >
                                 <span class="text-2xl font-black text-yellow-600">{{ $myRequests->where('status', 'pending')->count() }}</span>
-                                <span class="mt-1 text-[9px] font-bold tracking-widest text-yellow-700 uppercase">Pending</span>
+                                <span class="mt-1 text-[8px] font-bold tracking-widest text-yellow-700 uppercase">Pending</span>
                             </button>
                             <button
                                 onclick="
                                     switchTab('tracking');
                                     setTimeout(() => document.getElementById('btn-track-status').click(), 100);
                                 "
-                                class="flex flex-col items-center justify-center rounded-xl border border-blue-200 bg-blue-50 p-3 transition-all hover:bg-blue-100 active:scale-95"
+                                class="flex flex-col items-center justify-center rounded-xl border border-blue-200 bg-blue-50 py-3 transition-all hover:bg-blue-100 active:scale-95"
                             >
                                 <span class="text-2xl font-black text-blue-600">{{ $myRequests->whereIn('status', ['processing', 'for_interview'])->count() }}</span>
-                                <span class="mt-1 text-[9px] font-bold tracking-widest text-blue-700 uppercase">Processing</span>
+                                <span class="mt-1 text-[8px] font-bold tracking-widest text-blue-700 uppercase">Process</span>
                             </button>
                             <button
                                 onclick="
                                     switchTab('tracking');
                                     setTimeout(() => document.getElementById('btn-track-status').click(), 100);
                                 "
-                                class="flex flex-col items-center justify-center rounded-xl border border-orange-200 bg-orange-50 p-3 transition-all hover:bg-orange-100 active:scale-95"
+                                class="flex flex-col items-center justify-center rounded-xl border border-orange-200 bg-orange-50 py-3 transition-all hover:bg-orange-100 active:scale-95"
                             >
                                 <span class="text-2xl font-black text-orange-600">{{ $readyRequests->count() }}</span>
-                                <span class="mt-1 text-[9px] font-bold tracking-widest text-orange-700 uppercase">Ready</span>
+                                <span class="mt-1 text-[8px] font-bold tracking-widest text-orange-700 uppercase">Ready</span>
                             </button>
                         </div>
                         <p class="mt-4 text-center text-[10px] font-medium text-slate-400">I-click ang mga numero upang makita ang detalye.</p>
@@ -116,20 +140,19 @@
                     <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                         <h3 class="mb-4 font-bold text-slate-700">Recent History</h3>
                         <div class="space-y-3">
-                            <!-- THE FIX: Kinukuha lang natin ang unang 3 history para hindi humaba ang page -->
-                            @forelse ($historyRequests->take(3) as $req)
+                            @forelse ($historyRequests->where('status', 'received')->take(3) as $req)
                                 <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
                                     <div class="opacity-75">
                                         <p class="text-xs font-black text-slate-900 uppercase">{{ $req->queue_number }}</p>
                                         <p class="text-[10px] font-bold text-slate-500">{{ $req->documentType->name ?? 'Dokumento' }}</p>
                                     </div>
-                                    <span class="rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm {{ $req->status === 'received' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200' }}"> {{ $req->status }} </span>
+                                    <span class="rounded border border-green-200 bg-green-100 px-2 py-1 text-[9px] font-black tracking-widest text-green-700 uppercase shadow-sm"> {{ $req->status }} </span>
                                 </div>
                             @empty
                                 <p class="text-xs font-bold text-slate-400 italic">Wala ka pang nakaraang transaksyon.</p>
                             @endforelse
                         </div>
-                        @if ($historyRequests->count() > 3)
+                        @if ($historyRequests->where('status', 'received')->count() > 3)
                             <button
                                 onclick="
                                     switchTab('tracking');
@@ -140,23 +163,6 @@
                                 Tingnan Lahat
                             </button>
                         @endif
-                    </div>
-                    <!-- 3. BARANGAY ANNOUNCEMENTS -->
-                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                        <h3 class="mb-4 flex items-center gap-2 font-bold text-slate-700">
-                            <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
-                            Mga Anunsyo ng Barangay
-                        </h3>
-                        <div class="space-y-3">
-                            @forelse ($announcements as $announcement)
-                                <div class="rounded-lg border border-red-100 bg-red-50/60 p-4 transition-all hover:bg-red-50">
-                                    <p class="mb-1 text-[9px] font-black tracking-widest text-red-600 uppercase">{{ $announcement->created_at->format('M d, Y h:i A') }}</p>
-                                    <p class="text-xs font-bold text-slate-800">{{ $announcement->message_body }}</p>
-                                </div>
-                            @empty
-                                <p class="text-xs font-bold text-slate-400 italic">Walang bagong anunsyo.</p>
-                            @endforelse
-                        </div>
                     </div>
                 </div>
             </div>
@@ -180,16 +186,19 @@
             <div>
                 <h2 class="mb-3 text-lg font-bold text-slate-900">Primary Contact Number</h2>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <input type="text" value="{{ Auth::user()->contact_number }}" disabled class="block w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80" />
+                    <!-- THE FIX 1: Gumamit ng <div> para hindi patungan ng Chrome Autofill ang number mo -->
+                    <div class="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80">{{ Auth::user()->contact_number }}</div>
 
                     @if (Auth::user()->contact_verified_at)
-                        <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto"
-                            ><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified</span
-                        >
+                        <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Verified
+                        </span>
                         <button onclick="openSettingsModal('changeContactModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
                     @else
                         <span class="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
                         <button onclick="openSettingsModal('verifyContactModal')" class="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto">Verify OTP</button>
+                        <!-- THE FIX 2: Ang "Palitan" button para sa mga nagkamali ng type ng number -->
+                        <button onclick="openSettingsModal('changeContactModal')" class="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
                     @endif
                 </div>
                 <p class="mt-2 text-xs text-slate-500">Ito ang iyong login ID at channel para sa SMS updates.</p>
@@ -250,13 +259,13 @@
     <!-- SETTINGS MODALS (Put these before scripts) -->
     <!-- ========================================== -->
     <!-- 1. CHANGE CONTACT MODAL -->
-    <div id="changeContactModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div id="changeContactModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Palitan ang Numero</h3>
             <p class="mb-6 text-sm text-slate-500">I-type ang iyong bagong 11-digit mobile number.</p>
             <form action="{{ route('resident.settings.update_contact') }}" method="POST">
                 @csrf
-                <!-- THE FIX: pattern="09[1-9]{9}" -->
+                <!-- THE FIX 1: Corrected Regex Pattern (09[1-9]{9}) -->
                 <input type="tel" name="contact_number" required pattern="09[1-9]{9}" maxlength="11" placeholder="09XXXXXXXXX" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-xl font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" />
                 <div class="flex gap-2">
                     <button type="button" onclick="closeSettingsModal('changeContactModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
@@ -266,18 +275,38 @@
         </div>
     </div>
     <!-- 2. VERIFY CONTACT OTP MODAL -->
-    <div id="verifyContactModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div id="verifyContactModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Verify Number</h3>
-            <p class="mb-6 text-sm text-slate-500">I-enter ang 6-digit OTP na ipinadala sa {{ Auth::user()->contact_number }}.</p>
+            <p class="mb-4 text-sm text-slate-500">I-enter ang 6-digit OTP na ipinadala sa {{ Auth::user()->contact_number }}.</p>
+
+            @if ($errors->has('otp_error'))
+                <div class="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{{ $errors->first('otp_error') }}</div>
+            @endif
+            <!-- Kapag tinry i-spam ang resend at naharang ng RateLimiter -->
+            @if ($errors->has('contact_number'))
+                <div class="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{{ $errors->first('contact_number') }}</div>
+            @endif
+
+            <!-- Form 1: The Verification Submit -->
             <form action="{{ route('resident.settings.verify_contact') }}" method="POST">
                 @csrf
-                <input type="text" name="otp_code" maxlength="6" required placeholder="000000" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
-                <div class="flex gap-2">
+                <input type="text" name="otp_code" maxlength="6" required placeholder="000000" class="mb-4 w-full rounded-lg border {{ $errors->has('otp_error') ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300' }} bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
+                <div class="mb-4 flex gap-2">
                     <button type="button" onclick="closeSettingsModal('verifyContactModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
                     <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Verify OTP</button>
                 </div>
             </form>
+
+            <!-- THE FIX 2: Ang Nawawalang Resend Form para sa Contact Number -->
+            <div class="border-t border-slate-100 pt-4 text-center">
+                <form action="{{ route('resident.settings.update_contact') }}" method="POST" id="resendContactOtpForm">
+                    @csrf
+                    <!-- Lihim na isasama ang current number para ma-trigger ang 'update' route bilang Resend -->
+                    <input type="hidden" name="contact_number" value="{{ Auth::user()->contact_number }}" />
+                    <button type="submit" id="resendContactBtn" class="text-xs font-bold text-slate-500 transition-all hover:text-slate-900 hover:underline">Resend SMS Code <span id="timerContactDisplay" class="font-mono text-red-600"></span></button>
+                </form>
+            </div>
         </div>
     </div>
     <!-- 3. CHANGE EMAIL MODAL -->
@@ -295,27 +324,32 @@
             </form>
         </div>
     </div>
-    <!-- 4. VERIFY EMAIL OTP MODAL (THE FIX: HINIWALAY ANG FORMS) -->
-    <div id="verifyEmailModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <!-- 4. VERIFY EMAIL OTP MODAL -->
+    <div id="verifyEmailModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 class="mb-2 text-lg font-black text-slate-900 uppercase">Verify Email</h3>
-            <p class="mb-6 text-sm text-slate-500">I-enter ang 6-digit code na ipinadala sa iyong email.</p>
+            <p class="mb-4 text-sm text-slate-500">I-enter ang 6-digit code na ipinadala sa iyong email.</p>
+
+            <!-- THE FIX: Nasa loob na ng modal ang error -->
+            @if ($errors->has('email_otp'))
+                <div class="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{{ $errors->first('email_otp') }}</div>
+            @endif
 
             <!-- Form 1: The Verification Submit -->
             <form action="{{ route('resident.email.verify') }}" method="POST">
                 @csrf
-                <input type="text" name="email_otp" maxlength="6" required placeholder="000000" class="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
+                <input type="text" name="email_otp" maxlength="6" required placeholder="000000" class="mb-4 w-full rounded-lg border {{ $errors->has('email_otp') ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300' }} bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900" />
                 <div class="mb-4 flex gap-2">
                     <button type="button" onclick="closeSettingsModal('verifyEmailModal')" class="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
                     <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Verify OTP</button>
                 </div>
             </form>
 
-            <!-- Form 2: The Resend Form (Nasa Labas Na!) -->
+            <!-- Form 2: The Resend Form (May Timer Na!) -->
             <div class="border-t border-slate-100 pt-4 text-center">
                 <form action="{{ route('resident.email.send') }}" method="POST" id="resendOtpForm">
                     @csrf
-                    <button type="submit" class="text-xs font-bold text-slate-500 hover:text-slate-900 hover:underline">Resend Email Code</button>
+                    <button type="submit" id="resendEmailBtn" class="text-xs font-bold text-slate-500 transition-all hover:text-slate-900 hover:underline">Resend Email Code <span id="timerEmailDisplay" class="font-mono text-red-600"></span></button>
                 </form>
             </div>
         </div>
@@ -329,28 +363,65 @@
                 document.body.style.overflow = 'hidden';
             }
         }
+
         function closeSettingsModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
                 document.body.style.overflow = 'auto';
-                // THE FIX: Burahin ang naiwang data kapag nag-cancel
                 const form = modal.querySelector('form');
                 if (form) form.reset();
             }
         }
 
-        // THE FIX: Seamless Auto-Open UX
         document.addEventListener('DOMContentLoaded', () => {
-            @if (session('active_tab') == 'settings')
-            @if (Auth::user()->contact_number && !Auth::user()->contact_verified_at)
-            openSettingsModal('verifyContactModal');
-            @endif
-            @if (Auth::user()->email && !Auth::user()->email_verified_at)
-            openSettingsModal('verifyEmailModal');
-            @endif
-            @endif
+            // THE FIX: Clean JS Variables using Laravel json
+            // Iniiwasan natin ang hilaw na arrow para hindi masira ang Syntax Highlighting
+            const activeTab = @json (session('active_tab'));
+            const hasContactError = @json ($errors->has('otp_error'));
+            const hasEmailError = @json ($errors->has('email_otp'));
+            const needsContactVerification = @json (Auth::user()->contact_number && !Auth::user()->contact_verified_at);
+            const needsEmailVerification = @json (Auth::user()->email && !Auth::user()->email_verified_at);
+
+            // Strict if-else Modal Router (Bawal ang overlap!)
+            if (activeTab === 'settings') {
+                if (hasContactError || needsContactVerification) {
+                    openSettingsModal('verifyContactModal');
+                } else if (hasEmailError || needsEmailVerification) {
+                    openSettingsModal('verifyEmailModal');
+                }
+            }
+
+            // THE FIX 3: 1-Minute Countdown Timers para sa parehong Email at Contact
+            const emailCooldown = @json (\Illuminate\Support\Facades\RateLimiter::availableIn('resend_email_otp_' . Auth::id()) ?: 0);
+            const contactCooldown = @json (\Illuminate\Support\Facades\RateLimiter::availableIn('update_contact_' . Auth::id()) ?: 0);
+
+            function startTimer(duration, btnId, displayId) {
+                if (duration <= 0) return;
+                const btn = document.getElementById(btnId);
+                const display = document.getElementById(displayId);
+                if (!btn || !display) return;
+
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed', 'no-underline');
+
+                let timer = duration;
+                const interval = setInterval(() => {
+                    display.innerText = `(${timer}s)`;
+                    timer--;
+                    if (timer < 0) {
+                        clearInterval(interval);
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'no-underline');
+                        display.innerText = '';
+                    }
+                }, 1000);
+            }
+
+            // I-activate ang timers sa magkabilang button
+            startTimer(emailCooldown, 'resendEmailBtn', 'timerEmailDisplay');
+            startTimer(contactCooldown, 'resendContactBtn', 'timerContactDisplay');
         });
     </script>
     <!-- ===================================== -->
