@@ -27,21 +27,31 @@ class ServiceRequestController extends Controller
     /**
      * Display the Resident Dashboard.
      */
+    /**
+     * Display the Resident Dashboard.
+     */
     public function index()
     {
         $documents = DocumentType::where('is_active', 1)->get();
         $user = Auth::user();
 
-        // THE FIX: Kunin ang totoong requests ng residente (Dynamic Data)
+        // THE FIX: Idinagdag ang withTrashed() para makuha pati ang mga na-reject at na-cancel (Soft Deleted)
         $myRequests = ServiceRequest::with('documentType')
-                        ->where('user_id', $user->id)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+            ->withTrashed()
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
+        // 1. Mga Aktibong Pinoproseso
         $pendingRequests = $myRequests->whereIn('status', ['pending', 'processing', 'for_interview']);
+
+        // 2. Handa Nang Kunin
         $readyRequests = $myRequests->where('status', 'released');
 
-        return view('resident.dashboard', compact('documents', 'pendingRequests', 'readyRequests'));
+        // 3. Kasaysayan (Tapos na, na-reject, o na-cancel)
+        $historyRequests = $myRequests->whereIn('status', ['received', 'canceled', 'rejected']);
+
+        return view('resident.dashboard', compact('documents', 'pendingRequests', 'readyRequests', 'historyRequests'));
     }
 
     /**
@@ -172,7 +182,7 @@ class ServiceRequestController extends Controller
         return back()->with([
             'success_title' => 'Request Canceled',
             'success_message' => 'Matagumpay mong kinansela ang dokumento.',
-            'active_tab' => 'dashboard'
+            'active_tab' => 'dashboard',
         ]);
     }
 }

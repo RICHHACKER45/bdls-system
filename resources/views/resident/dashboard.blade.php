@@ -70,11 +70,11 @@
                     </div>
                 </div>
 
-                <!-- THE FIX: Dynamic Resident Dashboard Statistics & Lists -->
+                <!-- THE FIX: Dynamic Resident Dashboard Tracking Board -->
                 <div class="flex flex-col gap-6">
-                    <!-- PENDING BOX -->
+                    <!-- 1. IN PROGRESS BOX -->
                     <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                        <h3 class="mb-4 font-bold text-slate-700">Pending Requests ({{ $pendingRequests->count() }})</h3>
+                        <h3 class="mb-4 font-bold text-slate-700">In Progress ({{ $pendingRequests->count() }})</h3>
                         <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
                             @forelse ($pendingRequests as $req)
                                 <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
@@ -83,9 +83,17 @@
                                         <p class="text-[10px] font-bold text-slate-500">{{ $req->documentType->name ?? 'Dokumento' }}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="rounded bg-slate-200 px-2 py-1 text-[9px] font-black tracking-widest text-slate-700 uppercase"> {{ str_replace('_', ' ', $req->status) }} </span>
+                                        <!-- Dynamic Color Badges -->
+                                        <span
+                                            class="rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm
+                            {{ $req->status === 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
+                            {{ $req->status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
+                            {{ $req->status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
+                        "
+                                        >
+                                            {{ str_replace('_', ' ', $req->status) }}
+                                        </span>
 
-                                        <!-- LILITAW LANG ANG CANCEL KUNG PENDING PA (Hindi pa nahawakan ni Admin) -->
                                         @if ($req->status === 'pending')
                                             <form action="{{ route('resident.request.cancel', $req->id) }}" method="POST">
                                                 @csrf
@@ -102,25 +110,52 @@
                         </div>
                     </div>
 
-                    <!-- READY FOR PICK-UP BOX -->
-                    <div class="rounded-2xl border border-l-4 border-slate-100 border-l-green-500 bg-white p-6 shadow-sm">
+                    <!-- 2. READY FOR PICK-UP BOX (The 10% Accent) -->
+                    <div class="rounded-2xl border border-l-4 border-slate-100 border-l-orange-500 bg-white p-6 shadow-sm">
                         <h3 class="mb-4 font-bold text-slate-700">Ready for Pick-up ({{ $readyRequests->count() }})</h3>
                         <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
                             @forelse ($readyRequests as $req)
-                                <div class="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3 shadow-sm">
+                                <div class="flex items-center justify-between rounded-lg border border-orange-200 bg-orange-50 p-3 shadow-sm">
                                     <div>
-                                        <p class="text-xs font-black text-green-800 uppercase">{{ $req->queue_number }}</p>
-                                        <p class="text-[10px] font-bold text-green-600">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                                        <p class="text-xs font-black text-orange-800 uppercase">{{ $req->queue_number }}</p>
+                                        <p class="text-[10px] font-bold text-orange-600">{{ $req->documentType->name ?? 'Dokumento' }}</p>
                                     </div>
+                                    <span class="rounded bg-orange-600 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">RELEASED</span>
                                 </div>
                             @empty
                                 <p class="text-xs font-bold text-slate-400 italic">Walang dokumentong pwedeng kunin.</p>
                             @endforelse
                         </div>
                     </div>
+
+                    <!-- 3. HISTORY BOX -->
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                        <h3 class="mb-4 font-bold text-slate-700">Kasaysayan (History)</h3>
+                        <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
+                            @forelse ($historyRequests as $req)
+                                <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
+                                    <div class="opacity-75">
+                                        <p class="text-xs font-black text-slate-900 uppercase">{{ $req->queue_number }}</p>
+                                        <p class="text-[10px] font-bold text-slate-500">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                                    </div>
+                                    <span
+                                        class="rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm
+                        {{ $req->status === 'received' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200' }}
+                    "
+                                    >
+                                        {{ $req->status }}
+                                    </span>
+                                </div>
+                            @empty
+                                <p class="text-xs font-bold text-slate-400 italic">Wala ka pang nakaraang transaksyon.</p>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
             </div>
-        @endif
+    </div>
+    </div>
+    @endif
     </div>
     <!-- TAB 2: SETTINGS CONTENT -->
     <div id="tab-settings" class="tab-content hidden">
