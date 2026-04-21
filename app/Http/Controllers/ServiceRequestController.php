@@ -24,11 +24,24 @@ class ServiceRequestController extends Controller
      * Display the Resident Dashboard.
      * Inalis ang logic sa routes/web.php.
      */
+    /**
+     * Display the Resident Dashboard.
+     */
     public function index()
     {
         $documents = DocumentType::where('is_active', 1)->get();
+        $user = Auth::user();
 
-        return view('resident.dashboard', compact('documents'));
+        // THE FIX: Kunin ang totoong requests ng residente (Dynamic Data)
+        $myRequests = ServiceRequest::with('documentType')
+                        ->where('user_id', $user->id)
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+        $pendingRequests = $myRequests->whereIn('status', ['pending', 'processing', 'for_interview']);
+        $readyRequests = $myRequests->where('status', 'released');
+
+        return view('resident.dashboard', compact('documents', 'pendingRequests', 'readyRequests'));
     }
 
     /**
@@ -139,5 +152,27 @@ class ServiceRequestController extends Controller
                 'success_message' => "Ang iyong dokumento ay pinoproseso na. Ang iyong Queue Number ay {$queueNumber}.",
                 'active_tab' => 'dashboard',
             ]);
+    }
+
+    /**
+     * RESIDENT CANCEL REQUEST LOGIC
+     */
+    public function cancelRequest(ServiceRequest $serviceRequest)
+    {
+        // 1. SECURITY: Siguraduhing kanya ang request at 'pending' pa lang
+        if ($serviceRequest->user_id !== Auth::id() || $serviceRequest->status !== 'pending') {
+            abort(403, 'Hindi mo maaaring i-cancel ang request na ito.');
+        }
+
+        // 2. THE LARAVEL WAY: Soft Delete + Update Status
+        $serviceRequest->status = 'canceled';
+        $serviceRequest->save();
+        $serviceRequest->delete(); // Ligtas na itatago ng system
+
+        return back()->with([
+            'success_title' => 'Request Canceled',
+            'success_message' => 'Matagumpay mong kinansela ang dokumento.',
+            'active_tab' => 'dashboard'
+        ]);
     }
 }

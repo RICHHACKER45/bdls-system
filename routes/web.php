@@ -159,5 +159,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/request', [ServiceRequestController::class, 'store'])->name(
                 'request.store',
             );
+            // CANCEL REQUEST (Resident Side)
+            Route::post('/request/{serviceRequest}/cancel', [
+                ServiceRequestController::class,
+                'cancelRequest',
+            ])->name('request.cancel');
         });
 });
