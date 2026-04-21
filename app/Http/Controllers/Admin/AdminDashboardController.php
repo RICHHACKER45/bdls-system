@@ -45,27 +45,27 @@ class AdminDashboardController extends Controller
         }
 
         // 4. THE LARAVEL WAY: DB-Level Filtering (Iwas Memory Exhaustion)
-        $pendingAccounts = (clone $query)->pending()->get();
-        $approvedAccounts = (clone $query)->approved()->get();
-        $rejectedAccounts = (clone $query)->rejected()->get();
+        $pendingAccounts = (clone $query)->pending()->paginate(10, ['*'], 'pending_page');
+        $approvedAccounts = (clone $query)->approved()->paginate(10, ['*'], 'approved_page');
+        $rejectedAccounts = (clone $query)->rejected()->paginate(10, ['*'], 'rejected_page');
 
         // 5. QUEUE LOGIC: Separate Active Queue from Received History
         $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
 
         $activeQueue = (clone $queueBase)
             ->whereIn('status', ['pending', 'processing', 'for_interview', 'released'])
-            ->get();
+            ->paginate(15, ['*'], 'active_page');
 
         // THE FIX: Isinama ang rejected at canceled sa History
         $receivedQueue = (clone $queueBase)
             ->whereIn('status', ['received', 'rejected', 'canceled'])
-            ->get();
+            ->paginate(15, ['*'], 'history_page');
 
         $documents = DocumentType::where('is_active', 1)->get();
 
         // 6. SYSTEM AUDIT LOGS (Process 6.0)
-        $auditLogs = AuditLog::with('admin')->latest()->get();
-        $notificationLogs = NotificationLog::with('user')->latest()->get(); // <-- IDINAGDAG NATIN ITO
+        $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
+        $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
 
         return view(
             'admin.admin-panel',
