@@ -785,7 +785,7 @@
 
                 <!-- THE FIX: Binaliktad ang pwesto ng buttons at nilagyan ng ID ang Submit -->
                 <div class="flex flex-col gap-3">
-                    <button type="button" onclick="closeStatusModal()" class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600">Kanselahin (Cancel)</button>
+                    <button type="button" onclick="closeStatusModal()" class="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95">Kanselahin (Cancel)</button>
                     <button type="submit" id="statusSubmitBtn" class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">Confirm Update</button>
                 </div>
             </form>
