@@ -9,14 +9,14 @@
 <body class="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
     <!-- OTP CARD CONTAINER (Dynamic Padding: p-6 sa mobile, p-8 sa desktop) -->
     <div class="mx-4 w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-xl md:p-8">
-        <h2 class="mb-2 text-2xl font-bold text-slate-900">Verify Your Number</h2>
+        <h2 class="mb-2 text-2xl font-bold text-slate-900">I-verify ang iyong Numero</h2>
         <p class="mb-8 text-sm text-slate-500">Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.</p>
         <!-- LARAVEL SUCCESS DISPLAY -->
         @if (session('success'))
             <div class="mb-6 rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-left shadow-sm">
                 <div class="mb-1 flex items-center gap-2 font-bold text-green-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    Success
+                    Tagumpay
                 </div>
                 <p class="text-sm font-medium text-green-600">{{ session('success') }}</p>
             </div>
@@ -26,7 +26,7 @@
             <div class="mb-6 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-left shadow-sm">
                 <div class="mb-1 flex items-center gap-2 font-bold text-red-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Verification Failed
+                    Bigo ang Verification
                 </div>
                 <p class="text-sm font-medium text-red-600">{{ $errors->first() }}</p>
             </div>
@@ -47,7 +47,7 @@
             </div>
 
             <!-- SUBMIT BUTTON -->
-            <button type="submit" class="w-full rounded-xl bg-slate-900 px-8 py-3 font-bold text-white transition-all duration-200 hover:bg-slate-800 active:scale-95">Verify Account</button>
+            <button type="submit" class="w-full rounded-xl bg-slate-900 px-8 py-3 font-bold text-white transition-all duration-200 hover:bg-slate-800 active:scale-95">I-verify ang Account</button>
         </form>
 
         <!-- RESEND OTP SECTION WITH RATE LIMITER -->

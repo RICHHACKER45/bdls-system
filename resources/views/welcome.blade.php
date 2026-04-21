@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome - Barangay Doña Lucia</title>
+    <title>Maligayang Pagdating - Barangay Doña Lucia</title>
     @vite (['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 antialiased">
@@ -13,7 +13,7 @@
             <span class="text-xl font-black tracking-widest text-white drop-shadow-md">BDLS</span>
         </div>
         <div class="flex items-center gap-4">
-            <a href="/login" class="rounded-xl px-6 py-2.5 text-sm font-bold tracking-widest text-white uppercase transition-all duration-200 hover:bg-white/20 active:scale-95"> Login </a>
+            <a href="/login" class="rounded-xl px-6 py-2.5 text-sm font-bold tracking-widest text-white uppercase transition-all duration-200 hover:bg-white/20 active:scale-95"> Mag-login </a>
             <a href="/signup" class="rounded-xl bg-red-600 px-6 py-2.5 text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-red-700 hover:shadow-red-600/30 active:scale-95"> Mag-Signup </a>
         </div>
     </nav>
@@ -42,14 +42,14 @@
             </div>
 
             <h1 class="mb-6 text-4xl font-extrabold tracking-tight drop-shadow-lg md:text-6xl">
-                Welcome to <br />
+                Maligayang Pagdating sa <br />
                 <span class="text-red-500">Barangay Doña Lucia</span> Services
             </h1>
-            <p class="mx-auto max-w-2xl text-lg font-medium text-slate-300 drop-shadow-md md:text-xl">Ang iyong mabilis at direktang koneksyon para sa mga government services, dokumento, at impormasyon ng barangay.</p>
+            <p class="mx-auto max-w-2xl text-lg font-medium text-slate-300 drop-shadow-md md:text-xl">Ang iyong mabilis at direktang koneksyon para sa mga serbisyo ng gobyerno, dokumento, at impormasyon ng barangay.</p>
 
             <div class="mt-10 flex flex-col gap-4 sm:flex-row">
                 <a href="/signup" class="rounded-xl bg-red-600 px-8 py-4 font-black tracking-widest text-white uppercase shadow-xl transition-all hover:-translate-y-1 hover:bg-red-700 hover:shadow-red-600/40 active:scale-95">Gumawa ng Account</a>
-                <a href="#services" class="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-black tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95">Tingnan ang Serbisyo</a>
+                <a href="#services" class="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-black tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95">Tingnan ang mga Serbisyo</a>
             </div>
         </div>
 
@@ -68,7 +68,7 @@
     <!-- Main Content (Services Section) -->
     <main id="services" class="mx-auto max-w-7xl px-6 py-20 md:px-12">
         <div class="mb-12 text-center">
-            <h2 class="text-3xl font-black tracking-tight text-slate-900 uppercase">Government Services</h2>
+            <h2 class="text-3xl font-black tracking-tight text-slate-900 uppercase">Mga Serbisyo ng Pamahalaan</h2>
             <p class="mt-2 font-medium text-slate-500">I-access ang mga serbisyo ng barangay sa iyong mga kamay.</p>
         </div>
 
@@ -88,7 +88,7 @@
                     <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 </div>
                 <h3 class="mb-3 text-xl font-bold text-slate-800">Live SMS Tracking</h3>
-                <p class="leading-relaxed text-slate-600">Alamin ang status ng iyong papel in real-time. Makakatanggap ka ng text kapag ready na for release ang iyong dokumento.</p>
+                <p class="leading-relaxed text-slate-600">Alamin ang status ng iyong papel in real-time. Makakatanggap ka ng text kapag handa na para sa release ang iyong dokumento.</p>
             </a>
         </div>
     </main>
@@ -110,7 +110,7 @@
                             <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                         </div>
                         <h3 class="mb-4 text-xl font-black tracking-widest text-slate-900 uppercase">Mandato</h3>
-                        <p class="text-justify text-sm leading-relaxed font-medium text-slate-600">Bilang pangunahing yunit ng pamahalaan, ang Barangay ay nagsisilbing pangunahing tagapagplano at tagapagpatupad ng yunit ng mga patakaran, plano, programa, proyekto, at aktibidad ng pamahalaan sa komunidad, at bilang isang porum kung saan ang mga sama-samang pananaw ng mga tao ay maaaring ipahayag, isaalang-alang, at kung saan ang mga hindi pagkakaunawaan ay maaaring maayos.</p>
+                        <p class="text-justify text-sm leading-relaxed font-medium text-slate-600">Bilang pangunahing yunit ng pamahalaan, ang Barangay ay nagsisilbing pangunahing tagapagplano at tagapagpatupad ng mga patakaran, plano, programa, proyekto, at aktibidad ng pamahalaan sa komunidad, at bilang isang porum kung saan ang mga sama-samang pananaw ng mga tao ay maaaring ipahayag, isaalang-alang, at kung saan ang mga hindi pagkakaunawaan ay maaaring maayos.</p>
                     </div>
                 </div>
 
@@ -125,7 +125,7 @@
                             </svg>
                         </div>
                         <h3 class="mb-4 text-xl font-black tracking-widest text-slate-900 uppercase">Vision</h3>
-                        <p class="text-justify text-sm leading-relaxed font-medium text-slate-600">Ang Barangay Doña Lucia ay sentro ng Agrikulturang kalakaran sa bayan ng Quezon, na may mga mamamayan may takot sa Diyos may pag-kakaisa, may sapat na edukasyon, malusog na pangangatawan, malinis at mapayapang kapaligiran na may kumpletong pasilidad at may pamunuang nagtutulungan at nagkakaisa.</p>
+                        <p class="text-justify text-sm leading-relaxed font-medium text-slate-600">Ang Barangay Doña Lucia ay sentro ng Agrikulturang kalakaran sa bayan ng Quezon, na may mga mamamayang may takot sa Diyos, may pagkakaisa, may sapat na edukasyon, malusog na pangangatawan, malinis at mapayapang kapaligiran na may kumpletong pasilidad at may pamunuang nagtutulungan at nagkakaisa.</p>
                     </div>
                 </div>
 
