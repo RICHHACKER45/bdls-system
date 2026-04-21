@@ -546,4 +546,27 @@ class AdminDashboardController extends Controller
 
         return $pdf->stream($filename);
     }
+
+    /**
+     * MODULE: Account Suspension (1-Week Penalty for No-Show)
+     */
+    public function suspendAccount(User $user, SmsService $smsService)
+    {
+        // 1. I-lock ng 7 araw (T&C Rule 6)
+        $user->locked_until = now()->addDays(7);
+        $user->save();
+
+        // 2. I-text ang Residente
+        $message = "BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).";
+        $smsService->sendSms($user->id, $user->contact_number, $message);
+
+        // 3. I-record sa CCTV
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'ACCOUNT_SUSPENSION',
+            'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}."
+        ]);
+
+        return back()->with('active_tab', 'pending')->with('success_message', 'Resident suspended for 7 days.');
+    }
 }
