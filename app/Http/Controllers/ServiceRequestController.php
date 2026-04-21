@@ -35,24 +35,23 @@ class ServiceRequestController extends Controller
         $documents = DocumentType::where('is_active', 1)->get();
         $user = Auth::user();
 
-        // THE FIX: Idinagdag ang withTrashed() para makuha pati ang mga na-reject at na-cancel (Soft Deleted)
         $myRequests = ServiceRequest::with('documentType')
             ->withTrashed()
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
-
         // 1. Mga Aktibong Pinoproseso
-        $pendingRequests = $myRequests->whereIn('status', ['pending', 'processing', 'for_interview']);
-
+        $pendingRequests = $myRequests->where('status', 'pending');
         // 2. Handa Nang Kunin
         $readyRequests = $myRequests->where('status', 'released');
 
         // 3. Kasaysayan (Tapos na, na-reject, o na-cancel)
         $historyRequests = $myRequests->whereIn('status', ['received', 'canceled', 'rejected']);
 
-        // THE FIX: Idinagdag ang myRequests para magamit sa buong Tracking Tab
-        return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests'));
+        // THE FIX: Kunin ang pinakabagong 3 announcements
+        $announcements = \App\Models\Announcement::latest()->take(3)->get();
+
+        return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests', 'announcements'));
     }
 
     /**
