@@ -291,6 +291,15 @@ class AdminDashboardController extends Controller
             'purok_street' => 'required_if:is_new_user,1|string|max:255',
         ]);
 
+        // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
+        $isAdmin = User::where('contact_number', $request->contact_number)->where('role', 'admin')->exists();
+        
+        if ($isAdmin) {
+            return back()->withErrors([
+                'walkin_error' => 'Bawal gamitin ang numero ng Admin para sa Service Requests.'
+            ])->with('active_tab', 'walkin');
+        }
+
         // 2. I-wrap sa Transaction para ligtas ang pera sa SMS
         DB::transaction(function () use ($request, $smsService) {
             // A. Hanapin o Gumawa ng Shadow Profile
