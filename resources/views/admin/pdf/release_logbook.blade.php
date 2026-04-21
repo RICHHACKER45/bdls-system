@@ -51,8 +51,8 @@
 <body>
     <div class="header">
         <div class="title">Barangay Doña Lucia Services (BDLS)</div>
-        <div class="subtitle">OFFICIAL DOCUMENT RELEASE LOGBOOK</div>
-        <div class="subtitle">Generated on: {{ \Carbon\Carbon::now()->format('F d, Y h:i A') }}</div>
+        <div class="subtitle">OPISYAL NA RELEASE LOGBOOK NG DOKUMENTO</div>
+        <div class="subtitle">Ginawa noong: {{ \Carbon\Carbon::now()->format('F d, Y h:i A') }}</div>
     </div>
 
     <table>
@@ -61,7 +61,7 @@
                 <th>Queue #</th>
                 <th>Pangalan ng Residente</th>
                 <th>Dokumento</th>
-                <th>Date Released</th>
+                <th>Petsa ng Pag-release</th>
                 <th>Pirma ng Kumuha</th>
             </tr>
         </thead>
@@ -73,11 +73,10 @@
                     <td>{{ $req->documentType->name ?? 'N/A' }}</td>
                     <td>{{ $req->released_at ? \Carbon\Carbon::parse($req->released_at)->format('M d, Y h:i A') : 'N/A' }}</td>
                     <td class="signature-box"></td>
-                    <!-- BLANK ITO PARA MAY MAPIRMAHAN GAMIT ANG BALLPEN -->
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center">Walang record ng released documents.</td>
+                    <td colspan="5" style="text-align: center">Walang record ng mga na-release na dokumento.</td>
                 </tr>
             @endforelse
         </tbody>

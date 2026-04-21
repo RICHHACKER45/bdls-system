@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>System Analytics Report</title>
+    <title>Ulat ng System Analytics</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; color: #333; }
         .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 10px; margin-bottom: 20px; }
@@ -22,10 +22,10 @@
         <div class="subtitle">Petsa ng Ulat: {{ \Carbon\Carbon::now()->format('F d, Y h:i A') }}</div>
     </div>
 
-    <div class="section-title">1. OVERALL REQUEST VOLUME</div>
+    <div class="section-title">1. KABUUANG DAMI NG REQUEST</div>
     <table>
         <tr>
-            <th>Total Requests</th>
+            <th>Kabuuang Request</th>
             <th>Walk-in Channel</th>
             <th>Online Channel</th>
         </tr>
@@ -36,13 +36,13 @@
         </tr>
     </table>
 
-    <div class="section-title">2. OPERATIONAL EFFICIENCY (Status)</div>
+    <div class="section-title">2. KAHUSAYAN SA OPERASYON (Status)</div>
     <table>
         <tr>
             <th>Pending</th>
-            <th>Processing</th>
-            <th>For Interview</th>
-            <th>Released / Received</th>
+            <th>Pinoproseso</th>
+            <th>Para sa Interview</th>
+            <th>Na-release / Tinanggap</th>
         </tr>
         <tr>
             <td>{{ $pendingCount }}</td>
@@ -52,12 +52,12 @@
         </tr>
     </table>
 
-    <div class="section-title">3. NOTIFICATION & API USAGE</div>
+    <div class="section-title">3. PAGGAMIT NG NOTIPIKASYON AT API</div>
     <table>
         <tr>
-            <th>Total SMS Sent</th>
-            <th>Total Emails Sent</th>
-            <th>Failed Deliveries</th>
+            <th>Kabuuang SMS na Naipadala</th>
+            <th>Kabuuang Email na Naipadala</th>
+            <th>Bigo ang Pagpapadala</th>
         </tr>
         <tr>
             <td class="highlight">{{ $smsCount }}</td>
