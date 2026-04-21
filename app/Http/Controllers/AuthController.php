@@ -273,11 +273,13 @@ class AuthController extends Controller
             // 6. ROLE-BASED ROUTING (Ang Traffic Enforcer)
             // ==========================================
             if ($user->role === 'admin') {
-                return redirect()->intended('/admin/dashboard');
+                // THE FIX: Inalis ang ->intended() para hindi ma-hijack ng AJAX polling
+                return redirect('/admin/dashboard');
             }
 
             // Kung hindi siya admin, ibig sabihin resident siya:
-            return redirect()->intended('/resident/dashboard');
+            return redirect('/resident/dashboard');
+
         }
 
         // Kapag mali ang password o number/email
