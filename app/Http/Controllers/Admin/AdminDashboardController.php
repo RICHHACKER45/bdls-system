@@ -412,8 +412,8 @@ class AdminDashboardController extends Controller
             'message_body' => $request->message_body,
         ]);
 
-        // 3. Kunin LAHAT ng Verified Residents gamit ang ginawa mong scope
-        $verifiedResidents = User::approved()->get();
+        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang (Exclude Admins)
+        $verifiedResidents = User::approved()->where('role', 'resident')->get();
         $sentCount = 0;
 
         // 4. Mag-text Blast
