@@ -74,59 +74,32 @@
 
             <!-- RIGHT COLUMN: QUICK TRACKING BOARD -->
             <div class="flex flex-col gap-6">
-                <!-- 1. IN PROGRESS BOX -->
+                <!-- 1. COMPRESSED ACTIVE REQUESTS SUMMARY -->
                 <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 font-bold text-slate-700">In Progress ({{ $pendingRequests->count() }})</h3>
-                    <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
-                        @forelse ($pendingRequests as $req)
-                            <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
-                                <div>
-                                    <p class="text-xs font-black text-slate-900 uppercase">{{ $req->queue_number }}</p>
-                                    <p class="text-[10px] font-bold text-slate-500">{{ $req->documentType->name ?? 'Dokumento' }}</p>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm {{ $req->status === 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }} {{ $req->status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }} {{ $req->status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}">
-                                        {{ str_replace('_', ' ', $req->status) }}
-                                    </span>
-                                    @if ($req->status === 'pending')
-                                        <form action="{{ route('resident.request.cancel', $req->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" onclick="return confirm('Sigurado kang gusto mong i-cancel ang request na ito?');" class="rounded border border-slate-200 bg-white p-1.5 text-slate-400 shadow-sm transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600 active:scale-95" title="Kanselahin">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-xs font-bold text-slate-400 italic">Wala kang naka-pending na request.</p>
-                        @endforelse
+                    <h3 class="mb-4 font-bold text-slate-700">Active Requests</h3>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <button onclick="switchTab('tracking'); setTimeout(() => document.getElementById('btn-track-pending').click(), 100);" class="flex flex-col items-center justify-center rounded-xl border border-yellow-200 bg-yellow-50 p-3 transition-all hover:bg-yellow-100 active:scale-95">
+                            <span class="text-2xl font-black text-yellow-600">{{ $myRequests->where('status', 'pending')->count() }}</span>
+                            <span class="mt-1 text-[9px] font-bold tracking-widest text-yellow-700 uppercase">Pending</span>
+                        </button>
+                        <button onclick="switchTab('tracking'); setTimeout(() => document.getElementById('btn-track-status').click(), 100);" class="flex flex-col items-center justify-center rounded-xl border border-blue-200 bg-blue-50 p-3 transition-all hover:bg-blue-100 active:scale-95">
+                            <span class="text-2xl font-black text-blue-600">{{ $myRequests->whereIn('status', ['processing', 'for_interview'])->count() }}</span>
+                            <span class="mt-1 text-[9px] font-bold tracking-widest text-blue-700 uppercase">Processing</span>
+                        </button>
+                        <button onclick="switchTab('tracking'); setTimeout(() => document.getElementById('btn-track-status').click(), 100);" class="flex flex-col items-center justify-center rounded-xl border border-orange-200 bg-orange-50 p-3 transition-all hover:bg-orange-100 active:scale-95">
+                            <span class="text-2xl font-black text-orange-600">{{ $readyRequests->count() }}</span>
+                            <span class="mt-1 text-[9px] font-bold tracking-widest text-orange-700 uppercase">Ready</span>
+                        </button>
                     </div>
+                    <p class="mt-4 text-center text-[10px] font-medium text-slate-400">I-click ang mga numero upang makita ang detalye.</p>
                 </div>
 
-                <!-- 2. READY FOR PICK-UP BOX -->
-                <div class="rounded-2xl border border-l-4 border-slate-100 border-l-orange-500 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 font-bold text-slate-700">Ready for Pick-up ({{ $readyRequests->count() }})</h3>
-                    <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
-                        @forelse ($readyRequests as $req)
-                            <div class="flex items-center justify-between rounded-lg border border-orange-200 bg-orange-50 p-3 shadow-sm">
-                                <div>
-                                    <p class="text-xs font-black text-orange-800 uppercase">{{ $req->queue_number }}</p>
-                                    <p class="text-[10px] font-bold text-orange-600">{{ $req->documentType->name ?? 'Dokumento' }}</p>
-                                </div>
-                                <span class="rounded bg-orange-600 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">RELEASED</span>
-                            </div>
-                        @empty
-                            <p class="text-xs font-bold text-slate-400 italic">Walang dokumentong pwedeng kunin.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- 3. HISTORY BOX -->
+                <!-- 2. RECENT HISTORY BOX (Top 3 Only) -->
                 <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 font-bold text-slate-700">Kasaysayan (History)</h3>
-                    <div class="max-h-48 space-y-3 overflow-y-auto pr-2">
-                        @forelse ($historyRequests as $req)
+                    <h3 class="mb-4 font-bold text-slate-700">Recent History</h3>
+                    <div class="space-y-3">
+                        <!-- THE FIX: Kinukuha lang natin ang unang 3 history para hindi humaba ang page -->
+                        @forelse ($historyRequests->take(3) as $req)
                             <div class="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
                                 <div class="opacity-75">
                                     <p class="text-xs font-black text-slate-900 uppercase">{{ $req->queue_number }}</p>
@@ -140,6 +113,9 @@
                             <p class="text-xs font-bold text-slate-400 italic">Wala ka pang nakaraang transaksyon.</p>
                         @endforelse
                     </div>
+                    @if($historyRequests->count() > 3)
+                    <button onclick="switchTab('tracking'); setTimeout(() => document.getElementById('btn-track-history').click(), 100);" class="mt-4 w-full rounded-lg bg-slate-100 py-2 text-[10px] font-black tracking-widest text-slate-600 uppercase transition-all hover:bg-slate-200 active:scale-95">Tingnan Lahat</button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -280,45 +256,99 @@
 <div id="tab-tracking" class="tab-content hidden">
     <h1 class="mb-6 text-2xl font-bold text-slate-900">Track My Requests</h1>
 
-    <div class="space-y-4">
-        @forelse ($myRequests as $req)
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <div class="mb-2 flex items-center gap-3">
-                        <span class="text-lg font-black tracking-tighter text-slate-900 uppercase">{{ $req->queue_number }}</span>
-                        <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm
-                            {{ $req->status === 'pending' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : '' }}
-                            {{ $req->status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
-                            {{ $req->status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
-                            {{ $req->status === 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
-                            {{ $req->status === 'received' ? 'bg-green-100 text-green-700 border border-green-200' : '' }}
-                            {{ $req->status === 'canceled' || $req->status === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' : '' }}
-                        ">
-                            {{ str_replace('_', ' ', $req->status) }}
-                        </span>
-                    </div>
-                    <p class="text-sm font-bold text-slate-800">{{ $req->documentType->name ?? 'Dokumento' }}</p>
-                    <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Layunin (Purpose):</span> {{ $req->purpose }}</p>
-                    <p class="text-xs text-slate-500"><span class="font-semibold">Petsa ng Request:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
-                </div>
+    <!-- THE FIX: Sub-tab Buttons -->
+    <div class="mb-6 flex gap-2 overflow-x-auto pb-2 border-b border-slate-100">
+        <button id="btn-track-pending" onclick="showResidentSubTab('track-pending', this)" class="res-sub-tab-btn rounded-full bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all shadow-sm">Pending ({{ $myRequests->where('status', 'pending')->count() }})</button>
+        <button id="btn-track-status" onclick="showResidentSubTab('track-status', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Status ({{ $myRequests->whereIn('status', ['processing', 'for_interview', 'released'])->count() }})</button>
+        <button id="btn-track-history" onclick="showResidentSubTab('track-history', this)" class="res-sub-tab-btn rounded-full bg-slate-100 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-600 transition-all hover:bg-slate-200">Received ({{ $historyRequests->count() }})</button>
+    </div>
 
-                <!-- THE BIG CANCEL BUTTON: Lilitaw lang kapag Pending pa -->
-                @if ($req->status === 'pending')
-                <form action="{{ route('resident.request.cancel', $req->id) }}" method="POST" class="shrink-0">
-                    @csrf
-                    <button type="submit" onclick="return confirm('Sigurado kang gusto mong i-cancel ang request na ito?');" class="w-full sm:w-auto rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95 shadow-sm flex items-center justify-center gap-2">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        Cancel Request
-                    </button>
-                </form>
-                @endif
+    <!-- 1. PENDING SUB-TAB (MAY CANCEL BUTTON) -->
+    <div id="track-pending" class="res-sub-tab-content block space-y-4">
+        @forelse ($myRequests->where('status', 'pending') as $req)
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div class="mb-2 flex items-center gap-3">
+                            <span class="text-lg font-black tracking-tighter text-slate-900 uppercase">{{ $req->queue_number }}</span>
+                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                {{ str_replace('_', ' ', $req->status) }}
+                            </span>
+                        </div>
+                        <p class="text-sm font-bold text-slate-800">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                        <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Layunin:</span> {{ $req->purpose }}</p>
+                        <p class="text-xs text-slate-500"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
+                    </div>
+                    <!-- THE CANCEL BUTTON (Visible only here!) -->
+                    <form action="{{ route('resident.request.cancel', $req->id) }}" method="POST" class="shrink-0">
+                        @csrf
+                        <button type="submit" onclick="return confirm('Sigurado kang gusto mong i-cancel ang request na ito?');" class="w-full sm:w-auto rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95 shadow-sm flex items-center justify-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Cancel Request
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
         @empty
-        <div class="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <p class="font-bold text-slate-500 italic">Wala ka pang nagagawang request o transaksyon.</p>
-        </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
+                <p class="font-bold text-slate-500 italic">Wala kang pending na request.</p>
+            </div>
+        @endforelse
+    </div>
+
+    <!-- 2. STATUS SUB-TAB (WALANG CANCEL BUTTON) -->
+    <div id="track-status" class="res-sub-tab-content hidden space-y-4">
+        @forelse ($myRequests->whereIn('status', ['processing', 'for_interview', 'released']) as $req)
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div class="mb-2 flex items-center gap-3">
+                            <span class="text-lg font-black tracking-tighter text-slate-900 uppercase">{{ $req->queue_number }}</span>
+                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm
+                                {{ $req->status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : '' }}
+                                {{ $req->status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : '' }}
+                                {{ $req->status === 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : '' }}
+                            ">
+                                {{ str_replace('_', ' ', $req->status) }}
+                            </span>
+                        </div>
+                        <p class="text-sm font-bold text-slate-800">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                        <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Layunin:</span> {{ $req->purpose }}</p>
+                        <p class="text-xs text-slate-500"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
+                <p class="font-bold text-slate-500 italic">Walang request na pinoproseso sa ngayon.</p>
+            </div>
+        @endforelse
+    </div>
+
+    <!-- 3. RECEIVED / HISTORY SUB-TAB (WALANG CANCEL BUTTON) -->
+    <div id="track-history" class="res-sub-tab-content hidden space-y-4">
+        @forelse ($historyRequests as $req)
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 transition-all hover:opacity-100">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div class="mb-2 flex items-center gap-3">
+                            <span class="text-lg font-black tracking-tighter text-slate-600 uppercase">{{ $req->queue_number }}</span>
+                            <span class="rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm
+                                {{ $req->status === 'received' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200' }}
+                            ">
+                                {{ $req->status }}
+                            </span>
+                        </div>
+                        <p class="text-sm font-bold text-slate-700">{{ $req->documentType->name ?? 'Dokumento' }}</p>
+                        <p class="mt-1 text-xs text-slate-500"><span class="font-semibold">Layunin:</span> {{ $req->purpose }}</p>
+                        <p class="text-xs text-slate-500"><span class="font-semibold">Petsa:</span> {{ $req->created_at->format('M d, Y h:i A') }}</p>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
+                <p class="font-bold text-slate-500 italic">Wala kang nakaraang transaksyon.</p>
+            </div>
         @endforelse
     </div>
 </div>
