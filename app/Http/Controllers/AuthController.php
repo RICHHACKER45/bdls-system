@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
-use App\Services\SmsService;
-
 use App\Http\Requests\RegisterRequest;
+use App\Models\User;
+use App\Services\SmsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -30,10 +27,10 @@ class AuthController extends Controller
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
         $dateOfBirth =
-            $validatedData['dob_year'] .
-            '-' .
-            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT) .
-            '-' .
+            $validatedData['dob_year'].
+            '-'.
+            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT).
+            '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
         // STEP 3: I-save ang mga Images sa Server Storage (public disk)
@@ -72,12 +69,18 @@ class AuthController extends Controller
                 'otp_expires_at' => $otpExpiresAt,
                 // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
                 'terms_accepted_at' => now(), // Kukunin ng Laravel ang petsa at oras ngayon
-                'signup_ip' => $request->ip(), // Kukunin ng Laravel ang IP address nila
             ]);
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)
             $message = "Ang iyong OTP code ay {$otpCode}. Ito ay mag-e-expire sa loob ng 10 minuto.";
-            $this->smsService->sendSms($user->id, $user->contact_number, $message, null);
+            $this->smsService->sendSms(
+                $user->id,
+                $user->contact_number,
+                $message,
+                null,
+                false,
+                true,
+            );
 
             $request->session()->put('registration_contact', $user->contact_number);
         });
@@ -100,7 +103,7 @@ class AuthController extends Controller
 
         // Hanapin kung kaninong session ito naka-link
         $contactNumber = $request->session()->get('registration_contact');
-        if (!$contactNumber) {
+        if (! $contactNumber) {
             return redirect('/signup')->withErrors([
                 'error' => 'Session expired. Mangyaring mag-register muli.',
             ]);
@@ -162,14 +165,13 @@ class AuthController extends Controller
     public function resendOtp(Request $request)
     {
         // 1. I-setup ang dalawang susi (keys) gamit ang IP address ng user
-        $cooldownKey = 'resend_sms_otp_' . $request->ip(); // Para sa 60s timer
-        $blockKey = 'block_sms_otp_' . $request->ip(); // Para sa 3-strike block
+        $cooldownKey = 'resend_sms_otp_'.$request->ip(); // Para sa 60s timer
+        $blockKey = 'block_sms_otp_'.$request->ip(); // Para sa 3-strike block
 
         // 2. CHECK: Naka-3 beses na ba siya? (Naka-lock ng 1 oras kapag spammer)
         if (RateLimiter::tooManyAttempts($blockKey, 3)) {
             return back()->withErrors([
-                'otp_error' =>
-                    'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.',
+                'otp_error' => 'Na-block ang iyong IP dahil sa maraming attempts. Subukan ulit mamaya.',
             ]);
         }
 
@@ -180,7 +182,7 @@ class AuthController extends Controller
             ]);
         }
 
-        /* 
+        /*
         ====================================================
         DITO MO ILALAGAY YUNG LOGIC MO SA PAG-SEND NG SMS
         (e.g., pag-generate ng bagong code, pag-save sa DB)
@@ -189,7 +191,7 @@ class AuthController extends Controller
         // 1. Kuhanin ang number ng user na nagre-request mula sa Session memory
         $contactNumber = $request->session()->get('registration_contact');
 
-        if (!$contactNumber) {
+        if (! $contactNumber) {
             return back()->withErrors([
                 'otp_error' => 'Session expired. Hindi mahanap ang iyong numero.',
             ]);
@@ -211,7 +213,14 @@ class AuthController extends Controller
 
             // TOTOONG SMS INTEGRATION: Resend (Ligtas: 1 Credit)
             $message = "Ang iyong BAGONG OTP code ay {$newOtp}. Ito ay mag-e-expire sa loob ng 10 minuto.";
-            $this->smsService->sendSms($user->id, $user->contact_number, $message);
+            $this->smsService->sendSms(
+                $user->id,
+                $user->contact_number,
+                $message,
+                null,
+                false,
+                true,
+            );
         });
 
         // 4. LOCK THE SYSTEM: Pagkatapos ma-send, i-lock natin sila!
@@ -251,9 +260,9 @@ class AuthController extends Controller
                 Auth::logout(); // I-kick palabas sa system
                 // I-restore ang session memory para gumana ulit ang OTP page niya
                 $request->session()->put('registration_contact', $user->contact_number);
+
                 return redirect('/otp')->withErrors([
-                    'otp' =>
-                        'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.',
+                    'otp' => 'Hindi pa verified ang iyong numero. Pakilagay ang OTP code upang makapagpatuloy.',
                 ]);
             }
 
@@ -264,11 +273,13 @@ class AuthController extends Controller
             // 6. ROLE-BASED ROUTING (Ang Traffic Enforcer)
             // ==========================================
             if ($user->role === 'admin') {
-                return redirect()->intended('/admin/dashboard');
+                // THE FIX: Inalis ang ->intended() para hindi ma-hijack ng AJAX polling
+                return redirect('/admin/dashboard');
             }
 
             // Kung hindi siya admin, ibig sabihin resident siya:
-            return redirect()->intended('/resident/dashboard');
+            return redirect('/resident/dashboard');
+
         }
 
         // Kapag mali ang password o number/email
@@ -282,6 +293,128 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken(); // CSRF Protection
+
         return redirect('/login');
+    }
+
+   // ==========================================
+    // MODULE: SMS FORGOT PASSWORD LOGIC (3-Step Flow)
+    // ==========================================
+
+    public function forgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetOtp(Request $request)
+    {
+        $request->validate([
+            'contact_number' => 'required|string|exists:users,contact_number'
+        ], [
+            'contact_number.exists' => 'Hindi nakarehistro ang numerong ito sa aming system.'
+        ]);
+
+        $user = User::where('contact_number', $request->contact_number)->first();
+        $otpCode = (string) rand(100000, 999999);
+
+        $user->update([
+            'otp_code' => $otpCode,
+            'otp_expires_at' => now()->addMinutes(10)
+        ]);
+
+        $message = "BDLS: Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
+        $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
+
+        $request->session()->put('reset_contact', $user->contact_number);
+
+        // THE FIX 1: Ididiretso na natin siya sa OTP Screen
+        return redirect()->route('password.otp.show')->with('success', 'Nagpadala kami ng 6-digit code sa iyong numero.');
+    }
+
+    public function showResetOtpForm(Request $request)
+    {
+        if (!$request->session()->has('reset_contact')) {
+            return redirect()->route('password.request');
+        }
+        
+        // THE FIX 2: Ire-recycle natin ang otp.blade.php at ipapasa ang bagong routes!
+        return view('auth.otp', [
+            'verifyRoute' => route('password.otp.verify'),
+            'resendRoute' => route('password.otp.resend')
+        ]);
+    }
+
+    public function verifyResetOtp(Request $request)
+    {
+        $request->validate(['otp' => 'required|array']);
+        $enteredOtp = implode('', $request->input('otp'));
+        
+        $contactNumber = $request->session()->get('reset_contact');
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        if (!$user || $user->otp_code !== $enteredOtp) {
+            return back()->withErrors(['otp' => 'Mali ang 6-digit code. Subukan muli.']);
+        }
+
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return back()->withErrors(['otp' => 'Expired na ang code. Mag-request ng bago.']);
+        }
+
+        // SUCCESS: Lalagyan natin ng marka ang session na "Verified" na siya
+        $request->session()->put('reset_otp_verified', true);
+
+        return redirect()->route('password.reset')->with('success', 'Code verified! Maaari mo nang ilagay ang iyong bagong password.');
+    }
+
+    public function resendResetOtp(Request $request)
+    {
+        $cooldownKey = 'resend_sms_otp_' . $request->ip();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($cooldownKey, 1)) {
+            return back()->withErrors(['otp_error' => 'Masyado pang mabilis. Maghintay bago mag-resend.']);
+        }
+
+        $contactNumber = $request->session()->get('reset_contact');
+        $user = User::where('contact_number', $contactNumber)->first();
+        
+        $newOtp = (string) rand(100000, 999999);
+        $user->update([
+            'otp_code' => $newOtp,
+            'otp_expires_at' => now()->addMinutes(10)
+        ]);
+
+        $message = "BDLS: Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
+        $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
+
+        \Illuminate\Support\Facades\RateLimiter::hit($cooldownKey, 60);
+
+        return back()->with('success', 'Bagong OTP code ay naipadala na!');
+    }
+
+    public function showResetForm(Request $request)
+    {
+        // THE FIX 3: Haharangin kung hindi pa dumaan sa OTP screen
+        if (!$request->session()->has('reset_otp_verified')) {
+            return redirect()->route('password.request');
+        }
+        return view('auth.reset-password');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed'
+        ]);
+
+        $contactNumber = $request->session()->get('reset_contact');
+        $user = User::where('contact_number', $contactNumber)->first();
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'otp_code' => null
+        ]);
+
+        $request->session()->forget(['reset_contact', 'reset_otp_verified']);
+
+        return redirect()->route('login')->with('success', 'Matagumpay na napalitan ang iyong password. Maaari ka nang mag-login.');
     }
 }

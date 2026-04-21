@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\ServiceRequest;
 use App\Models\Attachment;
 use App\Models\DocumentType;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use App\Services\SmsService; // 1. TINAWAG NATIN ANG SERVICE MO
+use App\Models\ServiceRequest;
+use App\Services\SmsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // 1. TINAWAG NATIN ANG SERVICE MO
 use Illuminate\Support\Facades\DB;
 
 class ServiceRequestController extends Controller
@@ -25,10 +24,34 @@ class ServiceRequestController extends Controller
      * Display the Resident Dashboard.
      * Inalis ang logic sa routes/web.php.
      */
+    /**
+     * Display the Resident Dashboard.
+     */
+    /**
+     * Display the Resident Dashboard.
+     */
     public function index()
     {
         $documents = DocumentType::where('is_active', 1)->get();
-        return view('resident.dashboard', compact('documents'));
+        $user = Auth::user();
+
+        $myRequests = ServiceRequest::with('documentType')
+            ->withTrashed()
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        // 1. Mga Aktibong Pinoproseso
+        $pendingRequests = $myRequests->where('status', 'pending');
+        // 2. Handa Nang Kunin
+        $readyRequests = $myRequests->where('status', 'released');
+
+        // 3. Kasaysayan (Tapos na, na-reject, o na-cancel)
+        $historyRequests = $myRequests->whereIn('status', ['received', 'canceled', 'rejected']);
+
+        // THE FIX: Kunin ang pinakabagong 3 announcements
+        $announcements = \App\Models\Announcement::latest()->take(3)->get();
+
+        return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests', 'announcements'));
     }
 
     /**
@@ -88,7 +111,7 @@ class ServiceRequestController extends Controller
         // 2. Queue Number Generator
         $latestRequest = ServiceRequest::where('request_channel', 'Online')->latest('id')->first();
         $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
-        $queueNumber = 'O-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $queueNumber = 'O-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         $user = Auth::user();
 
@@ -103,7 +126,7 @@ class ServiceRequestController extends Controller
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
                 'preferred_pickup_time' => $validated['preferred_pickup_time'],
-                'status' => 'Pending',
+                'status' => 'pending',
             ]);
 
             // 4. I-save ang Attachments
@@ -139,5 +162,27 @@ class ServiceRequestController extends Controller
                 'success_message' => "Ang iyong dokumento ay pinoproseso na. Ang iyong Queue Number ay {$queueNumber}.",
                 'active_tab' => 'dashboard',
             ]);
+    }
+
+    /**
+     * RESIDENT CANCEL REQUEST LOGIC
+     */
+    public function cancelRequest(ServiceRequest $serviceRequest)
+    {
+        // 1. SECURITY: Siguraduhing kanya ang request at 'pending' pa lang
+        if ($serviceRequest->user_id !== Auth::id() || $serviceRequest->status !== 'pending') {
+            abort(403, 'Hindi mo maaaring i-cancel ang request na ito.');
+        }
+
+        // 2. THE LARAVEL WAY: Soft Delete + Update Status
+        $serviceRequest->status = 'canceled';
+        $serviceRequest->save();
+        $serviceRequest->delete(); // Ligtas na itatago ng system
+
+        return back()->with([
+            'success_title' => 'Request Canceled',
+            'success_message' => 'Matagumpay mong kinansela ang dokumento.',
+            'active_tab' => 'dashboard',
+        ]);
     }
 }

@@ -2,26 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EmailService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash; // 1. TINAWAG NATIN ANG BAGONG SERVICE
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
+    protected $emailService;
+
+    // 2. THE LARAVEL WAY: Dependency Injection sa Constructor
+    public function __construct(EmailService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
     /**
-     * Mag-generate at magpadala ng Dummy Email OTP
+     * Mag-generate at magpadala ng Email OTP
      */
     public function sendEmailOtp(Request $request)
     {
         $user = Auth::user();
 
         // THE LARAVEL WAY (SECURITY): Rate Limiter (1 request per 60 seconds)
-        $rateLimitKey = 'resend_email_otp_' . $user->id;
+        $rateLimitKey = 'resend_email_otp_'.$user->id;
 
         if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
             $seconds = RateLimiter::availableIn($rateLimitKey);
+
             return back()
                 ->withErrors([
                     'email_otp' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit.",
@@ -29,7 +40,7 @@ class ProfileController extends Controller
                 ->with('active_tab', 'settings');
         }
 
-        if (!$user->email) {
+        if (! $user->email) {
             return back()
                 ->withErrors(['email' => 'Walang nakarehistrong email sa account na ito.'])
                 ->with('active_tab', 'settings');
@@ -46,9 +57,12 @@ class ProfileController extends Controller
         // I-lock ang user ng 60 seconds bago makapag-send ulit
         RateLimiter::hit($rateLimitKey, 60);
 
-        // DUMMY EMAIL INTEGRATION
-        Log::info(
-            "DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}",
+        // 3. THE FIX: Pinalitan ang Log::info ng pormal na Service Call
+        $this->emailService->sendEmail(
+            $user->id,
+            $user->email,
+            'BDLS Email Verification',
+            "Ang iyong BDLS Email Verification Code ay {$otp}",
         );
 
         return back()->with([
@@ -110,6 +124,18 @@ class ProfileController extends Controller
      */
     public function addEmail(Request $request)
     {
+        $user = Auth::user();
+
+        // THE FIX: 30-Day Security Lock para sa Email
+        if ($user->email_verified_at && $user->email_verified_at->copy()->addDays(30)->isFuture()) {
+            $availableDate = $user->email_verified_at->copy()->addDays(30)->format('M d, Y');
+
+            return back()->withErrors([
+                'new_email' => "Security Lock: Hindi pa maaaring palitan ang email. Subukan muli sa {$availableDate}.",
+            ])->with('active_tab', 'settings');
+
+        }
+
         $request->validate(
             [
                 'new_email' => 'required|email|unique:users,email',
@@ -136,9 +162,12 @@ class ProfileController extends Controller
             'email_otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        // DUMMY EMAIL INTEGRATION
-        Log::info(
-            "DUMMY EMAIL SENT to {$user->email}: Ang iyong BDLS Email Verification Code ay {$otp}",
+        // 4. THE FIX: Pinalitan ang Log::info ng pormal na Service Call
+        $this->emailService->sendEmail(
+            $user->id,
+            $user->email,
+            'BDLS Email Verification',
+            "Ang iyong BDLS Email Verification Code ay {$otp}",
         );
 
         return back()->with([
@@ -146,6 +175,7 @@ class ProfileController extends Controller
             'active_tab' => 'settings',
         ]);
     }
+
     /**
      * I-update kung gusto ng user makatanggap ng Email Notifications (Fallback)
      */
@@ -163,5 +193,109 @@ class ProfileController extends Controller
             'success' => 'Na-update na ang iyong Notification Preferences!',
             'active_tab' => 'settings',
         ]);
+    }
+
+    /**
+     * UNIVERSAL: Update Password (Admin & Resident)
+     */
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ], [
+            'password.min' => 'Ang password ay dapat hindi bababa sa 8 characters.',
+            'password.confirmed' => 'Hindi tugma ang Confirm Password.',
+        ]);
+
+        $user = Auth::user();
+
+        // I-check kung tama ang lumang password bago payagan
+        if (! Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Mali ang iyong kasalukuyang password.'])->with('active_tab', 'settings');
+        }
+
+        // THE LARAVEL WAY: Ligtas na i-hash ang bagong password
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return back()->with([
+            'success_message' => 'Matagumpay na nabago ang iyong password!',
+            'active_tab' => 'settings',
+        ]);
+    }
+
+    /**
+     * Palitan ang Contact Number (NO LOGOUT WAY + 1-MINUTE COOLDOWN)
+     */
+    public function updateContactNumber(Request $request, SmsService $smsService)
+    {
+        $user = Auth::user();
+
+        // THE FIX: 30-Day Security Lock para sa Contact Number
+        if ($user->contact_verified_at && $user->contact_verified_at->copy()->addDays(30)->isFuture()) {
+            $availableDate = $user->contact_verified_at->copy()->addDays(30)->format('M d, Y');
+
+            return back()->withErrors([
+                'contact_number' => "Security Lock: Hindi pa maaaring palitan ang numero. Subukan muli sa {$availableDate}.",
+            ])->with('active_tab', 'settings');
+        }
+
+        // THE FIX: 1-Minute Rate Limiter Security
+        $rateLimitKey = 'update_contact_'.$user->id;
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+
+            return back()->withErrors([
+                'contact_number' => "Masyadong mabilis! Maghintay ng {$seconds} segundo bago mag-request ulit.",
+            ])->with('active_tab', 'settings');
+        }
+
+        $request->validate([
+            'contact_number' => 'required|string|max:20|regex:/^09\d{9}$/|unique:users,contact_number,'.Auth::id(),
+        ]);
+
+        if ($user->contact_number !== $request->contact_number || is_null($user->contact_verified_at)) {
+            $user->contact_number = $request->contact_number;
+            $user->contact_verified_at = null; // Unverified na ulit
+
+            $newOtp = (string) rand(100000, 999999);
+            $user->otp_code = $newOtp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+
+            // Magpadala ng bagong OTP
+            $smsService->sendSms($user->id, $user->contact_number, "BDLS: Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
+
+            // THE FIX: I-lock ang button ng 60 seconds (1 minute) bago makapag-send ulit
+            RateLimiter::hit($rateLimitKey, 60);
+
+            return back()->with(['success' => 'Numero pinalitan! Pakilagay ang 6-digit OTP para ma-verify ito.', 'active_tab' => 'settings']);
+        }
+
+        return back()->with(['active_tab' => 'settings']);
+    }
+
+    /**
+     * I-verify ang Contact OTP habang naka-login
+     */
+    public function verifyContactOtp(Request $request)
+    {
+        $request->validate(['otp_code' => 'required|size:6']);
+        $user = Auth::user();
+
+        if ($user->otp_code !== $request->otp_code) {
+            return back()->withErrors(['otp_error' => 'Mali ang 6-digit code. Subukan muli.'])->with('active_tab', 'settings');
+        }
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return back()->withErrors(['otp_error' => 'Expired na ang code. Mag-request ng bago.'])->with('active_tab', 'settings');
+        }
+
+        $user->contact_verified_at = now();
+        $user->otp_code = null;
+        $user->save();
+
+        return back()->with(['success' => 'Phone Number Verified Successfully!', 'active_tab' => 'settings']);
     }
 }

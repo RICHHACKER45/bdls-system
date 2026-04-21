@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Admin\AdminDashboardController;
+use Illuminate\Support\Facades\Route;
 
 // ==========================================
 // 1. THE SMART TRAFFIC DIRECTOR (Welcome Page)
@@ -26,13 +25,29 @@ Route::middleware(['guest'])->group(function () {
         return view('auth.signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
+
+    // ==========================================
+    // SMS FORGOT PASSWORD ROUTES (3-Step Flow)
+    // ==========================================
+    Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetOtp'])->name('password.send_otp');
+    
+    Route::get('/forgot-password/otp', [AuthController::class, 'showResetOtpForm'])->name('password.otp.show');
+    Route::post('/forgot-password/otp', [AuthController::class, 'verifyResetOtp'])->name('password.otp.verify');
+    Route::post('/forgot-password/otp/resend', [AuthController::class, 'resendResetOtp'])->name('password.otp.resend');
+    
+    Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update.submit');
 });
 
 // ==========================================
 // 3. OTP ROUTES (Para sa Account Verification)
 // ==========================================
 Route::get('/otp', function () {
-    return view('auth.otp');
+    return view('auth.otp', [
+        'verifyRoute' => route('otp.verify'),
+        'resendRoute' => route('otp.resend')
+    ]);
 })->name('otp.show');
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
 Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend');
@@ -41,6 +56,10 @@ Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.rese
 // 4. AUTHENTICATED ROUTES (Bawal ang walang account)
 // ==========================================
 Route::middleware(['auth'])->group(function () {
+
+    // UNIVERSAL PASSWORD UPDATE ROUTE
+    Route::post('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
+
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -95,6 +114,28 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'storeWalkinRequest',
             ])->name('walkin.store');
+
+            // ANNOUNCEMENTS ROUTE
+            Route::post('/announcements/broadcast', [
+                AdminDashboardController::class,
+                'broadcastAnnouncement',
+            ])->name('announcements.broadcast');
+            // REPORTS & LOGS ROUTE (Process 5.0)
+            Route::post('/reports/generate', [
+                AdminDashboardController::class,
+                'generateReport',
+            ])->name('reports.generate');
+
+            // LOGBOOK ROUTE (Maintain Release Logbook Use Case)
+            Route::get('/queue/logbook/print', [
+                AdminDashboardController::class,
+                'printReleaseLogbook',
+            ])->name('queue.print_logbook');
+            // 1-WEEK PENALTY ROUTE
+            Route::post('/account/{user}/suspend', [
+                AdminDashboardController::class,
+                'suspendAccount',
+            ])->name('suspend_account');
         });
 
     // ==========================================
@@ -126,6 +167,8 @@ Route::middleware(['auth'])->group(function () {
                 'email.verify',
             );
             Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
+            Route::post('/settings/update-contact', [ProfileController::class, 'updateContactNumber'])->name('settings.update_contact');
+             Route::post('/settings/verify-contact', [ProfileController::class, 'verifyContactOtp'])->name('settings.verify_contact');
             Route::post('/settings/email-preference', [
                 ProfileController::class,
                 'updateEmailPreference',
@@ -138,5 +181,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/request', [ServiceRequestController::class, 'store'])->name(
                 'request.store',
             );
+            // CANCEL REQUEST (Resident Side)
+            Route::post('/request/{serviceRequest}/cancel', [
+                ServiceRequestController::class,
+                'cancelRequest',
+            ])->name('request.cancel');
         });
 });

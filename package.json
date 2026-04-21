@@ -6,19 +6,18 @@
     "dev": "vite --host",
     "build": "vite build",
     "format": "npx prettier --write .",
-    "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"npm run dev\"",
+    "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"npm run dev\" \"php artisan queue:work\"",
     "clear-all": "concurrently \"php artisan optimize:clear\" \"php artisan view:clear\" \"php artisan cache:clear\"",
-    "dbreset":"php artisan migrate:fresh --seed"
+    "dbreset": "php artisan migrate:fresh --seed"
   },
   "devDependencies": {
-    "@prettier/plugin-php": "^0.24.0",
-    "prettier-plugin-blade": "^3.1.3",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "prettier": "^3.8.1",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.11.0",
     "concurrently": "^9.0.1",
     "laravel-vite-plugin": "^2.0.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-blade": "^3.1.3",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.2.1",
     "vite": "^7.0.7"
   }

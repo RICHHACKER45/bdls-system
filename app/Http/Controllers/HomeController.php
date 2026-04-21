@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
@@ -17,6 +16,7 @@ class HomeController extends Controller
             if (Auth::user()->role === 'admin') {
                 return redirect()->route('admin.dashboard');
             }
+
             return redirect()->route('resident.dashboard');
         }
 

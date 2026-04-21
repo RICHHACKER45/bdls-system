@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
@@ -15,9 +16,17 @@ class User extends Authenticatable
     /**
      * TASK 1: Fixed Scopes for zero-tolerance pending and multi-attempt rejection
      */
+
+    /**
+     * ACCOUNT FILTERING SCOPES (The Laravel Way)
+     */
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('is_verified', false)->where('rejection_count', 0);
+        // THE FIX: Dapat 0 ang rejection count para maituring na "Under Review" lang.
+        return $query
+            ->where('is_verified', false)
+            ->where('rejection_count', 0)
+            ->whereNotNull('contact_verified_at');
     }
 
     public function scopeApproved(Builder $query): Builder
@@ -35,7 +44,7 @@ class User extends Authenticatable
      */
     protected function age(): Attribute
     {
-        return Attribute::make(get: fn() => \Carbon\Carbon::parse($this->date_of_birth)->age);
+        return Attribute::make(get: fn () => Carbon::parse($this->date_of_birth)->age);
     }
 
     /**
@@ -69,7 +78,6 @@ class User extends Authenticatable
         'locked_until',
         'is_verified',
         'terms_accepted_at',
-        'signup_ip',
     ];
 
     /**

@@ -41,65 +41,71 @@ function switchTab(tabId) {
   if (window.innerWidth < 1024) toggleSidebar();
 }
 
-// 3. SUB-TAB LOGIC
+// 3. SUB-TAB LOGIC (UNIVERSAL PILL DESIGN)
 function showSubTab(tabId, btnElement) {
-  // Determine the container context (sub-tab buttons are grouped per main tab)
   const subTabContainer = btnElement.closest('.tab-content') || document.body;
-
-  // Hide all sub-tab contents within this context
   subTabContainer.querySelectorAll('.sub-tab-content').forEach((el) => el.classList.add('hidden'));
 
-  // Show target sub-tab
   const targetTab = document.getElementById(tabId);
   if (targetTab) targetTab.classList.remove('hidden');
 
-  // Handle button highlights based on which sub-tab group it belongs to
   const siblingButtons = btnElement.parentElement.querySelectorAll('.sub-tab-btn');
-
   siblingButtons.forEach((btn) => {
     btn.classList.remove(
       'bg-slate-900',
       'text-white',
       'bg-red-100',
       'text-red-700',
-      'border-slate-900',
-      'text-slate-900',
+      'border-slate-900'
     );
-    btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent', 'text-slate-400');
+    btn.classList.add('bg-slate-200', 'text-slate-700', 'border-transparent');
   });
 
-  if (tabId.startsWith('queue-')) {
-    // Queue Sub-tab logic (Underline style)
-    btnElement.classList.add('text-slate-900', 'border-slate-900');
-    btnElement.classList.remove('text-slate-400', 'border-transparent');
-  } else {
-    if (tabId === 'sub-pending' || tabId === 'sub-approved') {
-      btnElement.classList.add('bg-slate-900', 'text-white');
-    } else if (tabId === 'sub-rejected') {
-      btnElement.classList.add('bg-red-100', 'text-red-700');
-    }
+  // Kung ang pinindot ay mga "History" o "Rejected", gawing red ang pill
+  if (tabId === 'sub-rejected' || tabId === 'queue-received') {
+    btnElement.classList.add('bg-red-100', 'text-red-700');
     btnElement.classList.remove('bg-slate-200', 'text-slate-700');
+  } else {
+    // Default Active Tab
+    btnElement.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+    btnElement.classList.remove('bg-slate-200', 'text-slate-700', 'border-transparent');
   }
 }
 
-// 4. TASK 2: UPDATED ONE-WAY STATUS MODAL
+// 4. TASK 2: UPDATED ONE-WAY STATUS MODAL (Grammar & UX Fix)
 function openStatusModal(requestId, nextStatus, nextStatusLabel) {
-  const modal = document.getElementById('statusModal');
-  const label = document.getElementById('nextStatusLabel');
-  const input = document.getElementById('targetStatusInput');
-  const form = document.getElementById('statusForm');
+    const modal = document.getElementById('statusModal');
+    const titleLabel = document.getElementById('statusModalTitle'); 
+    const input = document.getElementById('targetStatusInput');
+    const form = document.getElementById('statusForm');
+    const submitBtn = document.getElementById('statusSubmitBtn'); // Bagong target natin
 
-  if (modal && label && input && form) {
-    label.innerText = nextStatusLabel;
-    input.value = nextStatus;
-    form.action = `/admin/request/${requestId}/update-status`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
+    if (modal && titleLabel && input && form && submitBtn) {
+        // THE FIX: Smart Grammar at Dynamic Button Styling
+        if (nextStatus === 'rejected') {
+            titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
+            submitBtn.innerText = 'Reject Request';
+            submitBtn.className = 'w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95';
+        } else {
+            titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
+            submitBtn.innerText = 'Confirm Update';
+            submitBtn.className = 'w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95';
+        }
+
+        input.value = nextStatus;
+        form.action = `/admin/request/${requestId}/update-status`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 }
 
+// THE FIX: Idinagdag ang nawawalang "Close" function!
 function closeStatusModal() {
-  document.getElementById('statusModal').classList.add('hidden');
+    const modal = document.getElementById('statusModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 // 5. TASK 1: DELETE MODAL LOGIC
@@ -110,6 +116,30 @@ function openDeleteModal(userId) {
     form.action = `/admin/account/${userId}`;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+  }
+}
+
+// ==========================================
+// SUSPEND MODAL LOGIC (7-Day Penalty)
+// ==========================================
+function openSuspendModal(userId, userName) {
+  const modal = document.getElementById('suspendModal');
+  const form = document.getElementById('suspendForm');
+  const nameLabel = document.getElementById('suspendUserName');
+
+  if (modal && form) {
+    if (nameLabel) nameLabel.innerText = userName;
+    form.action = `/admin/account/${userId}/suspend`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeSuspendModal() {
+  const modal = document.getElementById('suspendModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
   }
 }
 
