@@ -18,9 +18,9 @@
         </div>
 
         <div class="mb-6 flex gap-2 overflow-x-auto pb-2">
-            <button onclick="showSubTab('sub-pending', this)" class="sub-tab-btn rounded-full bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all">Under Review ({{ $pendingAccounts->count() }})</button>
-            <button onclick="showSubTab('sub-approved', this)" class="sub-tab-btn rounded-full bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-slate-300">Approved ({{ $approvedAccounts->count() }})</button>
-            <button onclick="showSubTab('sub-rejected', this)" class="sub-tab-btn rounded-full bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-red-200 hover:text-red-700">Rejected / Locked ({{ $rejectedAccounts->count() }})</button>
+            <button onclick="showSubTab('sub-pending', this)" class="sub-tab-btn rounded-full bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all">Sinusuri ({{ $pendingAccounts->count() }})</button>
+            <button onclick="showSubTab('sub-approved', this)" class="sub-tab-btn rounded-full bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-slate-300">Aprubado ({{ $approvedAccounts->count() }})</button>
+            <button onclick="showSubTab('sub-rejected', this)" class="sub-tab-btn rounded-full bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-red-200 hover:text-red-700">Tinanggihan / Naka-lock ({{ $rejectedAccounts->count() }})</button>
         </div>
 
         <!-- SUB-TAB CONTENT: PENDING -->
@@ -56,9 +56,9 @@
                         <div class="flex gap-2">
                             <form action="{{ route('admin.approve_account', $user->id) }}" method="POST" class="flex-1">
                                 @csrf
-                                <button type="submit" class="w-full rounded-lg bg-slate-900 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Approve</button>
+                                <button type="submit" class="w-full rounded-lg bg-slate-900 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">I-aprubahan</button>
                             </form>
-                            <button type="button" onclick="openRejectModal('{{ $user->id }}', '{{ $user->first_name }} {{ $user->last_name }}')" class="flex-1 rounded-lg border border-red-200 bg-red-50 py-2.5 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95">Reject</button>
+                            <button type="button" onclick="openRejectModal('{{ $user->id }}', '{{ $user->first_name }} {{ $user->last_name }}')" class="flex-1 rounded-lg border border-red-200 bg-red-50 py-2.5 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95">Tanggihan</button>
                         </div>
                     </div>
                 </div>

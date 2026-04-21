@@ -36,7 +36,7 @@
             <button onclick="switchTab('pending')" id="nav-pending" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab', 'pending') == 'pending' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <div class="flex items-center gap-3">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Pending Registrations
+                    Mga Nakabinbing Pagpaparehistro
                 </div>
                 <span id="pending-badge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">0</span>
             </button>
@@ -44,7 +44,7 @@
             <button onclick="switchTab('queue')" id="nav-queue" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab', 'queue') == 'queue' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <div class="flex items-center gap-3">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                    Queue & Processing
+                    Pila at Pagproseso
                 </div>
                 <span id="queue-badge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">0</span>
             </button>
@@ -90,7 +90,7 @@
                 <button onclick="toggleSidebar()" class="-ml-2 rounded-md p-2 text-slate-500 transition-all hover:text-slate-900 focus:outline-none active:scale-95 lg:hidden">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
-                <h1 id="topbar-title" class="hidden text-xl font-bold text-slate-800 sm:block">{{ session('active_tab') == 'queue' ? 'Queue & Processing' : 'Pending Registrations' }}</h1>
+                <h1 id="topbar-title" class="hidden text-xl font-bold text-slate-800 sm:block">{{ session('active_tab') == 'queue' ? 'Pila at Pagproseso' : 'Mga Nakabinbing Pagpaparehistro' }}</h1>
             </div>
 
             <!-- DYNAMIC GREETING & ROLE -->
