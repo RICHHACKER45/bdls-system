@@ -130,8 +130,8 @@
             @if (session('success') && session('active_tab') == 'settings')
                 <div class="rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-sm font-medium text-green-700 shadow-sm">{{ session('success') }}</div>
             @endif
-            @if ($errors->has('email_otp') || $errors->has('email'))
-                <div class="rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
+            @if ($errors->any() && session('active_tab') == 'settings')
+                <div class="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
             @endif
 
             <div>
@@ -223,6 +223,31 @@
                         </label>
                     @endif
                 </div>
+            </div>
+            <hr class="my-8 border-slate-100" />
+
+            <div>
+                <h2 class="mb-4 text-lg font-bold text-slate-900">Security Settings</h2>
+                <form action="{{ route('password.update') }}" method="POST" class="max-w-md space-y-4">
+                    @csrf
+                    <div>
+                        <label class="mb-1 block text-sm font-bold text-slate-700">Kasalukuyang Password <span class="text-red-500">*</span></label>
+                        <input type="password" name="current_password" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-bold text-slate-700">Bagong Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="password" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-bold text-slate-700">Confirm Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="password_confirmation" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">I-save ang Bagong Password</button>
+                </form>
             </div>
         </div>
     </div>
