@@ -211,4 +211,54 @@ class ProfileController extends Controller
             'active_tab' => 'settings'
         ]);
     }
+
+    /**
+     * Palitan ang Contact Number (NO LOGOUT WAY)
+     */
+    public function updateContactNumber(Request $request, \App\Services\SmsService $smsService)
+    {
+        $request->validate([
+            'contact_number' => 'required|string|max:20|regex:/^09\d{9}$/|unique:users,contact_number,' . Auth::id()
+        ]);
+
+        $user = Auth::user();
+        if ($user->contact_number !== $request->contact_number) {
+            $user->contact_number = $request->contact_number;
+            $user->contact_verified_at = null; // Unverified na ulit
+            
+            $newOtp = (string) rand(100000, 999999);
+            $user->otp_code = $newOtp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+
+            // Magpadala ng bagong OTP
+            $smsService->sendSms($user->id, $user->contact_number, "BDLS: Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
+
+            return back()->with(['success' => 'Numero pinalitan! Pakilagay ang 6-digit OTP para ma-verify ito.', 'active_tab' => 'settings']);
+        }
+
+        return back()->with(['active_tab' => 'settings']);
+    }
+
+    /**
+     * I-verify ang Contact OTP habang naka-login
+     */
+    public function verifyContactOtp(Request $request)
+    {
+        $request->validate(['otp_code' => 'required|size:6']);
+        $user = Auth::user();
+
+        if ($user->otp_code !== $request->otp_code) {
+            return back()->withErrors(['otp_error' => 'Mali ang 6-digit code. Subukan muli.'])->with('active_tab', 'settings');
+        }
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return back()->withErrors(['otp_error' => 'Expired na ang code. Mag-request ng bago.'])->with('active_tab', 'settings');
+        }
+
+        $user->contact_verified_at = now();
+        $user->otp_code = null;
+        $user->save();
+
+        return back()->with(['success' => 'Phone Number Verified Successfully!', 'active_tab' => 'settings']);
+    }
 }
