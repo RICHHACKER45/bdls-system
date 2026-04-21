@@ -769,13 +769,12 @@
         }
     </script>
     <!-- TASK 2: UPDATED STATUS CONFIRMATION MODAL -->
-    <div id="statusModal" class="fixed inset-0 z-[110] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+    <div id="statusModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-sm transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
             <div class="mb-6 flex flex-col items-center text-center">
                 <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-900">
                     <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </div>
-                <!-- THE FIX: Nilagyan ng id="statusModalTitle" ang h3 tag para makontrol ng JS -->
                 <h3 id="statusModalTitle" class="text-xl font-black tracking-tight text-slate-900 uppercase">Move to <span id="nextStatusLabel" class="text-blue-600">...</span>?</h3>
                 <p class="mt-2 px-4 text-sm font-medium text-slate-500">Sigurado ka bang gusto mong i-update ang status ng request na ito?</p>
             </div>
@@ -783,9 +782,11 @@
             <form id="statusForm" method="POST">
                 @csrf
                 <input type="hidden" name="status" id="targetStatusInput" />
+
+                <!-- THE FIX: Binaliktad ang pwesto ng buttons at nilagyan ng ID ang Submit -->
                 <div class="flex flex-col gap-3">
-                    <button type="submit" class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">Confirm Update</button>
-                    <button type="button" onclick="closeStatusModal()" class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600">Kanselahin</button>
+                    <button type="button" onclick="closeStatusModal()" class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600">Kanselahin (Cancel)</button>
+                    <button type="submit" id="statusSubmitBtn" class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">Confirm Update</button>
                 </div>
             </form>
         </div>
