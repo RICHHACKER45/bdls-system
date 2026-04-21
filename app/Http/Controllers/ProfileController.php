@@ -124,6 +124,18 @@ class ProfileController extends Controller
      */
     public function addEmail(Request $request)
     {
+        $user = Auth::user();
+
+        // THE FIX: 30-Day Security Lock para sa Email
+        if ($user->email_verified_at && $user->email_verified_at->copy()->addDays(30)->isFuture()) {
+            $availableDate = $user->email_verified_at->copy()->addDays(30)->format('M d, Y');
+
+            return back()->withErrors([
+                'new_email' => "Security Lock: Hindi pa maaaring palitan ang email. Subukan muli sa {$availableDate}.",
+            ])->with('active_tab', 'settings');
+
+        }
+
         $request->validate(
             [
                 'new_email' => 'required|email|unique:users,email',
@@ -219,6 +231,15 @@ class ProfileController extends Controller
     public function updateContactNumber(Request $request, SmsService $smsService)
     {
         $user = Auth::user();
+
+        // THE FIX: 30-Day Security Lock para sa Contact Number
+        if ($user->contact_verified_at && $user->contact_verified_at->copy()->addDays(30)->isFuture()) {
+            $availableDate = $user->contact_verified_at->copy()->addDays(30)->format('M d, Y');
+
+            return back()->withErrors([
+                'contact_number' => "Security Lock: Hindi pa maaaring palitan ang numero. Subukan muli sa {$availableDate}.",
+            ])->with('active_tab', 'settings');
+        }
 
         // THE FIX: 1-Minute Rate Limiter Security
         $rateLimitKey = 'update_contact_'.$user->id;
