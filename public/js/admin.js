@@ -103,8 +103,33 @@ function openDeleteModal(userId) {
     form.action = `/admin/account/${userId}`;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-  }
+  } 
 }
+
+// ==========================================
+// SUSPEND MODAL LOGIC (7-Day Penalty)
+// ==========================================
+function openSuspendModal(userId, userName) {
+    const modal = document.getElementById('suspendModal');
+    const form = document.getElementById('suspendForm');
+    const nameLabel = document.getElementById('suspendUserName');
+    
+    if (modal && form) {
+        if (nameLabel) nameLabel.innerText = userName;
+        form.action = `/admin/account/${userId}/suspend`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeSuspendModal() {
+    const modal = document.getElementById('suspendModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
 
 function closeDeleteModal() {
   document.getElementById('deleteModal').classList.add('hidden');

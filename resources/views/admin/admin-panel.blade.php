@@ -209,8 +209,18 @@
                                     />
                                 </div>
 
-                                <!-- THE NEW RED DELETE BUTTON -->
-                                <div class="border-l border-slate-200 pl-3">
+                                <!-- THE NEW RED DELETE BUTTON & SUSPEND BUTTON -->
+                                <div class="flex items-center gap-2 border-l border-slate-200 pl-3">
+                                    <!-- THE FIX: 1-Week Penalty Modal Trigger -->
+                                    <button
+                                        type="button"
+                                        onclick="openSuspendModal('{{ $user->id }}', '{{ $user->first_name }} {{ $user->last_name }}')"
+                                        class="rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-amber-600 uppercase shadow-sm transition-all hover:bg-amber-100 active:scale-95"
+                                    >
+                                        Suspend
+                                    </button>
+
+                                    <!-- Hard Delete Button -->
                                     <button
                                         type="button"
                                         onclick="openDeleteModal('{{ $user->id }}')"
@@ -1467,6 +1477,46 @@
                     Isara
                 </button>
             </div>
+        </div>
+    </div>
+    <!-- TASK 1: SUSPEND ACCOUNT MODAL (7-Day Penalty) -->
+    <div
+        id="suspendModal"
+        class="fixed inset-0 z-[200] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity"
+    >
+        <div
+            class="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all"
+        >
+            <div class="mb-6 flex flex-col items-center text-center">
+                <div
+                    class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600"
+                >
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="text-xl font-black tracking-tight text-slate-900 uppercase">
+                    Suspend Account?
+                </h3>
+                <p class="mt-2 px-4 text-sm font-medium text-slate-500">Sigurado ka bang gusto mong patawan ng 7-araw na penalty si <strong id="suspendUserName" class="text-slate-900"></strong>?</p>
+            </div>
+
+            <form id="suspendForm" method="POST">
+                @csrf
+                <div class="flex flex-col gap-3">
+                    <button
+                        type="submit"
+                        class="w-full rounded-xl bg-amber-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-amber-700 active:scale-95"
+                    >
+                        Ipataw ang Penalty
+                    </button>
+                    <button
+                        type="button"
+                        onclick="closeSuspendModal()"
+                        class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 @endsection
