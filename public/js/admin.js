@@ -74,38 +74,40 @@ function showSubTab(tabId, btnElement) {
 
 // 4. TASK 2: UPDATED ONE-WAY STATUS MODAL (Grammar & UX Fix)
 function openStatusModal(requestId, nextStatus, nextStatusLabel) {
-    const modal = document.getElementById('statusModal');
-    const titleLabel = document.getElementById('statusModalTitle'); 
-    const input = document.getElementById('targetStatusInput');
-    const form = document.getElementById('statusForm');
-    const submitBtn = document.getElementById('statusSubmitBtn'); // Bagong target natin
+  const modal = document.getElementById('statusModal');
+  const titleLabel = document.getElementById('statusModalTitle');
+  const input = document.getElementById('targetStatusInput');
+  const form = document.getElementById('statusForm');
+  const submitBtn = document.getElementById('statusSubmitBtn'); // Bagong target natin
 
-    if (modal && titleLabel && input && form && submitBtn) {
-        // THE FIX: Smart Grammar at Dynamic Button Styling
-        if (nextStatus === 'rejected') {
-            titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
-            submitBtn.innerText = 'Reject Request';
-            submitBtn.className = 'w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95';
-        } else {
-            titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
-            submitBtn.innerText = 'Confirm Update';
-            submitBtn.className = 'w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95';
-        }
-
-        input.value = nextStatus;
-        form.action = `/admin/request/${requestId}/update-status`;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+  if (modal && titleLabel && input && form && submitBtn) {
+    // THE FIX: Smart Grammar at Dynamic Button Styling
+    if (nextStatus === 'rejected') {
+      titleLabel.innerHTML = `<span class="text-red-600">Reject Request?</span>`;
+      submitBtn.innerText = 'Reject Request';
+      submitBtn.className =
+        'w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95';
+    } else {
+      titleLabel.innerHTML = `Move to <span class="text-blue-600">${nextStatusLabel}</span>?`;
+      submitBtn.innerText = 'Confirm Update';
+      submitBtn.className =
+        'w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95';
     }
+
+    input.value = nextStatus;
+    form.action = `/admin/request/${requestId}/update-status`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 // THE FIX: Idinagdag ang nawawalang "Close" function!
 function closeStatusModal() {
-    const modal = document.getElementById('statusModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+  const modal = document.getElementById('statusModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
 
 // 5. TASK 1: DELETE MODAL LOGIC

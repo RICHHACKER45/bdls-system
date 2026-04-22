@@ -166,26 +166,26 @@ function pollResidentStatus() {
 
 // 7. TRACKING SUB-TAB LOGIC
 function showResidentSubTab(tabId, btnElement) {
-    const subTabContainer = btnElement.closest('.tab-content') || document.body;
-    subTabContainer.querySelectorAll('.res-sub-tab-content').forEach((el) => {
-        el.classList.add('hidden');
-        el.classList.remove('block');
-    });
+  const subTabContainer = btnElement.closest('.tab-content') || document.body;
+  subTabContainer.querySelectorAll('.res-sub-tab-content').forEach((el) => {
+    el.classList.add('hidden');
+    el.classList.remove('block');
+  });
 
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.remove('hidden');
-        targetTab.classList.add('block');
-    }
+  const targetTab = document.getElementById(tabId);
+  if (targetTab) {
+    targetTab.classList.remove('hidden');
+    targetTab.classList.add('block');
+  }
 
-    const siblingButtons = btnElement.parentElement.querySelectorAll('.res-sub-tab-btn');
-    siblingButtons.forEach((btn) => {
-        btn.classList.remove('bg-slate-900', 'text-white');
-        btn.classList.add('bg-slate-100', 'text-slate-600');
-    });
+  const siblingButtons = btnElement.parentElement.querySelectorAll('.res-sub-tab-btn');
+  siblingButtons.forEach((btn) => {
+    btn.classList.remove('bg-slate-900', 'text-white');
+    btn.classList.add('bg-slate-100', 'text-slate-600');
+  });
 
-    btnElement.classList.add('bg-slate-900', 'text-white');
-    btnElement.classList.remove('bg-slate-100', 'text-slate-600');
+  btnElement.classList.add('bg-slate-900', 'text-white');
+  btnElement.classList.remove('bg-slate-100', 'text-slate-600');
 }
 
 // INITIALIZER (Babasahin ang window.BDLS Config galing sa Laravel Blade)

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Forgot Password - BDLS</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite (['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-screen items-center justify-center bg-slate-50 font-sans text-slate-900 antialiased p-4">
+<body class="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
     <!-- BACK BUTTON -->
     <div class="absolute top-4 left-4 md:top-8 md:left-8">
         <a href="{{ route('login') }}" class="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition-all duration-200 hover:text-red-600 focus:ring-4 focus:ring-slate-200 active:scale-95 active:bg-slate-200">
@@ -25,18 +25,16 @@
         </div>
 
         @if ($errors->any())
-        <div class="mb-6 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
+            <div class="mb-6 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">{{ $errors->first() }}</div>
         @endif
 
         <form action="{{ route('password.send_otp') }}" method="POST">
             @csrf
             <div class="mb-6">
-                <label class="mb-1 block text-sm font-semibold text-slate-700 text-center">Contact Number</label>
-                <input type="tel" name="contact_number" placeholder="09XXXXXXXXX" required maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full rounded-lg border border-slate-300 px-4 py-3.5 transition-all outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600 font-mono text-xl font-bold tracking-widest text-center" />
+                <label class="mb-1 block text-center text-sm font-semibold text-slate-700">Contact Number</label>
+                <input type="tel" name="contact_number" placeholder="09XXXXXXXXX" required maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full rounded-lg border border-slate-300 px-4 py-3.5 text-center font-mono text-xl font-bold tracking-widest transition-all outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600" />
             </div>
-            <button type="submit" class="w-full rounded-xl bg-slate-900 px-8 py-3.5 font-bold text-white transition-all hover:bg-slate-800 active:scale-95 shadow-md flex justify-center items-center gap-2">
-                Ipadala ang OTP Code
-            </button>
+            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-8 py-3.5 font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95">Ipadala ang OTP Code</button>
         </form>
     </div>
 </body>

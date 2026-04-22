@@ -23,7 +23,7 @@
         <div class="flex w-full flex-col items-center text-center md:w-1/2 md:items-start md:text-left">
             <!-- THE FIX: Official Logo in Login -->
             <div class="mt-12 mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-lg md:mt-0">
-                <img src="{{ asset('images/bdls-logo-large.png') }}" alt="BDLS Logo" class="h-full w-full object-cover" onerror="this.outerHTML='<span class=\'text-2xl font-bold text-red-600\'>BDLS</span>'" />
+                <img src="{{ asset('images/bdls-logo-large.png') }}" alt="BDLS Logo" class="h-full w-full object-cover" onerror="this.outerHTML = '<span class=\'text-2xl font-bold text-red-600\'>BDLS</span>'" />
             </div>
             <h1 class="mb-4 text-3xl font-extrabold tracking-tight md:text-5xl">Barangay Doña Lucia <span class="text-red-600">Services</span></h1>
             <p class="max-w-md text-lg text-slate-600 md:text-xl">Ang iyong mabilis at direktang koneksyon para sa mga dokumento at serbisyo ng barangay.</p>
