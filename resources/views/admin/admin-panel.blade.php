@@ -707,7 +707,7 @@
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
-                <iframe name="pdfViewerFrame" id="pdfViewerFrame" onload="hideGlobalLoader()" class="relative z-10 h-full w-full bg-white"></iframe>
+                <iframe name="pdfViewerFrame" id="pdfViewerFrame" class="relative z-10 h-full w-full bg-white"></iframe>
             </div>
             <!-- Modal Footer: WITH DOWNLOAD BUTTON -->
             <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-4">
@@ -719,124 +719,6 @@
             </div>
         </div>
     </div>
-    <script>
-        function openPdfModal() {
-            const modal = document.getElementById('pdfModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closePdfModal() {
-            const modal = document.getElementById('pdfModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-            document.getElementById('pdfViewerFrame').src = 'about:blank';
-        }
-
-        function hideGlobalLoader() {
-            const loader = document.getElementById('global-loader');
-            if (loader) {
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
-            }
-        }
-
-        // Gagawa ng invisible form para mag-force download ng PDF
-        function downloadPdfNow() {
-            const month = document.querySelector('select[name="report_month"]').value;
-            const year = document.querySelector('select[name="report_year"]').value;
-
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route('admin.reports.generate') }}';
-            form.target = '_blank'; // Magda-download ito sa bagong tab
-
-            const csrf = document.createElement('input');
-            csrf.type = 'hidden';
-            csrf.name = '_token';
-            csrf.value = '{{ csrf_token() }}';
-            form.appendChild(csrf);
-
-            const mInput = document.createElement('input');
-            mInput.type = 'hidden';
-            mInput.name = 'report_month';
-            mInput.value = month;
-            form.appendChild(mInput);
-
-            const yInput = document.createElement('input');
-            yInput.type = 'hidden';
-            yInput.name = 'report_year';
-            yInput.value = year;
-            form.appendChild(yInput);
-
-            const dlInput = document.createElement('input');
-            dlInput.type = 'hidden';
-            dlInput.name = 'is_download';
-            dlInput.value = '1';
-            form.appendChild(dlInput);
-
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
-        }
-    </script>
-    <script>
-        // JS Logic para sa In-App PDF Modal (SPA Illusion)
-        function openPdfModal() {
-            const modal = document.getElementById('pdfModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            // Hahayaan nating lumabas ang global loader (z-[2]) dahil automatic itong tini-trigger ng form submit.
-        }
-
-        function closePdfModal() {
-            const modal = document.getElementById('pdfModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-            // Clear the iframe para hindi naiipon ang memory at mag-reset
-            document.getElementById('pdfViewerFrame').src = 'about:blank';
-        }
-
-        // THE FIX 3: Ang function na papatay sa infinite loop ng loader
-        function hideGlobalLoader() {
-            const loader = document.getElementById('global-loader');
-            if (loader) {
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
-            }
-        }
-
-        // JS Logic para sa Logbook Modal
-        function openLogbookModal(url) {
-            const modal = document.getElementById('logbookModal');
-            const loader = document.getElementById('global-loader');
-
-            // I-trigger ang loader habang nag-ge-generate pa ng PDF ang server
-            if (loader) {
-                loader.classList.remove('hidden');
-                loader.classList.add('flex');
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-
-            // I-assign ang URL sa iframe para mag-load
-            document.getElementById('logbookViewerFrame').src = url;
-        }
-
-        function closeLogbookModal() {
-            const modal = document.getElementById('logbookModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-            document.getElementById('logbookViewerFrame').src = 'about:blank';
-        }
-    </script>
     <!-- TASK 2: UPDATED STATUS CONFIRMATION MODAL -->
     <div id="statusModal" class="fixed inset-0 z-[100] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-sm transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
@@ -945,83 +827,197 @@
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
-                <iframe name="logbookViewerFrame" id="logbookViewerFrame" onload="hideGlobalLoader()" class="relative z-10 h-full w-full bg-white"></iframe>
-            </div>
-            <!-- Modal Footer: WITH DOWNLOAD BUTTON -->
-            <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-4">
-                <a href="{{ route('admin.queue.print_logbook') }}?download=1" class="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    I-Download ang Logbook
-                </a>
-                <button onclick="closeLogbookModal()" class="rounded-xl bg-slate-900 px-8 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Isara</button>
+                <iframe name="logbookViewerFrame" id="logbookViewerFrame" class="relative z-10 h-full w-full bg-white"></iframe>
+
+                <!-- Modal Footer: WITH DOWNLOAD BUTTON -->
+                <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-4">
+                    <a href="{{ route('admin.queue.print_logbook') }}?download=1" class="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        I-Download ang Logbook
+                    </a>
+                    <button onclick="closeLogbookModal()" class="rounded-xl bg-slate-900 px-8 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Isara</button>
+                </div>
             </div>
         </div>
-    </div>
-    <!-- TASK 1: SUSPEND ACCOUNT MODAL (7-Day Penalty) -->
-    <div id="suspendModal" class="fixed inset-0 z-[200] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
-        <div class="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all">
-            <div class="mb-6 flex flex-col items-center text-center">
-                <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 class="text-xl font-black tracking-tight text-slate-900 uppercase">Suspend Account?</h3>
-                <p class="mt-2 px-4 text-sm font-medium text-slate-500">Sigurado ka bang gusto mong patawan ng 7-araw na penalty si <strong id="suspendUserName" class="text-slate-900"></strong>?</p>
-            </div>
-
-            <form id="suspendForm" method="POST">
-                @csrf
-                <div class="flex flex-col gap-3">
-                    <button type="submit" class="w-full rounded-xl bg-amber-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-amber-700 active:scale-95">Ipataw ang Penalty</button>
-                    <button type="button" onclick="closeSuspendModal()" class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <!-- ===================================== -->
-    <!-- TAB 6: ACCOUNT SETTINGS               -->
-    <!-- ===================================== -->
-    <div id="tab-settings" class="tab-content {{ session('active_tab') == 'settings' ? 'block' : 'hidden' }}">
-        <div class="mx-auto mt-8 max-w-2xl">
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-                <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <!-- TASK 1: SUSPEND ACCOUNT MODAL (7-Day Penalty) -->
+        <div id="suspendModal" class="fixed inset-0 z-[200] flex hidden items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+            <div class="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all">
+                <div class="mb-6 flex flex-col items-center text-center">
+                    <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-900 uppercase">Security Settings</h2>
+                    <h3 class="text-xl font-black tracking-tight text-slate-900 uppercase">Suspend Account?</h3>
+                    <p class="mt-2 px-4 text-sm font-medium text-slate-500">Sigurado ka bang gusto mong patawan ng 7-araw na penalty si <strong id="suspendUserName" class="text-slate-900"></strong>?</p>
                 </div>
 
-                <p class="mb-6 text-sm font-medium text-slate-500">Mahalaga: Palitan agad ang iyong default password upang maiwasan ang unauthorized access sa Admin Portal.</p>
-
-                @if ($errors->has('current_password') || $errors->has('password'))
-                    <div class="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-4">
-                        <p class="text-sm font-bold text-red-700">{{ $errors->first() }}</p>
-                    </div>
-                @endif
-
-                <form action="{{ route('password.update') }}" method="POST" class="space-y-5">
+                <form id="suspendForm" method="POST">
                     @csrf
-                    <div>
-                        <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Kasalukuyang Password <span class="text-red-500">*</span></label>
-                        <input type="password" name="current_password" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
-                    </div>
-                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Bagong Password <span class="text-red-500">*</span></label>
-                            <input type="password" name="password" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">I-type Ulit (Confirm) <span class="text-red-500">*</span></label>
-                            <input type="password" name="password_confirmation" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
-                        </div>
-                    </div>
-                    <div class="flex justify-end border-t border-slate-100 pt-4">
-                        <button type="submit" class="flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
-                            I-save ang Bagong Password
-                        </button>
+                    <div class="flex flex-col gap-3">
+                        <button type="submit" class="w-full rounded-xl bg-amber-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-amber-700 active:scale-95">Ipataw ang Penalty</button>
+                        <button type="button" onclick="closeSuspendModal()" class="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
-    </div>
+        <!-- ===================================== -->
+        <!-- TAB 6: ACCOUNT SETTINGS               -->
+        <!-- ===================================== -->
+        <div id="tab-settings" class="tab-content {{ session('active_tab') == 'settings' ? 'block' : 'hidden' }}">
+            <div class="mx-auto mt-8 max-w-2xl">
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                    <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tight text-slate-900 uppercase">Security Settings</h2>
+                    </div>
+
+                    <p class="mb-6 text-sm font-medium text-slate-500">Mahalaga: Palitan agad ang iyong default password upang maiwasan ang unauthorized access sa Admin Portal.</p>
+
+                    @if ($errors->has('current_password') || $errors->has('password'))
+                        <div class="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-4">
+                            <p class="text-sm font-bold text-red-700">{{ $errors->first() }}</p>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('password.update') }}" method="POST" class="space-y-5">
+                        @csrf
+                        <div>
+                            <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Kasalukuyang Password <span class="text-red-500">*</span></label>
+                            <input type="password" name="current_password" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                        </div>
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Bagong Password <span class="text-red-500">*</span></label>
+                                <input type="password" name="password" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">I-type Ulit (Confirm) <span class="text-red-500">*</span></label>
+                                <input type="password" name="password_confirmation" required minlength="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-slate-900 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div class="flex justify-end border-t border-slate-100 pt-4">
+                            <button type="submit" class="flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                                I-save ang Bagong Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script>
+            // ==========================================
+            // MODALS & IFRAME JS LOGIC (SPA Illusion)
+            // ==========================================
+            function hideGlobalLoader() {
+                const loader = document.getElementById('global-loader');
+                if (loader) {
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                }
+            }
+
+            // --- PDF ANALYTICS MODAL ---
+            function openPdfModal() {
+                const modal = document.getElementById('pdfModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            function closePdfModal() {
+                const modal = document.getElementById('pdfModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    document.body.style.overflow = 'auto';
+                    document.getElementById('pdfViewerFrame').src = 'about:blank';
+                }
+            }
+
+            function downloadPdfNow() {
+                const month = document.querySelector('select[name="report_month"]').value;
+                const year = document.querySelector('select[name="report_year"]').value;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("admin.reports.generate") }}';
+                form.target = '_blank';
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+
+                const mInput = document.createElement('input');
+                mInput.type = 'hidden';
+                mInput.name = 'report_month';
+                mInput.value = month;
+                form.appendChild(mInput);
+
+                const yInput = document.createElement('input');
+                yInput.type = 'hidden';
+                yInput.name = 'report_year';
+                yInput.value = year;
+                form.appendChild(yInput);
+
+                const dlInput = document.createElement('input');
+                dlInput.type = 'hidden';
+                dlInput.name = 'is_download';
+                dlInput.value = '1';
+                form.appendChild(dlInput);
+
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+
+            // --- LOGBOOK MODAL ---
+            function openLogbookModal(url) {
+                const modal = document.getElementById('logbookModal');
+                const loader = document.getElementById('global-loader');
+
+                if (loader) {
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                }
+
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    document.body.style.overflow = 'hidden';
+                    document.getElementById('logbookViewerFrame').src = url;
+                }
+            }
+
+            function closeLogbookModal() {
+                const modal = document.getElementById('logbookModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    document.body.style.overflow = 'auto';
+                    document.getElementById('logbookViewerFrame').src = 'about:blank';
+                }
+            }
+
+            // --- THE FIX: DYNAMIC IFRAME LISTENERS ---
+            // Iiwasan natin ang "Race Condition" sa pamamagitan ng pag-load nito AFTER ng DOM
+            document.addEventListener('DOMContentLoaded', () => {
+                const pdfFrame = document.getElementById('pdfViewerFrame');
+                const logbookFrame = document.getElementById('logbookViewerFrame');
+
+                if (pdfFrame) {
+                    pdfFrame.addEventListener('load', hideGlobalLoader);
+                }
+
+                if (logbookFrame) {
+                    logbookFrame.addEventListener('load', hideGlobalLoader);
+                }
+            });
+        </script>
+
 @endsection
