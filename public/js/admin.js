@@ -124,6 +124,7 @@ function openDeleteModal(userId) {
 // ==========================================
 // SUSPEND MODAL LOGIC (7-Day Penalty)
 // ==========================================
+//#region
 function openSuspendModal(userId, userName) {
   const modal = document.getElementById('suspendModal');
   const form = document.getElementById('suspendForm');
@@ -148,8 +149,9 @@ function closeSuspendModal() {
 function closeDeleteModal() {
   document.getElementById('deleteModal').classList.add('hidden');
 }
+//#endregion
 
-// 6. EXISTING MODALS
+//#region 6. EXISTING MODALS
 function openRejectModal(userId, userName) {
   const modal = document.getElementById('rejectModal');
   if (modal) {
@@ -176,8 +178,9 @@ function closeModal() {
   document.getElementById('imageModal').classList.remove('flex');
   document.getElementById('modalImg').src = '';
 }
+//#endregion
 
-// 7. TOASTS & LOADER
+// 7. TOASTS & LOADER (With Phase 3 Tactile Lock)
 function initUI() {
   const toasts = document.querySelectorAll('.toast-alert');
   toasts.forEach((toast) => {
@@ -195,15 +198,41 @@ function initUI() {
   const loader = document.getElementById('global-loader');
 
   forms.forEach((form) => {
+    // Skip kung GET method (gaya ng search bar)
     if (form.method.toUpperCase() === 'GET') return;
-    form.addEventListener('submit', () => {
+
+    form.addEventListener('submit', function (e) {
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      // THE FIX: Admin Tactile Shield (10s Button Lock)
+      if (submitBtn && !submitBtn.disabled) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        const originalText = submitBtn.innerHTML;
+        let count = 10;
+        submitBtn.innerHTML = `Wait... (${count}s)`;
+
+        const timer = setInterval(() => {
+          count--;
+          submitBtn.innerHTML = `Wait... (${count}s)`;
+          if (count <= 0) {
+            clearInterval(timer);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+        }, 1000);
+      }
+
+      // Show Global Loader
       if (loader) {
         loader.classList.remove('hidden');
         loader.classList.add('flex');
       }
     });
   });
-}
+} 
 
 // 8. POLLING
 let pendingCount = 0;
