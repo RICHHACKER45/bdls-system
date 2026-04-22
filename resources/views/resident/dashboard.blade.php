@@ -240,7 +240,58 @@
                 </div>
                 <p class="mt-2 text-xs text-slate-500">Optional: Para makatanggap ng kopya ng digital receipts.</p>
             </div>
+            <!-- ===================================== -->
+            <!-- UPGRADED: NOTIFICATION PREFERENCES    -->
+            <!-- ===================================== -->
+            <div class="mt-8 border-t border-slate-100 pt-6">
+                <h2 class="mb-4 text-lg font-bold text-slate-900">Notification Preferences</h2>
 
+                <div class="space-y-3">
+                    <!-- SMS (Disabled/Required - Locked to Green) -->
+                    <label class="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">SMS Notifications</p>
+                            <p class="text-xs text-slate-500">Pangunahing channel para sa mabilis na updates (Required).</p>
+                        </div>
+                        <!-- LOCKED GREEN SWITCH -->
+                        <div class="relative inline-flex cursor-not-allowed items-center">
+                            <input type="checkbox" checked disabled class="peer sr-only" />
+                            <div class="h-6 w-11 rounded-full bg-green-600 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-white after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                        </div>
+                    </label>
+
+                    <!-- EMAIL (Conditional: Verified vs Unverified) -->
+                    @if (Auth::user()->email_verified_at)
+                        <form action="{{ route('resident.settings.email_preference') }}" method="POST">
+                            @csrf
+                            <label class="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:bg-slate-50">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
+                                    <p class="text-xs text-slate-500">Makatanggap ng kopya ng updates sa iyong email.</p>
+                                </div>
+                                <!-- RED (OFF) TO GREEN (ON) DYNAMIC SWITCH -->
+                                <div class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" name="wants_email_notification" value="1" onchange="this.form.submit()" {{ Auth::user()->wants_email_notification ? 'checked' : '' }} class="peer sr-only" />
+                                    <div class="h-6 w-11 rounded-full bg-red-500 transition-colors peer-checked:bg-green-600 peer-focus:ring-2 peer-focus:ring-slate-300 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </div>
+                            </label>
+                        </form>
+                    @else
+                        <!-- UNVERIFIED STATE (Locked to Gray) -->
+                        <label class="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
+                                <p class="mt-1 text-xs font-bold text-amber-600">⚠️ I-verify muna ang iyong email sa itaas upang magamit ito.</p>
+                            </div>
+                            <!-- LOCKED GRAY SWITCH -->
+                            <div class="relative inline-flex cursor-not-allowed items-center opacity-60">
+                                <input type="checkbox" disabled class="peer sr-only" />
+                                <div class="h-6 w-11 rounded-full bg-slate-400 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-['']"></div>
+                            </div>
+                        </label>
+                    @endif
+                </div>
+            </div>
             <hr class="border-slate-100" />
 
             <!-- PASSWORD SECURITY -->
