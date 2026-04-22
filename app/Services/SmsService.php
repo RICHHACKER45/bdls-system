@@ -24,6 +24,12 @@ class SmsService
         $isOtp = false,
     ) {
         // ==========================================
+        // THE FIX: WALK-IN PREFIX SANITIZER
+        // Palihim na tatanggalin ang "W-" para makalusot sa Telco API
+        // ==========================================
+        $recipientContact = str_replace('W-', '', $recipientContact);
+        
+        // ==========================================
         // 0. SECURITY: UNVERIFIED NUMBER BLOCKER (Process 1.0)
         // ==========================================
         $user = User::find($userId);

@@ -259,10 +259,11 @@ class AdminDashboardController extends Controller
             'contact_number' => 'required|string|max:20',
         ]);
 
-        // Hanapin ang user gamit ang unique contact number
-        $walkinUser = User::where('contact_number', $request->contact_number)->first();
+        // THE FIX: Hanapin pareho kung may totoong account o may Walk-in profile na (W-)
+        $walkinUser = User::where('contact_number', $request->contact_number)
+            ->orWhere('contact_number', 'W-'.$request->contact_number)
+            ->first();
 
-        // Ibalik sa Walk-in Tab kasama ang resulta
         return back()->with([
             'active_tab' => 'walkin',
             'walkin_searched' => true,
@@ -312,11 +313,12 @@ class AdminDashboardController extends Controller
                     'date_of_birth' => $request->date_of_birth,
                     'house_number' => $request->house_number,
                     'purok_street' => $request->purok_street,
-                    'contact_number' => $request->contact_number,
+                    // THE FIX: Nilagyan ng W- para hindi mag-clash sa real registration!
+                    'contact_number' => 'W-'.$request->contact_number,
                     'password' => Hash::make(Str::random(12)),
                     'role' => 'resident',
                     'contact_verified_at' => now(),
-                    'is_verified' => true, // Walk-ins are physically verified by Admin
+                    'is_verified' => true,
                     'terms_accepted_at' => now(),
                 ]);
             } else {
@@ -413,8 +415,11 @@ class AdminDashboardController extends Controller
             'message_body' => $request->message_body,
         ]);
 
-        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang (Exclude Admins)
-        $verifiedResidents = User::approved()->where('role', 'resident')->get();
+        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang, PERO i-exclude ang mga Walk-In Dummies (W-%)
+        $verifiedResidents = User::approved()
+            ->where('role', 'resident')
+            ->where('contact_number', 'not like', 'W-%') // <--- ITO ANG MAGPIPIGIL SA PAG-SEND SA WALKINS!
+            ->get();
         $sentCount = 0;
 
         // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs na may DRIP-FEED DELAY
