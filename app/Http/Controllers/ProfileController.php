@@ -266,7 +266,7 @@ class ProfileController extends Controller
             $user->save();
 
             // Magpadala ng bagong OTP
-            $smsService->sendSms($user->id, $user->contact_number, "BDLS: Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
+            $smsService->sendSms($user->id, $user->contact_number, "Pinalitan mo ang iyong number. I-verify ito gamit ang OTP: {$newOtp}.", null, false, true);
 
             // THE FIX: I-lock ang button ng 60 seconds (1 minute) bago makapag-send ulit
             RateLimiter::hit($rateLimitKey, 60);

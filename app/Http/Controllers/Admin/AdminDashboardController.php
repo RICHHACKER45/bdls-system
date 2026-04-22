@@ -178,17 +178,17 @@ class AdminDashboardController extends Controller
         $message = '';
 
         if ($newStatus === 'processing') {
-            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
+            $message = "Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
         } elseif ($newStatus === 'for_interview') {
             // Ito ay magte-text lang kapag naging "For Interview" ang papel
-            $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
+            $message = "Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
         } elseif ($newStatus === 'released') {
             $serviceRequest->released_at = now();
             $serviceRequest->released_by_admin_id = Auth::id();
-            $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+            $message = "Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
         } elseif ($newStatus === 'rejected') {
             // THE FIX: Admin Reject Logic
-            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
+            $message = "Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
         }
 
         $serviceRequest->save();
@@ -353,7 +353,7 @@ class AdminDashboardController extends Controller
 
             // 2. DEFENSIVE SECURITY: I-wrap ang SMS sa Try-Catch para hindi mag-rollback ang DB kapag Curfew
             try {
-                $message = "Brgy Dona Lucia: Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
+                $message = "Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
                 $smsService->sendSms(
                     $user->id,
                     $user->contact_number,
@@ -541,7 +541,7 @@ class AdminDashboardController extends Controller
         $user->save();
 
         // 2. I-text ang Residente
-        $message = "BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).";
+        $message = "Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).";
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         // 3. I-record sa CCTV

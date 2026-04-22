@@ -84,48 +84,32 @@ class SmsService
         $driver = env('SMS_DRIVER', 'log');
 
         // ==========================================
-        // 5. ROUTING: Transactional vs Announcement
+        // 5. ROUTING: Transactional vs Announcement (150 LIMIT FIX)
         // ==========================================
         if (! $isAnnouncement) {
-            // TRANSACTIONAL (OTP / Queue Updates) -> STRICTLY 160 CHARACTERS
-            if (Str::length($fullMessage) > 160) {
-                $fullMessage = Str::limit($fullMessage, 160, ''); // Puputulin pilit para tipid credit
-                Log::warning(
-                    "SMS Truncated to 160 chars for {$recipientContact} para iwas double-charge.",
-                );
+            // TRANSACTIONAL -> STRICTLY 150 CHARACTERS
+            if (Str::length($fullMessage) > 150) {
+                $fullMessage = Str::limit($fullMessage, 150, ''); // Pinutol sa 150
+                Log::warning("SMS Truncated to 150 chars for {$recipientContact} para iwas double-charge.");
             }
-            $this->executeSend(
-                $userId,
-                $recipientContact,
-                $fullMessage,
-                $serviceRequestId,
-                $driver,
-            );
+            $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
         } else {
-            // ANNOUNCEMENTS (Concatenation Logic - Multi-part SMS)
-            if (Str::length($fullMessage) <= 160) {
-                $this->executeSend(
-                    $userId,
-                    $recipientContact,
-                    $fullMessage,
-                    $serviceRequestId,
-                    $driver,
-                );
+            // ANNOUNCEMENTS (Concatenation Logic)
+            if (Str::length($fullMessage) <= 150) {
+                $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
             } else {
-                // Hahatiin natin sa 148 characters + 5 chars para sa "(1/2) " = 153 max payload per credit
-                $chunks = str_split($fullMessage, 148);
+                // THE FIX: Hahatiin sa 138 characters + 12 chars para sa " (10/10)" = 150 max payload!
+                $chunks = str_split($fullMessage, 138);
                 $totalChunks = count($chunks);
 
                 foreach ($chunks as $index => $chunk) {
                     $partNum = $index + 1;
                     $segmentMessage = $chunk." ({$partNum}/{$totalChunks})";
-                    $this->executeSend(
-                        $userId,
-                        $recipientContact,
-                        $segmentMessage,
-                        $serviceRequestId,
-                        $driver,
-                    );
+
+                    $this->executeSend($userId, $recipientContact, $segmentMessage, $serviceRequestId, $driver);
+
+                    // THE DUAL-SIM FIX: 2-Second Delay para hindi mag-round-robin sa kabilang SIM ang API
+                    sleep(2);
                 }
             }
         }

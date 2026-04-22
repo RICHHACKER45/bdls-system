@@ -322,7 +322,7 @@ class AuthController extends Controller
             'otp_expires_at' => now()->addMinutes(10)
         ]);
 
-        $message = "BDLS: Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
+        $message = "Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
         $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
         $request->session()->put('reset_contact', $user->contact_number);
@@ -382,7 +382,7 @@ class AuthController extends Controller
             'otp_expires_at' => now()->addMinutes(10)
         ]);
 
-        $message = "BDLS: Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
+        $message = "Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
         $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
         \Illuminate\Support\Facades\RateLimiter::hit($cooldownKey, 60);

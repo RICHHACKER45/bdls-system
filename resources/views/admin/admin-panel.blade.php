@@ -419,22 +419,35 @@
 
                 <form action="{{ route('admin.announcements.broadcast') }}" method="POST">
                     @csrf
+                    <!-- THE UPGRADED SMS PREVIEW UI -->
                     <div class="mb-4">
                         <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Mensahe (Message Body) <span class="text-red-500">*</span></label>
+
+                        <!-- BAGONG INDICATOR: NTC PREFIX BADGE -->
+                        <div class="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 p-2.5 shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="rounded bg-slate-300 px-2 py-1 text-[9px] font-black tracking-widest text-slate-700 uppercase">NTC Prefix</span>
+                                <span class="font-mono text-xs font-bold text-slate-900">"Brgy Dona Lucia: "</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-500">+17 Characters</span>
+                        </div>
+
                         <textarea name="message_body" id="announcement_text" rows="5" required {{ $isCurfew ? 'disabled' : '' }} placeholder="{{ $isCurfew ? 'Naka-disable ang pag-type tuwing curfew...' : 'I-type ang iyong anunsyo dito...' }}" class="w-full px-4 py-3 rounded-xl border @error('message_body') border-red-500 bg-red-50 @else border-slate-300 bg-slate-50 @enderror focus:ring-2 focus:ring-slate-900 outline-none transition-all font-medium text-slate-800 resize-none {{ $isCurfew ? 'opacity-60 cursor-not-allowed bg-slate-100' : '' }}" oninput="updateCharCount(this)">{{ old('message_body') }}</textarea>
 
                         @error ('message_body')
                             <p class="mt-2 text-xs font-bold text-red-600">{{ $message }}</p>
                         @enderror
 
-                        <div class="mt-2 flex items-start justify-between">
-                            <p id="char_warning" class="mt-1 hidden text-xs font-bold text-red-600">⚠️ Bawal mag-send ng links (http/www).</p>
-                            <p id="char_counter" class="mt-1 ml-auto text-xs font-bold text-slate-500">Characters: 0/160 (Est. 1 Credit per user)</p>
+                        <!-- BAGONG INDICATOR: VISUAL PROGRESS BAR & COUNTERS -->
+                        <div class="mt-3 flex flex-col gap-2">
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div id="char_progress" class="h-full w-0 bg-green-500 transition-all duration-300"></div>
+                            </div>
+                            <div class="flex items-start justify-between">
+                                <p id="char_warning" class="mt-1 hidden text-xs font-bold text-red-600">⚠️ Bawal mag-send ng links (http/www).</p>
+                                <p id="char_counter" class="mt-1 ml-auto text-right text-xs font-medium text-slate-500">Mag-type para makita ang bilang...</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="flex justify-end pt-2">
-                        <button type="submit" id="broadcastBtn" {{ $isCurfew ? 'disabled' : '' }} class="bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl transition-all active:scale-95 shadow-md flex items-center gap-2 {{ $isCurfew ? 'opacity-50 cursor-not-allowed hover:bg-slate-900 active:scale-100' : '' }}"> Send Broadcast</button>
                     </div>
                 </form>
             </div>
@@ -445,37 +458,87 @@
             const counter = document.getElementById('char_counter');
             const warning = document.getElementById('char_warning');
             const btn = document.getElementById('broadcastBtn');
-            let length = textarea.value.length;
+            const progressBar = document.getElementById('char_progress');
 
-            // Front-end Link Blocker UI
+            const prefixLength = 17;
+            let typedLength = textarea.value.length;
+            let totalLength = typedLength > 0 ? typedLength + prefixLength : 0;
+
+            // 1. FRONTEND LINK BLOCKER
             if (/(http|https|www\.)/i.test(textarea.value)) {
                 warning.classList.remove('hidden');
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
                 textarea.classList.add('border-red-500', 'ring-1', 'ring-red-500');
             } else {
                 warning.classList.add('hidden');
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (btn && !textarea.disabled) {
+                    // Respect NTC Curfew disabled state
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
                 textarea.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
             }
 
-            // Character counting logic based on NTC Guidelines
-            let credits = 1;
-            if (length > 160) {
-                credits = Math.ceil(length / 153);
+            // 2. CREDIT MATH LOGIC (150-CHAR API LIMIT)
+            let credits = 0;
+            let maxLimit = 150;
+
+            if (totalLength === 0) {
+                credits = 0;
+                maxLimit = 150;
+            } else if (totalLength <= 150) {
+                credits = 1;
+                maxLimit = 150;
+            } else {
+                // THE FIX: Hinahati natin by 138 dahil nag-i-insert tayo ng chunk tags na kumakain ng space
+                credits = Math.ceil(totalLength / 138);
+                maxLimit = credits * 138;
             }
 
-            counter.innerText = `Characters: ${length} (Est. ${credits} Credit/s per user)`;
-
-            if (length > 160) {
-                counter.classList.add('text-amber-600');
-                counter.classList.remove('text-slate-500');
+            // 3. UI VISUAL UPDATES
+            if (totalLength === 0) {
+                counter.innerHTML = `Mag-type para makita ang bilang...`;
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                    progressBar.className = 'h-full w-0 transition-all duration-300 bg-green-500';
+                }
             } else {
-                counter.classList.remove('text-amber-600');
-                counter.classList.add('text-slate-500');
+                // Calculate Progress Bar Width
+                let percentage = (totalLength / maxLimit) * 100;
+                if (percentage > 100) percentage = 100;
+
+                if (progressBar) {
+                    progressBar.style.width = percentage + '%';
+                    // Change color logic (F-Pattern & 60/30/10 Rule)
+                    if (credits > 1) {
+                        progressBar.className = 'h-full transition-all duration-300 bg-amber-500';
+                    } else if (percentage >= 90) {
+                        progressBar.className = 'h-full transition-all duration-300 bg-orange-500';
+                    } else {
+                        progressBar.className = 'h-full transition-all duration-300 bg-green-500';
+                    }
+                }
+
+                // Update Counter Text Output
+                counter.innerHTML = `
+            <span class="font-bold ${credits > 1 ? 'text-amber-600' : 'text-slate-700'}">
+                ${totalLength} / ${maxLimit} Chars
+            </span><br>
+            <span class="text-[10px] tracking-widest uppercase font-black ${credits > 1 ? 'text-amber-600' : 'text-green-600'}">
+                (EST. ${credits} CREDIT/S PER USER)
+            </span>
+         `;
             }
         }
+
+        // Initialize on page load in case of validation errors throwing back old text
+        document.addEventListener('DOMContentLoaded', () => {
+            const textarea = document.getElementById('announcement_text');
+            if (textarea) updateCharCount(textarea);
+        });
     </script>
     <!-- ===================================== -->
     <!-- TAB 5: REPORTS & LOGS (Process 5.0 & 6.0) -->
