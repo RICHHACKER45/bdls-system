@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>System Analytics Report</title>
+    <title>System Summary Report</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; color: #333; }
         .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 10px; margin-bottom: 20px; }

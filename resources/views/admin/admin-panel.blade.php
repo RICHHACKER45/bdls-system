@@ -548,7 +548,7 @@
         <div class="mt-6 mb-6 flex gap-2 overflow-x-auto pb-2">
             <button onclick="showSubTab('sub-audit-trail', this)" class="sub-tab-btn rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all">System Audit Trail</button>
             <button onclick="showSubTab('sub-notif-history', this)" class="sub-tab-btn rounded-full border border-transparent bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-slate-300">Notification History</button>
-            <button onclick="showSubTab('sub-generate-pdf', this)" class="sub-tab-btn rounded-full border border-transparent bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-slate-300">Generate Analytics</button>
+            <button onclick="showSubTab('sub-generate-pdf', this)" class="sub-tab-btn rounded-full border border-transparent bg-slate-200 px-5 py-2 text-sm font-bold whitespace-nowrap text-slate-700 transition-all hover:bg-slate-300">Generate System Report</button>
         </div>
 
         <!-- 1. SYSTEM AUDIT TRAIL -->
@@ -648,20 +648,21 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Piliin ang Buwan <span class="text-red-500">*</span></label>
+                            <!-- THE DYNAMIC MONTH FIX -->
                             <select name="report_month" required class="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
                                 <option value="all">Buong Taon (All Months)</option>
-                                <option value="01">January</option>
-                                <option value="02">February</option>
-                                <option value="03" selected>March</option>
-                                <option value="04">April</option>
-                                <option value="05">May</option>
-                                <option value="06">June</option>
-                                <option value="07">July</option>
-                                <option value="08">August</option>
-                                <option value="09">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                                <option value="01" {{ date('m') == '01' ? 'selected' : '' }}>January</option>
+                                <option value="02" {{ date('m') == '02' ? 'selected' : '' }}>February</option>
+                                <option value="03" {{ date('m') == '03' ? 'selected' : '' }}>March</option>
+                                <option value="04" {{ date('m') == '04' ? 'selected' : '' }}>April</option>
+                                <option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
+                                <option value="06" {{ date('m') == '06' ? 'selected' : '' }}>June</option>
+                                <option value="07" {{ date('m') == '07' ? 'selected' : '' }}>July</option>
+                                <option value="08" {{ date('m') == '08' ? 'selected' : '' }}>August</option>
+                                <option value="09" {{ date('m') == '09' ? 'selected' : '' }}>September</option>
+                                <option value="10" {{ date('m') == '10' ? 'selected' : '' }}>October</option>
+                                <option value="11" {{ date('m') == '11' ? 'selected' : '' }}>November</option>
+                                <option value="12" {{ date('m') == '12' ? 'selected' : '' }}>December</option>
                             </select>
                         </div>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -679,7 +680,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
-                        Tingnan ang Analytics (In-App)
+                        Tingnan ang Report (In-App)
                     </button>
                 </form>
             </div>
@@ -694,7 +695,7 @@
             <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                 <h2 class="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
                     <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    System Analytics Report
+                    System Summary Report
                 </h2>
                 <button onclick="closePdfModal()" class="text-3xl leading-none font-bold text-slate-400 transition-all hover:text-red-600">&times;</button>
             </div>
