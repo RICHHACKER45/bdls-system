@@ -15,7 +15,7 @@
 
         <!-- Typography (Slate Primary - 30% Rule) -->
         <h1 class="mb-2 text-2xl font-extrabold text-slate-900">Walang page dito.</h1>
-        <p class="mb-6 text-sm font-medium text-slate-600">Wala dito ang iyong hinahanap. Maaring bumalik na sa Homepage</p>
+        <p class="mb-6 text-sm font-medium text-slate-600">Wala dito ang iyong hinahanap. Maaring bumalik na sa Homepage.</p>
 
         <!-- Primary Action Button (Slate-900 Accent) -->
         <a href="{{ route('home') }}" class="inline-block w-full rounded-xl bg-slate-900 px-4 py-3.5 font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95"> Bumalik sa Home </a>

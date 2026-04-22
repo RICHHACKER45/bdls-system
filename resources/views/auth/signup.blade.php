@@ -97,7 +97,7 @@
                         <div>
                             <label class="mb-1 block text-sm font-semibold text-slate-700">First Name <span class="text-red-500">*</span></label>
                             <input type="text" id="first_name" name="first_name" maxlength="255" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-colors duration-200 outline-none focus:ring-2 focus:ring-slate-900" />
-                            <p id="error-first_name" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-first_name" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Middle Name -->
@@ -110,7 +110,7 @@
                         <div>
                             <label class="mb-1 block text-sm font-semibold text-slate-700">Last Name <span class="text-red-500">*</span></label>
                             <input type="text" id="last_name" name="last_name" maxlength="255" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-colors duration-200 outline-none focus:ring-2 focus:ring-slate-900" />
-                            <p id="error-last_name" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-last_name" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Suffix (Optional) -->
@@ -137,7 +137,7 @@
                                 <option value="Male">Lalaki (Male)</option>
                                 <option value="Female">Babae (Female)</option>
                             </select>
-                            <p id="error-sex" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-sex" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Date of Birth (Custom Dropdowns) -->
@@ -207,14 +207,14 @@
                         <div>
                             <label class="mb-1 block text-sm font-semibold text-slate-700">House No. <span class="text-red-500">*</span></label>
                             <input type="text" id="house_number" name="house_number" maxlength="50" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-colors duration-200 outline-none focus:ring-2 focus:ring-slate-900" />
-                            <p id="error-house_number" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-house_number" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Purok / Street (Required) -->
                         <div>
                             <label class="mb-1 block text-sm font-semibold text-slate-700">Purok / Street <span class="text-red-500">*</span></label>
                             <input type="text" id="purok_street" name="purok_street" maxlength="255" required class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-colors duration-200 outline-none focus:ring-2 focus:ring-slate-900" />
-                            <p id="error-purok_street" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-purok_street" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
                     </div>
 
@@ -240,7 +240,7 @@
                         <div>
                             <label class="mb-1 block text-sm font-semibold text-slate-700">Mobile Number <span class="text-red-500">*</span></label>
                             <input type="tel" id="contact_number" name="contact_number" inputmode="numeric" required maxlength="11" pattern="09{9}" placeholder="09XXXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full rounded-lg border border-slate-300 px-4 py-3 transition-colors duration-200 outline-none focus:ring-2 focus:ring-slate-900" />
-                            <p id="error-contact_number" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-contact_number" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Email (Optional Fallback based on Chapter 1) -->
@@ -263,7 +263,7 @@
                                 <!-- Ang Bagong Tactile Show/Hide Button na Naka-Gitna -->
                                 <button type="button" onclick="togglePassword('password')" class="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 transition-all duration-100 select-none hover:text-slate-900 focus:outline-none active:scale-95 active:bg-slate-200 active:text-slate-900">SHOW</button>
                             </div>
-                            <p id="error-password" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-password" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
 
                         <!-- Confirm Password (Required) -->
@@ -276,7 +276,7 @@
                                 <!-- Ang Bagong Tactile Show/Hide Button na Naka-Gitna -->
                                 <button type="button" onclick="togglePassword('password_confirmation')" class="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 transition-all duration-100 select-none hover:text-slate-900 focus:outline-none active:scale-95 active:bg-slate-200 active:text-slate-900">SHOW</button>
                             </div>
-                            <p id="error-password_confirmation" class="mt-1 hidden text-sm text-red-500">This field is required.</p>
+                            <p id="error-password_confirmation" class="mt-1 hidden text-sm text-red-500">Kailangan itong punan.</p>
                         </div>
                     </div>
 

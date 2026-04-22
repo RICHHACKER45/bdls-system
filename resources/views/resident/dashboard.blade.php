@@ -32,7 +32,7 @@
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         Registration Rejected
                     </div>
-                    <p class="mb-4 text-sm text-red-700">Your request is rejected. Reason: <span class="font-bold underline">{{ Auth::user()->rejection_reason }}</span>. You still have {{ 5 - Auth::user()->rejection_count }} attempts to request.</p>
+                    <p class="mb-4 text-sm text-red-700">Mali ang iyong registration. Rason: <span class="font-bold underline">{{ Auth::user()->rejection_reason }}</span>. Mayroon ka na lang {{ 5 - Auth::user()->rejection_count }} subok para mag-request.</p>
                     <button type="button" onclick="openResubmitModal()" class="rounded-lg bg-red-600 px-5 py-2.5 text-xs font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95">Re-upload Requirements</button>
                 </div>
             @else
@@ -40,7 +40,7 @@
                 <div class="mb-6 rounded-r-xl border-l-4 border-amber-500 bg-amber-50 p-6 shadow-sm">
                     <div class="mb-2 flex items-center gap-3 text-lg font-bold text-amber-800">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Account is Under Review
+                        Under Review ang iyong Account
                     </div>
                     <p class="text-sm text-amber-700">Kasalukuyang sinusuri ng Barangay Administrator ang iyong Valid ID at Selfie. Hindi ka pa maaaring mag-request ng dokumento hangga't hindi ito naaaprubahan.</p>
                 </div>
@@ -69,7 +69,7 @@
                             @else
                                 <button onclick="openRequestModal()" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-red-700 focus:outline-none active:scale-95 sm:w-auto">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    Gumawa ng Bagong Request
+                                    Gumawa ng Request
                                 </button>
                             @endif
                         </div>
@@ -262,7 +262,7 @@
                             <input type="password" name="password_confirmation" minlength="8" required class="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900" />
                         </div>
                     </div>
-                    <button type="submit" class="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">I-save Password</button>
+                    <button type="submit" class="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">I-save ang Password</button>
                 </form>
             </div>
         </div>
@@ -684,8 +684,8 @@
                     </div>
 
                     <div class="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-4">
-                        <button type="button" onclick="closeRequestModal()" class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-all hover:bg-slate-200 active:scale-95">Kanselahin</button>
-                        <button type="submit" class="rounded-xl bg-slate-900 px-8 py-2.5 font-bold text-white shadow-md hover:bg-slate-800 active:scale-95">I-submit Request</button>
+                        <button type="button" onclick="closeRequestModal()" class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-all hover:bg-slate-200 active:scale-95">Cancel</button>
+                        <button type="submit" class="rounded-xl bg-slate-900 px-8 py-2.5 font-bold text-white shadow-md hover:bg-slate-800 active:scale-95">Submit Request</button>
                     </div>
                 </form>
             </div>

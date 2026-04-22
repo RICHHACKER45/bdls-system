@@ -87,7 +87,7 @@
                         <div>
                             <p class="mb-1 font-black tracking-widest text-slate-400 uppercase">Contact Details</p>
                             <p class="font-bold text-slate-900">{{ $user->contact_number }}</p>
-                            <p class="font-medium text-slate-500">{{ $user->email ?? 'No email provided' }}</p>
+                            <p class="font-medium text-slate-500">{{ $user->email ?? 'Walang email na nilagay.' }}</p>
                         </div>
                         <div>
                             <p class="mb-1 font-black tracking-widest text-slate-400 uppercase">Personal Info</p>
@@ -143,7 +143,7 @@
                         </div>
 
                         <div class="mb-4 rounded-lg border border-red-100 bg-red-50 p-3">
-                            <p class="mb-1 text-[9px] font-black tracking-widest text-red-400 uppercase italic">Reason for Rejection</p>
+                            <p class="mb-1 text-[9px] font-black tracking-widest text-red-400 uppercase italic">Rason ng Rejection</p>
                             <p class="text-xs leading-snug font-bold text-red-700">{{ $user->rejection_reason }}</p>
                         </div>
                     </div>
@@ -160,7 +160,7 @@
     <!-- ===================================== -->
     <!-- TAB 2: QUEUE & PROCESSING MODULE -->
     <!-- ===================================== -->
-    <div id="tab-queue" class="tab-content {{ session('active_tab') == 'queue' ? 'block' : 'hidden' }}">
+    <div id="tab-queue" class="tab-content {{ session('active_tab', 'queue') == 'queue' ? 'block' : 'hidden' }}">
         <!-- TASK 2: Horizontal sub-tab for Active vs Received -->
         <div class="mt-6 mb-6 flex gap-2 overflow-x-auto pb-2">
             <button onclick="showSubTab('queue-active', this)" class="sub-tab-btn rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-sm font-bold whitespace-nowrap text-white transition-all">Active Queue ({{ $activeQueue->count() }})</button>
@@ -791,7 +791,7 @@
 
                 <!-- THE FIX: Binaliktad ang pwesto ng buttons at nilagyan ng ID ang Submit -->
                 <div class="flex flex-col gap-3">
-                    <button type="button" onclick="closeStatusModal()" class="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95">Kanselahin (Cancel)</button>
+                    <button type="button" onclick="closeStatusModal()" class="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95">Cancel</button>
                     <button type="submit" id="statusSubmitBtn" class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95">Confirm Update</button>
                 </div>
             </form>
@@ -855,8 +855,8 @@
                 </div>
 
                 <div class="flex gap-3 border-t border-slate-100 bg-slate-50 p-4">
-                    <button type="button" onclick="closeRejectModal()" class="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-100">Kanselahin</button>
-                    <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">I-Submit Reject</button>
+                    <button type="button" onclick="closeRejectModal()" class="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-100">Cancel</button>
+                    <button type="submit" class="flex-1 rounded-xl bg-red-600 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Reject</button>
                 </div>
             </form>
         </div>

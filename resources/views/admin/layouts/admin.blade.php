@@ -42,7 +42,7 @@
                 <span id="pending-badge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">0</span>
             </button>
 
-            <button onclick="switchTab('queue')" id="nav-queue" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'queue' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+            <button onclick="switchTab('queue')" id="nav-queue" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab', 'queue') == 'queue' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <div class="flex items-center gap-3">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                     Queue & Processing
@@ -50,17 +50,17 @@
                 <span id="queue-badge" class="hidden rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">0</span>
             </button>
 
-            <button onclick="switchTab('walkin')" id="nav-walkin" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'walkin' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+            <button onclick="switchTab('walkin')" id="nav-walkin" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab', 'walkin' ) == 'walkin' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 Walk-in Requests
             </button>
 
-            <button onclick="switchTab('announcements')" id="nav-announcements" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'announcements' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+            <button onclick="switchTab('announcements')" id="nav-announcements" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab' ) == 'announcements' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
                 Announcements
             </button>
 
-            <button onclick="switchTab('audit')" id="nav-audit" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'audit' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+            <button onclick="switchTab('audit')" id="nav-audit" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab' ) == 'audit' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 System Audit Logs
             </button>
@@ -75,7 +75,7 @@
                 </button>
             </form>
             <!-- THE FIX: New Settings Tab Button -->
-            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab') == 'settings' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all {{ session('active_tab' ) == 'settings' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>

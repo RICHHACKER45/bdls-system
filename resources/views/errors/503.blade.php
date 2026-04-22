@@ -19,7 +19,7 @@
         <p class="mb-6 text-sm font-medium text-slate-600">May inaayos lang kami sa Website. Maaring bumalik na lang po kayo mamaya!</p>
 
         <!-- Huwag gamitin ang route() dito dahil naka-down ang routing engine -->
-        <a href="{{ route('home') }}" class="inline-block w-full rounded-xl bg-slate-900 px-4 py-3.5 font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95"> I-refresh ang Page </a>
+        <a href="/" class="inline-block w-full rounded-xl bg-slate-900 px-4 py-3.5 font-bold text-white shadow-md transition-all hover:bg-slate-800 active:scale-95"> I-refresh ang Page </a>
     </div>
 </body>
 </html>

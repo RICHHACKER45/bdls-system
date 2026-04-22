@@ -42,7 +42,7 @@
             </div>
 
             <h1 class="mb-6 text-4xl font-extrabold tracking-tight drop-shadow-lg md:text-6xl">
-                Welcome to <br />
+                Welcome sa <br />
                 <span class="text-red-500">Barangay Doña Lucia</span> Services
             </h1>
             <p class="mx-auto max-w-2xl text-lg font-medium text-slate-300 drop-shadow-md md:text-xl">Ang iyong mabilis at direktang koneksyon para sa mga government services, dokumento, at impormasyon ng barangay.</p>

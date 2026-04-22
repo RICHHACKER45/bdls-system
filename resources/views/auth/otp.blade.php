@@ -9,7 +9,7 @@
 <body class="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
     <!-- OTP CARD CONTAINER (Dynamic Padding: p-6 sa mobile, p-8 sa desktop) -->
     <div class="mx-4 w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-xl md:p-8">
-        <h2 class="mb-2 text-2xl font-bold text-slate-900">Verify Your Number</h2>
+        <h2 class="mb-2 text-2xl font-bold text-slate-900">I-verify ang iyong Numero</h2>
         <p class="mb-8 text-sm text-slate-500">Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.</p>
         <!-- LARAVEL SUCCESS DISPLAY -->
         @if (session('success'))
