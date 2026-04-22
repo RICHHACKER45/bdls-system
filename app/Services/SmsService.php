@@ -28,7 +28,7 @@ class SmsService
         // Palihim na tatanggalin ang "W-" para makalusot sa Telco API
         // ==========================================
         $recipientContact = str_replace('W-', '', $recipientContact);
-        
+
         // ==========================================
         // 0. SECURITY: UNVERIFIED NUMBER BLOCKER (Process 1.0)
         // ==========================================
@@ -157,7 +157,6 @@ class SmsService
                         'X-API-Key' => env('SMS_API_KEY'),
                     ])
                     ->post(env('SMS_API_URL'), [
-                        // INAYOS KO ITO: Ginawa kong SMS_API_URL
                         'SenderName' => env('SMS_SENDER_NAME'),
                         'ToNumber' => $recipientContact,
                         'MessageBody' => $messageContent,
@@ -167,19 +166,28 @@ class SmsService
                 if ($response->successful()) {
                     $status = 'Sent (Live)';
                     $providerResponse = $response->body();
-                    // DAGDAG RESIBO: Isusulat kung success ang API
-                    Log::info(
-                        "SMS API SUCCESS: Message delivered to {$recipientContact}. Provider Response: {$providerResponse}",
-                    );
+                    Log::info("SMS API SUCCESS: Message delivered to {$recipientContact}.");
                 } else {
                     $status = 'Failed';
-                    $providerResponse =
-                        'HTTP Error: '.$response->status().' - '.$response->body();
-                    // DAGDAG RESIBO: Isusulat kung nag-fail ang API
-                    // BAGONG LOG: Isusulat nito sa laravel.log kapag nag 400 or 500 error ang Fortmed
-                    Log::error(
-                        "SMS API HTTP FAILED: Hindi naipadala kay {$recipientContact}. Reason: {$providerResponse}",
-                    );
+                    $providerResponse = 'HTTP Error: '.$response->status().' - '.$response->body();
+                    Log::error("SMS API HTTP FAILED: Hindi naipadala kay {$recipientContact}. Reason: {$providerResponse}");
+
+                    // ==========================================
+                    // THE FIX: PHASE 5 - THE BOUNCING SHIELD
+                    // ==========================================
+                    // Kapag Error 400+ (Client Error/Invalid Number)
+                    if ($response->status() >= 400 && $userId) {
+                        $user = User::find($userId);
+                        // I-lock lamang kapag Resident (hindi Admin)
+                        if ($user && $user->role === 'resident') {
+                            $user->is_verified = false;
+                            $user->contact_verified_at = null; // Pigilan ang next broadcasts
+                            $user->rejection_reason = 'NTC API Auto-Lock: Invalid o Inactive Number. Paki-update ang iyong contact number.';
+                            $user->save();
+
+                            Log::warning("BOUNCING SHIELD ACTIVE: Account {$userId} locked to prevent API credit drain.");
+                        }
+                    }
                 }
             } catch (Exception $e) {
                 $status = 'Failed (Exception)';
