@@ -77,16 +77,41 @@ function initToasts() {
   });
 }
 
-// 4. GLOBAL FORM SUBMIT LISTENER WITH 30s TIMEOUT
+// 4. GLOBAL FORM SUBMIT LISTENER WITH 10s TACTILE LOCK (DRY Principle)
 function initGlobalLoader() {
   const forms = document.querySelectorAll('form');
   const loader = document.getElementById('global-loader');
   if (!loader) return;
 
   forms.forEach((form) => {
-    // Skip kung id is resendOtpForm o ayaw mong mag-load
-    if (form.id === 'resendOtpForm') return;
-    form.addEventListener('submit', function () {
+    // Skip kung GET method o kung resend form (dahil may sariling timer yun)
+    if (form.id === 'resendOtpForm' || form.method.toUpperCase() === 'GET') return;
+
+    form.addEventListener('submit', function (e) {
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      // THE FIX: Universal 10-Second Submit Lock
+      if (submitBtn && !submitBtn.disabled) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        const originalText = submitBtn.innerHTML;
+        let count = 10;
+        submitBtn.innerHTML = `Wait... (${count}s)`;
+
+        const timer = setInterval(() => {
+          count--;
+          submitBtn.innerHTML = `Wait... (${count}s)`;
+          if (count <= 0) {
+            clearInterval(timer);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          }
+        }, 1000);
+      }
+
+      // Ipakita ang Loading Screen
       loader.classList.remove('hidden');
       loader.classList.add('flex');
     });
