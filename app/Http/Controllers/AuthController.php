@@ -297,7 +297,7 @@ class AuthController extends Controller
         return redirect('/login');
     }
 
-   // ==========================================
+    // ==========================================
     // MODULE: SMS FORGOT PASSWORD LOGIC (3-Step Flow)
     // ==========================================
 
@@ -309,9 +309,9 @@ class AuthController extends Controller
     public function sendResetOtp(Request $request)
     {
         $request->validate([
-            'contact_number' => 'required|string|exists:users,contact_number'
+            'contact_number' => 'required|string|exists:users,contact_number',
         ], [
-            'contact_number.exists' => 'Hindi nakarehistro ang numerong ito sa aming system.'
+            'contact_number.exists' => 'Hindi nakarehistro ang numerong ito sa aming system.',
         ]);
 
         $user = User::where('contact_number', $request->contact_number)->first();
@@ -319,7 +319,7 @@ class AuthController extends Controller
 
         $user->update([
             'otp_code' => $otpCode,
-            'otp_expires_at' => now()->addMinutes(10)
+            'otp_expires_at' => now()->addMinutes(10),
         ]);
 
         $message = "BDLS: Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
@@ -333,14 +333,14 @@ class AuthController extends Controller
 
     public function showResetOtpForm(Request $request)
     {
-        if (!$request->session()->has('reset_contact')) {
+        if (! $request->session()->has('reset_contact')) {
             return redirect()->route('password.request');
         }
-        
+
         // THE FIX 2: Ire-recycle natin ang otp.blade.php at ipapasa ang bagong routes!
         return view('auth.otp', [
             'verifyRoute' => route('password.otp.verify'),
-            'resendRoute' => route('password.otp.resend')
+            'resendRoute' => route('password.otp.resend'),
         ]);
     }
 
@@ -348,11 +348,11 @@ class AuthController extends Controller
     {
         $request->validate(['otp' => 'required|array']);
         $enteredOtp = implode('', $request->input('otp'));
-        
+
         $contactNumber = $request->session()->get('reset_contact');
         $user = User::where('contact_number', $contactNumber)->first();
 
-        if (!$user || $user->otp_code !== $enteredOtp) {
+        if (! $user || $user->otp_code !== $enteredOtp) {
             return back()->withErrors(['otp' => 'Mali ang 6-digit code. Subukan muli.']);
         }
 
@@ -368,24 +368,24 @@ class AuthController extends Controller
 
     public function resendResetOtp(Request $request)
     {
-        $cooldownKey = 'resend_sms_otp_' . $request->ip();
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($cooldownKey, 1)) {
+        $cooldownKey = 'resend_sms_otp_'.$request->ip();
+        if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
             return back()->withErrors(['otp_error' => 'Masyado pang mabilis. Maghintay bago mag-resend.']);
         }
 
         $contactNumber = $request->session()->get('reset_contact');
         $user = User::where('contact_number', $contactNumber)->first();
-        
+
         $newOtp = (string) rand(100000, 999999);
         $user->update([
             'otp_code' => $newOtp,
-            'otp_expires_at' => now()->addMinutes(10)
+            'otp_expires_at' => now()->addMinutes(10),
         ]);
 
         $message = "BDLS: Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
         $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
-        \Illuminate\Support\Facades\RateLimiter::hit($cooldownKey, 60);
+        RateLimiter::hit($cooldownKey, 60);
 
         return back()->with('success', 'Bagong OTP code ay naipadala na!');
     }
@@ -393,24 +393,25 @@ class AuthController extends Controller
     public function showResetForm(Request $request)
     {
         // THE FIX 3: Haharangin kung hindi pa dumaan sa OTP screen
-        if (!$request->session()->has('reset_otp_verified')) {
+        if (! $request->session()->has('reset_otp_verified')) {
             return redirect()->route('password.request');
         }
+
         return view('auth.reset-password');
     }
 
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'password' => 'required|string|min:8|confirmed'
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         $contactNumber = $request->session()->get('reset_contact');
         $user = User::where('contact_number', $contactNumber)->first();
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-            'otp_code' => null
+            'password' => Hash::make($request->password),
+            'otp_code' => null,
         ]);
 
         $request->session()->forget(['reset_contact', 'reset_otp_verified']);

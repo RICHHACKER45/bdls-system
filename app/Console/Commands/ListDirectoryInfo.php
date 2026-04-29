@@ -17,10 +17,11 @@ class ListDirectoryInfo extends Command
     {
         // 1. Setup path and Finder
         $targetPath = $this->argument('path') ?: base_path();
-        $finder = new Finder();
+        $finder = new Finder;
 
-        if (!is_dir($targetPath)) {
+        if (! is_dir($targetPath)) {
             $this->error("The path [{$targetPath}] does not exist.");
+
             return 1;
         }
 
@@ -30,12 +31,12 @@ class ListDirectoryInfo extends Command
         $finder->in($targetPath)
             ->ignoreVCSIgnored(true) // Automatically ignores everything in your .gitignore
             ->exclude([
-                'node_modules', 'vendor', 'public/build', 'storage/pail', 
-                '.fleet', '.idea', '.vscode', '.zed'
+                'node_modules', 'vendor', 'public/build', 'storage/pail',
+                '.fleet', '.idea', '.vscode', '.zed',
             ])
             ->notName([
-                '*.log', '.DS_Store', '.env*', '.phpactor.json', 
-                'auth.json', 'Thumbs.db', 'envkey.txt'
+                '*.log', '.DS_Store', '.env*', '.phpactor.json',
+                'auth.json', 'Thumbs.db', 'envkey.txt',
             ])
             ->notPath('storage/*.key');
 
@@ -54,10 +55,10 @@ class ListDirectoryInfo extends Command
 
         // 4. Output Results
         if (empty($data)) {
-            $this->warn("No files found matching the criteria.");
+            $this->warn('No files found matching the criteria.');
         } else {
             $this->table($headers, $data);
-            $this->info("\nTotal items found: " . count($data));
+            $this->info("\nTotal items found: ".count($data));
         }
     }
 
@@ -66,11 +67,14 @@ class ListDirectoryInfo extends Command
      */
     private function formatBytes($bytes, $precision = 2)
     {
-        if ($bytes <= 0) return '0 B';
+        if ($bytes <= 0) {
+            return '0 B';
+        }
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $pow = floor(log($bytes) / log(1024));
         $pow = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
-        return round($bytes, $precision) . ' ' . $units[$pow];
+
+        return round($bytes, $precision).' '.$units[$pow];
     }
 }

@@ -26,7 +26,7 @@ class ProcessAnnouncementSms implements ShouldQueue
     ) {}
 
     /**
-     * Dito gagawin ang mabigat na trabaho. 
+     * Dito gagawin ang mabigat na trabaho.
      * Awtomatikong i-i-inject ng Laravel ang SmsService at EmailService natin dito.
      */
     public function handle(SmsService $smsService, EmailService $emailService): void
@@ -38,7 +38,7 @@ class ProcessAnnouncementSms implements ShouldQueue
                 $this->resident->contact_number,
                 $this->messageBody,
                 null,
-                true 
+                true
             );
 
             // 2. Ipadala ang Email Broadcast (Kung verified at naka-opt-in)
@@ -52,7 +52,7 @@ class ProcessAnnouncementSms implements ShouldQueue
             }
         } catch (\Exception $e) {
             // I-log lang kung may pumalyang isa, wag i-crash ang queue worker
-            Log::error("Failed to blast SMS/Email to {$this->resident->contact_number}: " . $e->getMessage());
+            Log::error("Failed to blast SMS/Email to {$this->resident->contact_number}: ".$e->getMessage());
         }
     }
 }

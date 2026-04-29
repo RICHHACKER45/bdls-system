@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\Attachment;
 use App\Models\DocumentType;
 use App\Models\ServiceRequest;
 use App\Services\SmsService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // 1. TINAWAG NATIN ANG SERVICE MO
+use Illuminate\Http\Request; // 1. TINAWAG NATIN ANG SERVICE MO
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ServiceRequestController extends Controller
@@ -49,7 +50,7 @@ class ServiceRequestController extends Controller
         $historyRequests = $myRequests->whereIn('status', ['received', 'canceled', 'rejected']);
 
         // THE FIX: Kunin ang pinakabagong 3 announcements
-        $announcements = \App\Models\Announcement::latest()->take(3)->get();
+        $announcements = Announcement::latest()->take(3)->get();
 
         return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests', 'announcements'));
     }

@@ -163,12 +163,12 @@
     <!-- PRETTIER-FRIENDLY JS INJECTOR -->
     <script>
         window.BDLS_ADMIN = @js ([
-                                            'activeTab' => session('active_tab', 'pending'),
-                                            'pollingUrl' => route('admin.api.pending_count'),
-                                            'queuePollingUrl' => route('admin.api.queue_count'),
-                                            'initialPendingCount' => isset($pendingAccounts) ? $pendingAccounts->count() : 0,
-                                            'initialQueueCount' => isset($activeQueue) ? $activeQueue->count() : 0
-                                        ]);
+                                                    'activeTab' => session('active_tab', 'pending'),
+                                                    'pollingUrl' => route('admin.api.pending_count'),
+                                                    'queuePollingUrl' => route('admin.api.queue_count'),
+                                                    'initialPendingCount' => isset($pendingAccounts) ? $pendingAccounts->count() : 0,
+                                                    'initialQueueCount' => isset($activeQueue) ? $activeQueue->count() : 0
+                                                ]);
     </script>
     <script src="{{ asset('js/admin.js') }}"></script>
 </body>

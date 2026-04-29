@@ -31,11 +31,11 @@ Route::middleware(['guest'])->group(function () {
     // ==========================================
     Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetOtp'])->name('password.send_otp');
-    
+
     Route::get('/forgot-password/otp', [AuthController::class, 'showResetOtpForm'])->name('password.otp.show');
     Route::post('/forgot-password/otp', [AuthController::class, 'verifyResetOtp'])->name('password.otp.verify');
     Route::post('/forgot-password/otp/resend', [AuthController::class, 'resendResetOtp'])->name('password.otp.resend');
-    
+
     Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update.submit');
 });
@@ -46,7 +46,7 @@ Route::middleware(['guest'])->group(function () {
 Route::get('/otp', function () {
     return view('auth.otp', [
         'verifyRoute' => route('otp.verify'),
-        'resendRoute' => route('otp.resend')
+        'resendRoute' => route('otp.resend'),
     ]);
 })->name('otp.show');
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
@@ -168,7 +168,7 @@ Route::middleware(['auth'])->group(function () {
             );
             Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
             Route::post('/settings/update-contact', [ProfileController::class, 'updateContactNumber'])->name('settings.update_contact');
-             Route::post('/settings/verify-contact', [ProfileController::class, 'verifyContactOtp'])->name('settings.verify_contact');
+            Route::post('/settings/verify-contact', [ProfileController::class, 'verifyContactOtp'])->name('settings.verify_contact');
             Route::post('/settings/email-preference', [
                 ProfileController::class,
                 'updateEmailPreference',

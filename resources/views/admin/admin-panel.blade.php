@@ -585,20 +585,21 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <label class="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Piliin ang Buwan <span class="text-red-500">*</span></label>
+                            <!-- THE DYNAMIC MONTH FIX -->
                             <select name="report_month" required class="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
                                 <option value="all">Buong Taon (All Months)</option>
-                                <option value="01">January</option>
-                                <option value="02">February</option>
-                                <option value="03" selected>March</option>
-                                <option value="04">April</option>
-                                <option value="05">May</option>
-                                <option value="06">June</option>
-                                <option value="07">July</option>
-                                <option value="08">August</option>
-                                <option value="09">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                                <option value="01" {{ date('m') == '01' ? 'selected' : '' }}>January</option>
+                                <option value="02" {{ date('m') == '02' ? 'selected' : '' }}>February</option>
+                                <option value="03" {{ date('m') == '03' ? 'selected' : '' }}>March</option>
+                                <option value="04" {{ date('m') == '04' ? 'selected' : '' }}>April</option>
+                                <option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
+                                <option value="06" {{ date('m') == '06' ? 'selected' : '' }}>June</option>
+                                <option value="07" {{ date('m') == '07' ? 'selected' : '' }}>July</option>
+                                <option value="08" {{ date('m') == '08' ? 'selected' : '' }}>August</option>
+                                <option value="09" {{ date('m') == '09' ? 'selected' : '' }}>September</option>
+                                <option value="10" {{ date('m') == '10' ? 'selected' : '' }}>October</option>
+                                <option value="11" {{ date('m') == '11' ? 'selected' : '' }}>November</option>
+                                <option value="12" {{ date('m') == '12' ? 'selected' : '' }}>December</option>
                             </select>
                         </div>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">

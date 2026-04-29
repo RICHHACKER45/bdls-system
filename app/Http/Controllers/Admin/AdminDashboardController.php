@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessAnnouncementSms;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\DocumentType;
@@ -293,10 +294,10 @@ class AdminDashboardController extends Controller
 
         // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
         $isAdmin = User::where('contact_number', $request->contact_number)->where('role', 'admin')->exists();
-        
+
         if ($isAdmin) {
             return back()->withErrors([
-                'walkin_error' => 'Bawal gamitin ang numero ng Admin para sa Service Requests.'
+                'walkin_error' => 'Bawal gamitin ang numero ng Admin para sa Service Requests.',
             ])->with('active_tab', 'walkin');
         }
 
@@ -418,7 +419,7 @@ class AdminDashboardController extends Controller
 
         // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs para hindi mag-hang ang system!
         foreach ($verifiedResidents as $resident) {
-            \App\Jobs\ProcessAnnouncementSms::dispatch($resident, $request->message_body);
+            ProcessAnnouncementSms::dispatch($resident, $request->message_body);
             $sentCount++;
         }
 
@@ -541,14 +542,14 @@ class AdminDashboardController extends Controller
         $user->save();
 
         // 2. I-text ang Residente
-        $message = "BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).";
+        $message = 'BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).';
         $smsService->sendSms($user->id, $user->contact_number, $message);
 
         // 3. I-record sa CCTV
         AuditLog::create([
             'admin_id' => Auth::id(),
             'action' => 'ACCOUNT_SUSPENSION',
-            'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}."
+            'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}.",
         ]);
 
         return back()->with('active_tab', 'pending')->with('success_message', 'Resident suspended for 7 days.');
