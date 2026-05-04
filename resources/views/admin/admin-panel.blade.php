@@ -30,11 +30,11 @@
                     <!-- TASK 1: Clickable Images -->
                     <div class="flex shrink-0 gap-2 sm:flex-col">
                         <div class="group relative">
-                            <img src="{{ asset('storage/' . $user->id_photo_path) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Valid ID')" />
+                            <img src="{{ route('secure.file', ['filepath' => $user->id_photo_path]) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Valid ID')" />
                             <span class="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">ID</span>
                         </div>
                         <div class="group relative">
-                            <img src="{{ asset('storage/' . $user->selfie_photo_path) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Selfie')" />
+                            <img src="{{ route('secure.file', ['filepath' => $user->selfie_photo_path]) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Selfie')" />
                             <span class="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">SELFIE</span>
                         </div>
                     </div>
@@ -104,8 +104,9 @@
                             <div class="flex items-center gap-3">
                                 <!-- Images -->
                                 <div class="flex gap-2">
-                                    <img src="{{ asset('storage/' . $user->id_photo_path) }}" class="h-8 w-8 cursor-pointer rounded border border-slate-200 object-cover" onclick="openModal(this.src, 'ID')" />
-                                    <img src="{{ asset('storage/' . $user->selfie_photo_path) }}" class="h-8 w-8 cursor-pointer rounded border border-slate-200 object-cover" onclick="openModal(this.src, 'Selfie')" />
+                                    <img src="{{ route('secure.file', ['filepath' => $user->id_photo_path]) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Valid ID')" />
+
+                                    <img src="{{ route('secure.file', ['filepath' => $user->selfie_photo_path]) }}" class="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onclick="openModal(this.src, 'Selfie')" />
                                 </div>
 
                                 <!-- THE NEW RED DELETE BUTTON & SUSPEND BUTTON -->

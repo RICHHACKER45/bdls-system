@@ -61,7 +61,7 @@
             <div class="ml-auto flex items-center gap-3">
                 <span class="max-w-[180px] truncate text-sm font-semibold text-slate-700 sm:max-w-xs">Kamusta, {{ Auth::user()->first_name }}!</span>
                 <div class="h-9 w-9 overflow-hidden rounded-full border-2 border-white bg-slate-200 shadow-sm">
-                    <img src="{{ asset('storage/' . Auth::user()->selfie_photo_path) }}" alt="Profile" class="h-full w-full object-cover" />
+                    <img src="{{ route('secure.file', ['filepath' => Auth::user()->selfie_photo_path]) }}" alt="Profile" class="h-full w-full object-cover" />
                 </div>
             </div>
         </header>

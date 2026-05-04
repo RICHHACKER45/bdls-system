@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
@@ -56,6 +57,11 @@ Route::post('/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.rese
 // 4. AUTHENTICATED ROUTES (Bawal ang walang account)
 // ==========================================
 Route::middleware(['auth'])->group(function () {
+
+    // I-paste ito sa loob ng Auth Middleware Group
+    Route::get('/secure-file/{filepath}', [FileController::class, 'serveSecureFile'])
+        ->where('filepath', '.*')
+        ->name('secure.file');
 
     // UNIVERSAL PASSWORD UPDATE ROUTE
     Route::post('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');

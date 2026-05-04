@@ -33,9 +33,9 @@ class AuthController extends Controller
             '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
-        // STEP 3: I-save ang mga Images sa Server Storage (public disk)
-        $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'public');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
+        // PALITAN ITO:
+        $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
+        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
 
         // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (

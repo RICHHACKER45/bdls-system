@@ -23,13 +23,6 @@ class ServiceRequestController extends Controller
 
     /**
      * Display the Resident Dashboard.
-     * Inalis ang logic sa routes/web.php.
-     */
-    /**
-     * Display the Resident Dashboard.
-     */
-    /**
-     * Display the Resident Dashboard.
      */
     public function index()
     {
@@ -78,9 +71,9 @@ class ServiceRequestController extends Controller
 
         $user = Auth::user();
 
-        // Store new photos
-        $idPath = $request->file('id_photo_path')->store('verification_ids', 'public');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'public');
+        // PALITAN ITO:
+        $idPath = $request->file('id_photo_path')->store('verification_ids', 'local');
+        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
 
         // Reset rejection data
         $user->update([
@@ -133,8 +126,9 @@ class ServiceRequestController extends Controller
             // 4. I-save ang Attachments
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('service_requirements', 'public');
-                    Attachment::create([
+                    // PALITAN ITO:
+                    $path = $file->store('service_requirements', 'local');
+                        Attachment::create([
                         'service_request_id' => $serviceRequest->id,
                         'file_path' => $path,
                     ]);
