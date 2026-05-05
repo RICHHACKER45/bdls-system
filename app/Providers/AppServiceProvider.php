@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Detect if the request is coming through an ngrok tunnel
+        if (str_contains(request()->getHost(), 'ngrok-free.app') ||
+            request()->header('X-Forwarded-Proto') === 'https') {
+
+            URL::forceScheme('https');
+        }
     }
 }
