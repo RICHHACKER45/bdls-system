@@ -135,10 +135,8 @@ class ServiceRequestController extends Controller
                 }
             }
 
-            // ==========================================
-            // 5. I-TRIGGER ANG SMS SERVICE (Workflow Step 8)
-            // ==========================================
-            // (Tinanggal ko na yung unused na $documentName query para bumilis)
+            
+            // 5.TRIGGER SMS SERVICE (Workflow Step 8)
             $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
 
             $this->smsService->sendSms(

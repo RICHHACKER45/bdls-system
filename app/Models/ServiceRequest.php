@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ServiceRequest extends Model
 {
-    use HasFactory, SoftDeletes; // Gagamit tayo ng SoftDeletes para sa Audit Trail
-
+    // SoftDeletes for Audit Trail
+    use HasFactory, SoftDeletes;
+  
     protected $fillable = [
         'user_id',
         'document_type_id',
