@@ -303,7 +303,7 @@ class AuthController extends Controller
 
     public function forgotPassword()
     {
-        return view('auth.forgot-password');
+        return Inertia::render('Auth/ForgotPassword');
     }
 
     public function sendResetOtp(Request $request)
@@ -398,7 +398,7 @@ class AuthController extends Controller
             return redirect()->route('password.request');
         }
 
-        return view('auth.reset-password');
+        return Inertia::render('Auth/ResetPassword');
     }
 
     public function resetPassword(Request $request)
