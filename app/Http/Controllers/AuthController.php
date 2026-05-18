@@ -337,10 +337,11 @@ class AuthController extends Controller
             return redirect()->route('password.request');
         }
 
-        // THE FIX 2: Ire-recycle natin ang otp.blade.php at ipapasa ang bagong routes!
-        return view('auth.otp', [
+        // THE FIX 2: Ire-recycle natin ang OTP Page at ipapasa ang bagong routes!
+        return Inertia::render('Auth/Otp', [
             'verifyRoute' => route('password.otp.verify'),
             'resendRoute' => route('password.otp.resend'),
+            'cooldown' => RateLimiter::availableIn('resend_sms_otp_'.$request->ip()),
         ]);
     }
 

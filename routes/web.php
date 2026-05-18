@@ -45,9 +45,10 @@ Route::middleware(['guest'])->group(function () {
 // 3. OTP ROUTES (Para sa Account Verification)
 // ==========================================
 Route::get('/otp', function () {
-    return view('auth.otp', [
+    return Inertia\Inertia::render('Auth/Otp', [
         'verifyRoute' => route('otp.verify'),
         'resendRoute' => route('otp.resend'),
+        'cooldown' => \Illuminate\Support\Facades\RateLimiter::availableIn('resend_sms_otp_'.request()->ip()),
     ]);
 })->name('otp.show');
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
