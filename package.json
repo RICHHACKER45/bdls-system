@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^4.3.1",
     "axios": "^1.11.0",
     "concurrently": "^9.0.1",
     "laravel-vite-plugin": "^2.0.0",
@@ -20,7 +20,8 @@
     "prettier-plugin-blade": "^3.1.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.2.1",
-    "vite": "^7.0.7"
+    "vite": "^7.0.7",
+    "ziggy-js": "^2.6.2"
   },
   "dependencies": {
     "@inertiajs/react": "^3.1.1",
