@@ -18,12 +18,12 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // ==========================================
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', function () {
-        return view('auth.login');
+        return Inertia\Inertia::render('Auth/Login');
     })->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
     Route::get('/signup', function () {
-        return view('auth.signup');
+        return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
 
