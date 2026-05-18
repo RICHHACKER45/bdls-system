@@ -20,6 +20,6 @@ class HomeController extends Controller
             return redirect()->route('resident.dashboard');
         }
 
-        return view('welcome');
+        return Inertia::render('Welcome');
     }
 }
