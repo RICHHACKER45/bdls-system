@@ -7,9 +7,10 @@ use App\Models\Attachment;
 use App\Models\DocumentType;
 use App\Models\ServiceRequest;
 use App\Services\SmsService;
-use Illuminate\Http\Request; // 1. TINAWAG NATIN ANG SERVICE MO
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ServiceRequestController extends Controller
 {
@@ -45,7 +46,14 @@ class ServiceRequestController extends Controller
         // THE FIX: Kunin ang pinakabagong 3 announcements
         $announcements = Announcement::latest()->take(3)->get();
 
-        return view('resident.dashboard', compact('documents', 'myRequests', 'pendingRequests', 'readyRequests', 'historyRequests', 'announcements'));
+        return Inertia::render('Resident/Dashboard', [
+            'documents' => $documents,
+            'myRequests' => $myRequests->values(),
+            'pendingRequests' => $pendingRequests->values(),
+            'readyRequests' => $readyRequests->values(),
+            'historyRequests' => $historyRequests->values(),
+            'announcements' => $announcements,
+        ]);
     }
 
     /**
