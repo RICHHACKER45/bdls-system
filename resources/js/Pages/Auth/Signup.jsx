@@ -39,7 +39,7 @@ const TermsModal = ({ isOpen, onClose }) => {
                     <button type="button" onClick={onClose} className="text-2xl font-bold text-slate-400 hover:text-slate-800">&times;</button>
                 </div>
                 <div className="space-y-4 overflow-y-auto p-6 text-sm text-slate-700">
-                    <p>Sa paggawa ng account sa BDLS, sumasang-ayon ka sa mga sumusunod na patakaran ng aming barangay:</p>
+                    <p>Sa paggawa ng account sa BDLS, sumasang-ayon ka sa mga sumusasunod na patakaran ng aming barangay:</p>
                     <h3 className="font-bold text-slate-900">1. Responsibilidad sa Tamang Impormasyon</h3>
                     <p>Responsibilidad ng user na siguraduhing tama at totoo ang lahat ng impormasyong ibibigay sa system. Anumang maling impormasyon ay maaaring maging dahilan ng pagka-antala o pagka-reject ng iyong request.</p>
                     <h3 className="font-bold text-slate-900">2. Seguridad ng Account</h3>
@@ -117,25 +117,6 @@ export default function Signup() {
         sessionStorage.setItem('bdls_signup_draft', JSON.stringify(serializableData));
         sessionStorage.setItem('bdls_signup_step', step.toString());
     }, [data, step]);
-
-    // BACKEND ERROR ROUTER & TOAST NOTIFICATION
-    useEffect(() => {
-        if (Object.keys(errors).length > 0) {
-            // Trigger Toast with first error message
-            triggerToast(Object.values(errors)[0]);
-
-            // Route to corresponding step
-            if (errors.first_name || errors.middle_name || errors.last_name || errors.suffix || errors.sex || errors.dob_month || errors.dob_day || errors.dob_year) {
-                setStep(1);
-            } else if (errors.house_number || errors.purok_street) {
-                setStep(2);
-            } else if (errors.contact_number || errors.email || errors.password || errors.password_confirmation) {
-                setStep(3);
-            } else if (errors.id_photo_path || errors.selfie_photo_path || errors.terms) {
-                setStep(4);
-            }
-        }
-    }, [errors]);
 
     const triggerToast = (message) => {
         setToast({ visible: true, message });
@@ -217,6 +198,22 @@ export default function Signup() {
             onSuccess: () => {
                 sessionStorage.removeItem('bdls_signup_draft');
                 sessionStorage.removeItem('bdls_signup_step');
+            },
+            onError: (errs) => {
+                // BACKEND ERROR ROUTER & TOAST NOTIFICATION (ONLY RUNS ON SUBMIT)
+                if (Object.keys(errs).length > 0) {
+                    triggerToast(Object.values(errs)[0]);
+
+                    if (errs.first_name || errs.middle_name || errs.last_name || errs.suffix || errs.sex || errs.dob_month || errs.dob_day || errs.dob_year) {
+                        setStep(1);
+                    } else if (errs.house_number || errs.purok_street) {
+                        setStep(2);
+                    } else if (errs.contact_number || errs.email || errs.password || errs.password_confirmation) {
+                        setStep(3);
+                    } else if (errs.id_photo_path || errs.selfie_photo_path || errs.terms) {
+                        setStep(4);
+                    }
+                }
             }
         });
     };
