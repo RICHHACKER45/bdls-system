@@ -71,12 +71,12 @@ export default function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [localErrors, setLocalErrors] = useState({});
-    const [toast, setToast] = useState({ show: false, message: '' });
+    const [toast, setToast] = useState({ visible: false, message: '' });
 
     const idInputRef = useRef(null);
     const selfieInputRef = useRef(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         first_name: '',
         middle_name: '',
         last_name: '',
@@ -96,12 +96,11 @@ export default function Signup() {
         terms: false,
     });
 
-    // 10. Sticky Form Logic
+    // Sticky Form Logic (Restore from sessionStorage)
     useEffect(() => {
         const savedDraft = sessionStorage.getItem('bdls_signup_draft');
         if (savedDraft) {
             const draft = JSON.parse(savedDraft);
-            // Don't restore passwords or files
             const { password, password_confirmation, id_photo_path, selfie_photo_path, ...rest } = draft;
             Object.keys(rest).forEach(key => setData(key, rest[key]));
         }
@@ -112,37 +111,65 @@ export default function Signup() {
         }
     }, []);
 
+    // Save Draft to sessionStorage
     useEffect(() => {
         const { id_photo_path, selfie_photo_path, ...serializableData } = data;
         sessionStorage.setItem('bdls_signup_draft', JSON.stringify(serializableData));
         sessionStorage.setItem('bdls_signup_step', step.toString());
     }, [data, step]);
 
-    const showToast = (message) => {
-        setToast({ show: true, message });
-        setTimeout(() => setToast({ show: false, message: '' }), 5000);
+    // BACKEND ERROR ROUTER & TOAST NOTIFICATION
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            // Trigger Toast with first error message
+            triggerToast(Object.values(errors)[0]);
+
+            // Route to corresponding step
+            if (errors.first_name || errors.middle_name || errors.last_name || errors.suffix || errors.sex || errors.dob_month || errors.dob_day || errors.dob_year) {
+                setStep(1);
+            } else if (errors.house_number || errors.purok_street) {
+                setStep(2);
+            } else if (errors.contact_number || errors.email || errors.password || errors.password_confirmation) {
+                setStep(3);
+            } else if (errors.id_photo_path || errors.selfie_photo_path || errors.terms) {
+                setStep(4);
+            }
+        }
+    }, [errors]);
+
+    const triggerToast = (message) => {
+        setToast({ visible: true, message });
+        setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 5000);
+    };
+
+    const handleInputChange = (field, value) => {
+        setData(field, value);
+        setLocalErrors(prev => ({ ...prev, [field]: null }));
+        clearErrors(field);
     };
 
     const validateStep = (currentStep) => {
         const newErrors = {};
+        const requiredMsg = "Kailangan itong punan.";
+        
         if (currentStep === 1) {
-            if (!data.first_name) newErrors.first_name = 'Required';
-            if (!data.last_name) newErrors.last_name = 'Required';
-            if (!data.sex) newErrors.sex = 'Required';
-            if (!data.dob_month) newErrors.dob_month = 'Required';
-            if (!data.dob_day) newErrors.dob_day = 'Required';
-            if (!data.dob_year) newErrors.dob_year = 'Required';
+            if (!data.first_name) newErrors.first_name = requiredMsg;
+            if (!data.last_name) newErrors.last_name = requiredMsg;
+            if (!data.sex) newErrors.sex = requiredMsg;
+            if (!data.dob_month) newErrors.dob_month = requiredMsg;
+            if (!data.dob_day) newErrors.dob_day = requiredMsg;
+            if (!data.dob_year) newErrors.dob_year = requiredMsg;
         } else if (currentStep === 2) {
-            if (!data.house_number) newErrors.house_number = 'Required';
-            if (!data.purok_street) newErrors.purok_street = 'Required';
+            if (!data.house_number) newErrors.house_number = requiredMsg;
+            if (!data.purok_street) newErrors.purok_street = requiredMsg;
         } else if (currentStep === 3) {
-            if (!data.contact_number) newErrors.contact_number = 'Required';
-            else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = 'Must start with 09 and be 11 digits';
+            if (!data.contact_number) newErrors.contact_number = requiredMsg;
+            else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = "Dapat magsimula sa 09 at may 11 numero.";
             
-            if (!data.password) newErrors.password = 'Required';
-            else if (data.password.length < 8) newErrors.password = 'Min 8 characters';
+            if (!data.password) newErrors.password = requiredMsg;
+            else if (data.password.length < 8) newErrors.password = "Dapat ay hindi bababa sa 8 characters.";
             
-            if (data.password !== data.password_confirmation) newErrors.password_confirmation = 'Passwords do not match';
+            if (data.password !== data.password_confirmation) newErrors.password_confirmation = "Hindi magtugma ang password.";
         }
         
         setLocalErrors(newErrors);
@@ -165,12 +192,14 @@ export default function Signup() {
 
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-            showToast('Ang file ay masyadong malaki. Maximum size ay 5MB.');
+            triggerToast('Ang file ay masyadong malaki. Maximum size ay 5MB.');
             e.target.value = '';
             return;
         }
 
         setData(field, file);
+        setLocalErrors(prev => ({ ...prev, [field]: null }));
+        clearErrors(field);
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -183,7 +212,6 @@ export default function Signup() {
         e.preventDefault();
         post(route('signup.post'), {
             onFinish: () => {
-                // Keep password/confirmation cleared if there are validation errors
                 reset('password', 'password_confirmation');
             },
             onSuccess: () => {
@@ -196,6 +224,17 @@ export default function Signup() {
     return (
         <div className="flex min-h-screen flex-col justify-center bg-slate-50 py-10 font-sans text-slate-900 antialiased">
             <Head title="Mag-Signup - Barangay Doña Lucia" />
+
+            {/* Toast Container - ALWAYS RENDERED with transition classes */}
+            <div className="pointer-events-none fixed top-6 left-1/2 z-[64] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
+                <div className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
+                    <svg className="h-6 w-6 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div>
+                        <p className="text-sm font-bold">Oops! May nakitang mali.</p>
+                        <p className="text-sm font-medium">{toast.message}</p>
+                    </div>
+                </div>
+            </div>
 
             <div className="mx-auto w-full max-w-3xl px-4">
                 <div className="mb-2 flex items-center justify-between">
@@ -252,7 +291,7 @@ export default function Signup() {
                         </div>
                     </div>
 
-                    <form onSubmit={submit}>
+                    <form onSubmit={submit} novalidate>
                         {/* Step 1 */}
                         {step === 1 && (
                             <div id="step1">
@@ -260,21 +299,21 @@ export default function Signup() {
                                 <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">First Name <span className="text-red-500">*</span></label>
-                                        <input type="text" value={data.first_name} onChange={e => setData('first_name', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.first_name || errors.first_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        <input type="text" placeholder="First Name *" autoComplete="given-name" value={data.first_name} onChange={e => handleInputChange('first_name', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.first_name || errors.first_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                         {(localErrors.first_name || errors.first_name) && <p className="mt-1 text-sm text-red-500">{localErrors.first_name || errors.first_name}</p>}
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Middle Name</label>
-                                        <input type="text" value={data.middle_name} onChange={e => setData('middle_name', e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900" />
+                                        <input type="text" placeholder="Middle Name" value={data.middle_name} onChange={e => handleInputChange('middle_name', e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900" />
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Last Name <span className="text-red-500">*</span></label>
-                                        <input type="text" value={data.last_name} onChange={e => setData('last_name', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.last_name || errors.last_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        <input type="text" placeholder="Last Name *" autoComplete="family-name" value={data.last_name} onChange={e => handleInputChange('last_name', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.last_name || errors.last_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                         {(localErrors.last_name || errors.last_name) && <p className="mt-1 text-sm text-red-500">{localErrors.last_name || errors.last_name}</p>}
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Suffix (Optional)</label>
-                                        <select value={data.suffix} onChange={e => setData('suffix', e.target.value)} className="w-full cursor-pointer rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900">
+                                        <select value={data.suffix} onChange={e => handleInputChange('suffix', e.target.value)} className="w-full cursor-pointer rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900">
                                             <option value="">Wala</option>
                                             <option value="Jr.">Jr.</option>
                                             <option value="Sr.">Sr.</option>
@@ -288,7 +327,7 @@ export default function Signup() {
                                 <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Kasarian (Sex) <span className="text-red-500">*</span></label>
-                                        <select value={data.sex} onChange={e => setData('sex', e.target.value)} className={`w-full cursor-pointer rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.sex || errors.sex ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
+                                        <select value={data.sex} onChange={e => handleInputChange('sex', e.target.value)} className={`w-full cursor-pointer rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.sex || errors.sex ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
                                             <option value="">-- Pumili ng Kasarian --</option>
                                             <option value="Male">Lalaki (Male)</option>
                                             <option value="Female">Babae (Female)</option>
@@ -299,7 +338,7 @@ export default function Signup() {
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Date of Birth <span className="text-red-500">*</span></label>
                                         <div className="grid grid-cols-3 gap-2">
-                                            <select value={data.dob_month} onChange={e => setData('dob_month', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_month || errors.dob_month ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
+                                            <select value={data.dob_month} onChange={e => handleInputChange('dob_month', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_month || errors.dob_month ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
                                                 <option value="">Month</option>
                                                 <option value="01">January</option>
                                                 <option value="02">February</option>
@@ -314,13 +353,13 @@ export default function Signup() {
                                                 <option value="11">November</option>
                                                 <option value="12">December</option>
                                             </select>
-                                            <select value={data.dob_day} onChange={e => setData('dob_day', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_day || errors.dob_day ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
+                                            <select value={data.dob_day} onChange={e => handleInputChange('dob_day', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_day || errors.dob_day ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
                                                 <option value="">Day</option>
                                                 {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                                                     <option key={d} value={d.toString().padStart(2, '0')}>{d}</option>
                                                 ))}
                                             </select>
-                                            <select value={data.dob_year} onChange={e => setData('dob_year', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_year || errors.dob_year ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
+                                            <select value={data.dob_year} onChange={e => handleInputChange('dob_year', e.target.value)} className={`w-full rounded-lg border px-3 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.dob_year || errors.dob_year ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}>
                                                 <option value="">Year</option>
                                                 {Array.from({ length: 126 }, (_, i) => new Date().getFullYear() - i).map(y => (
                                                     <option key={y} value={y}>{y}</option>
@@ -344,12 +383,12 @@ export default function Signup() {
                                 <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">House No. <span className="text-red-500">*</span></label>
-                                        <input type="text" value={data.house_number} onChange={e => setData('house_number', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.house_number || errors.house_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        <input type="text" placeholder="House No. *" autoComplete="off" value={data.house_number} onChange={e => handleInputChange('house_number', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.house_number || errors.house_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                         {(localErrors.house_number || errors.house_number) && <p className="mt-1 text-sm text-red-500">{localErrors.house_number || errors.house_number}</p>}
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Purok / Street <span className="text-red-500">*</span></label>
-                                        <input type="text" value={data.purok_street} onChange={e => setData('purok_street', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.purok_street || errors.purok_street ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        <input type="text" placeholder="Purok/Street *" autoComplete="off" value={data.purok_street} onChange={e => handleInputChange('purok_street', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.purok_street || errors.purok_street ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                         {(localErrors.purok_street || errors.purok_street) && <p className="mt-1 text-sm text-red-500">{localErrors.purok_street || errors.purok_street}</p>}
                                     </div>
                                 </div>
@@ -368,12 +407,12 @@ export default function Signup() {
                                 <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Mobile Number <span className="text-red-500">*</span></label>
-                                        <input type="tel" value={data.contact_number} onChange={e => setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))} maxLength="11" placeholder="09XXXXXXXXX" className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.contact_number || errors.contact_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        <input type="tel" placeholder="09XXXXXXXXX" autoComplete="tel" value={data.contact_number} onChange={e => handleInputChange('contact_number', e.target.value.replace(/[^0-9]/g, ''))} maxLength="11" className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.contact_number || errors.contact_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                         {(localErrors.contact_number || errors.contact_number) && <p className="mt-1 text-sm text-red-500">{localErrors.contact_number || errors.contact_number}</p>}
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Email Address (Optional)</label>
-                                        <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900" />
+                                        <input type="email" placeholder="juan@email.com" autoComplete="email" value={data.email} onChange={e => handleInputChange('email', e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900" />
                                         {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                                     </div>
                                 </div>
@@ -382,7 +421,7 @@ export default function Signup() {
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
                                         <div className="relative">
-                                            <input type={showPassword ? "text" : "password"} value={data.password} onChange={e => setData('password', e.target.value)} autoComplete="new-password" className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                            <input type={showPassword ? "text" : "password"} value={data.password} onChange={e => handleInputChange('password', e.target.value)} autoComplete="new-password" className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 transition-all hover:text-slate-900 active:scale-95 active:bg-slate-200">
                                                 {showPassword ? 'HIDE' : 'SHOW'}
                                             </button>
@@ -392,7 +431,7 @@ export default function Signup() {
                                     <div>
                                         <label className="mb-1 block text-sm font-semibold text-slate-700">Confirm Password <span className="text-red-500">*</span></label>
                                         <div className="relative">
-                                            <input type={showConfirmPassword ? "text" : "password"} value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} autoComplete="new-password" className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password_confirmation || errors.password_confirmation ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                            <input type={showConfirmPassword ? "text" : "password"} value={data.password_confirmation} onChange={e => handleInputChange('password_confirmation', e.target.value)} autoComplete="new-password" className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password_confirmation || errors.password_confirmation ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 transition-all hover:text-slate-900 active:scale-95 active:bg-slate-200">
                                                 {showConfirmPassword ? 'HIDE' : 'SHOW'}
                                             </button>
@@ -437,7 +476,7 @@ export default function Signup() {
                                 </div>
 
                                 <div className="mb-8 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                                    <input type="checkbox" id="terms" checked={data.terms} onChange={e => setData('terms', e.target.checked)} className="mt-1 h-5 w-5 cursor-pointer rounded border-slate-300 text-slate-900 focus:ring-slate-900" />
+                                    <input type="checkbox" id="terms" checked={data.terms} onChange={e => handleInputChange('terms', e.target.checked)} className="mt-1 h-5 w-5 cursor-pointer rounded border-slate-300 text-slate-900 focus:ring-slate-900" />
                                     <label htmlFor="terms" className="cursor-pointer text-sm text-slate-700">
                                         Nabasa ko at sumasang-ayon ako sa <button type="button" onClick={() => setIsPrivacyOpen(true)} className="font-bold text-red-600 hover:underline">Privacy Policy</button> at <button type="button" onClick={() => setIsTermsOpen(true)} className="font-bold text-red-600 hover:underline">Terms & Conditions</button> ng BDLS.
                                     </label>
@@ -457,19 +496,6 @@ export default function Signup() {
 
             <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
             <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
-
-            {/* Toast Container */}
-            {toast.show && (
-                <div className="pointer-events-none fixed top-6 left-1/2 z-[64] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
-                    <div className="pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 translate-y-0 opacity-100">
-                        <svg className="h-6 w-6 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <div>
-                            <p className="text-sm font-bold">Oops! May nakitang mali.</p>
-                            <p className="text-sm font-medium">{toast.message}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Global Loader */}
             {processing && (
