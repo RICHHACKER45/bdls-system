@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
 {
@@ -68,19 +69,18 @@ class AdminDashboardController extends Controller
         $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
         $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
 
-        return view(
-            'admin.admin-panel',
-            compact(
-                'pendingAccounts',
-                'approvedAccounts',
-                'rejectedAccounts',
-                'activeQueue',
-                'receivedQueue',
-                'documents',
-                'auditLogs',
-                'notificationLogs', // <--- IDINAGDAG NATIN ITO
-            ),
-        );
+        // THE ENTERPRISE FIX: Inertia Render with Auth Prop
+        return Inertia::render('Admin/Dashboard', [
+            'pendingAccounts' => $pendingAccounts,
+            'approvedAccounts' => $approvedAccounts,
+            'rejectedAccounts' => $rejectedAccounts,
+            'activeQueue' => $activeQueue,
+            'receivedQueue' => $receivedQueue,
+            'documents' => $documents,
+            'auditLogs' => $auditLogs,
+            'notificationLogs' => $notificationLogs,
+            'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
+        ]);
     }
 
     public function checkPendingCount()
