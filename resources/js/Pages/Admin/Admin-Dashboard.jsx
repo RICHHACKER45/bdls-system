@@ -3,7 +3,7 @@ import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 
-export default function Dashboard() {
+export default function AdminDashboard() {
     const { 
         pendingAccounts = { data: [] }, 
         approvedAccounts = { data: [] }, 

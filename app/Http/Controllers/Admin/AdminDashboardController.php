@@ -70,7 +70,7 @@ class AdminDashboardController extends Controller
         $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
 
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
-        return Inertia::render('Admin/Dashboard', [
+        return Inertia::render('Admin/Admin-Dashboard', [
             'pendingAccounts' => $pendingAccounts,
             'approvedAccounts' => $approvedAccounts,
             'rejectedAccounts' => $rejectedAccounts,
