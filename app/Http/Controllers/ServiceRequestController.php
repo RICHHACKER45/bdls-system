@@ -53,6 +53,7 @@ class ServiceRequestController extends Controller
             'readyRequests' => $readyRequests->values(),
             'historyRequests' => $historyRequests->values(),
             'announcements' => $announcements,
+            'auth' => ['user' => $user],
         ]);
     }
 
