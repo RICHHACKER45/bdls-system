@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 
 export default function ResidentLayout({ children }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash = {} } = usePage().props;
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [toast, setToast] = useState({ visible: false, message: '', title: '' });
 
@@ -10,7 +10,7 @@ export default function ResidentLayout({ children }) {
 
     // Toast Logic
     useEffect(() => {
-        if (flash.success_message || flash.success) {
+        if (flash.success_message || flash?.success) {
             setToast({
                 visible: true,
                 message: flash.success_message || flash.success,
