@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\ServiceRequest;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class TestSeeder extends Seeder
 {
@@ -51,7 +50,7 @@ class TestSeeder extends Seeder
             'date_of_birth' => '2000-12-25', 'house_number' => '101', 'purok_street' => 'Purok 4',
             'contact_number' => '09444444444', 'password' => $defaultPassword,
             'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
-            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 0, 
+            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 0,
             'rejection_count' => 3, 'rejection_reason' => 'Malabo ang Valid ID. Hindi mabasa.', 'rejected_at' => now(), 'terms_accepted_at' => now(),
         ]);
 
@@ -61,7 +60,7 @@ class TestSeeder extends Seeder
             'date_of_birth' => '1950-02-14', 'house_number' => '202', 'purok_street' => 'Purok 5',
             'contact_number' => '09555555555', 'password' => $defaultPassword,
             'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
-            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1, 
+            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1,
             'locked_until' => now()->addDays(7), 'terms_accepted_at' => now(),
         ]);
 
@@ -100,7 +99,7 @@ class TestSeeder extends Seeder
                 'status' => $req['status'],
                 'released_at' => $req['released_at'] ?? null,
                 // Soft delete if canceled/rejected per your system design
-                'deleted_at' => in_array($req['status'], ['canceled', 'rejected']) ? now() : null, 
+                'deleted_at' => in_array($req['status'], ['canceled', 'rejected']) ? now() : null,
             ]);
         }
     }

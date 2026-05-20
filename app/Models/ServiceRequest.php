@@ -10,7 +10,7 @@ class ServiceRequest extends Model
 {
     // SoftDeletes for Audit Trail
     use HasFactory, SoftDeletes;
-  
+
     protected $fillable = [
         'user_id',
         'document_type_id',

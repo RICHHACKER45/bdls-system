@@ -16,4 +16,4 @@ class Attachment extends Model
     {
         return $this->belongsTo(ServiceRequest::class);
     }
-}   
+}

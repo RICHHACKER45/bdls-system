@@ -137,14 +137,13 @@ class ServiceRequestController extends Controller
                 foreach ($request->file('attachments') as $file) {
                     // PALITAN ITO:
                     $path = $file->store('service_requirements', 'local');
-                        Attachment::create([
+                    Attachment::create([
                         'service_request_id' => $serviceRequest->id,
                         'file_path' => $path,
                     ]);
                 }
             }
 
-            
             // 5.TRIGGER SMS SERVICE (Workflow Step 8)
             $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
 

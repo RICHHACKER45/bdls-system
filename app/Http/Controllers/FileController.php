@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attachment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
-use App\Models\Attachment;
 
 class FileController extends Controller
 {
@@ -23,24 +23,24 @@ class FileController extends Controller
         if ($user->role !== 'admin') {
             // Check kung kanya ang Profile ID o Selfie
             $ownsProfileFile = User::where('id', $user->id)
-                ->where(function($query) use ($filepath) {
+                ->where(function ($query) use ($filepath) {
                     $query->where('id_photo_path', $filepath)
-                          ->orWhere('selfie_photo_path', $filepath);
+                        ->orWhere('selfie_photo_path', $filepath);
                 })->exists();
 
             // Check kung kanya ang uploaded requirement sa Service Request
             $ownsAttachment = Attachment::where('file_path', $filepath)
-                ->whereHas('serviceRequest', function($query) use ($user) {
+                ->whereHas('serviceRequest', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })->exists();
 
-            if (!$ownsProfileFile && !$ownsAttachment) {
+            if (! $ownsProfileFile && ! $ownsAttachment) {
                 abort(403, 'Unauthorized Access to PII. Bawal tingnan ang file ng iba.');
             }
         }
 
         // 3. File Verification & Delivery
-        if (!Storage::disk('local')->exists($filepath)) {
+        if (! Storage::disk('local')->exists($filepath)) {
             abort(404, 'File not found sa Deep Storage.');
         }
 
