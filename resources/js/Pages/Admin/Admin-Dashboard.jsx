@@ -3,29 +3,48 @@ import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 
+// Simpleng Pagination Component para sa mga Laravel Paginators
+const Pagination = ({ links }) => {
+    if (!links || links.length <= 3) return null;
+    return (
+        <div className="mt-4 flex flex-wrap gap-1">
+            {links.map((link, i) => (
+                <Link
+                    key={i}
+                    href={link.url || '#'}
+                    preserveScroll
+                    className={`rounded border px-3 py-1 text-sm transition-all ${
+                        link.active ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:bg-slate-100'
+                    } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: link.label }}
+                />
+            ))}
+        </div>
+    );
+};
+
 export default function AdminDashboard() {
-    const { 
-        pendingAccounts = { data: [] }, 
-        approvedAccounts = { data: [] }, 
-        rejectedAccounts = { data: [] }, 
-        activeQueue = { data: [] }, 
-        receivedQueue = { data: [] }, 
-        documents = [], 
-        auditLogs = { data: [] }, 
-        notificationLogs = { data: [] }, 
-        auth, 
-        flash = {}, 
-        errors = {} 
+    const {
+        pendingAccounts = { data: [], links: [] },
+        approvedAccounts = { data: [], links: [] },
+        rejectedAccounts = { data: [], links: [] },
+        activeQueue = { data: [], links: [] },
+        receivedQueue = { data: [], links: [] },
+        documents = [],
+        auditLogs = { data: [], links: [] },
+        notificationLogs = { data: [], links: [] },
+        auth,
+        flash = {},
+        errors = {}
     } = usePage().props;
 
+    // Tabs & Sub-Tabs State
     const [activeTab, setActiveTab] = useState('pending');
-    
-    // Sub tabs
     const [pendingSubTab, setPendingSubTab] = useState('sub-pending');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
     const [auditSubTab, setAuditSubTab] = useState('sub-audit-trail');
 
-    // Modals
+    // Modals State
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '', title: '' });
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, userId: null });
     const [rejectModal, setRejectModal] = useState({ isOpen: false, userId: null, userName: '' });
@@ -36,80 +55,67 @@ export default function AdminDashboard() {
     const [pdfUrl, setPdfUrl] = useState('');
     const [logbookUrl, setLogbookUrl] = useState('');
 
-    // Local Toast for form errors
+    // Local Toast
     const [localToast, setLocalToast] = useState({ visible: false, message: '' });
     const triggerToast = (msg) => {
         setLocalToast({ visible: true, message: msg });
         setTimeout(() => setLocalToast({ visible: false, message: '' }), 5000);
     };
 
-    // Polling setup
-    const [pendingCount, setPendingCount] = useState(pendingAccounts.total || 0);
-    const [queueCount, setQueueCount] = useState(activeQueue.total || 0);
-    const [showNewDataPill, setShowNewDataPill] = useState(false);
+    // ==========================================
+    // FORMS & SUBMIT HANDLERS
+    // ==========================================
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            Promise.all([
-                axios.get(route('admin.api.pending_count')),
-                axios.get(route('admin.api.queue_count'))
-            ]).then(([pendingRes, queueRes]) => {
-                const newPendingCount = pendingRes.data.count;
-                const newQueueCount = queueRes.data.count;
-                setPendingCount(newPendingCount);
-                setQueueCount(newQueueCount);
-                
-                if (newPendingCount > (pendingAccounts.total || 0) || newQueueCount > (activeQueue.total || 0)) {
-                    setShowNewDataPill(true);
-                }
-            }).catch(err => console.error("Polling error", err));
-        }, 10000);
-        return () => clearInterval(interval);
-    }, [pendingAccounts.total, activeQueue.total]);
-
-    // --- Forms ---
+    // 1. Reject Registration
     const rejectForm = useForm({ rejection_reason: '' });
     const submitReject = (e) => {
         e.preventDefault();
-        rejectForm.post(`/admin/account/${rejectModal.userId}/reject`, {
+        rejectForm.post(route('admin.reject_account', rejectModal.userId), {
+            preserveScroll: true,
             onSuccess: () => {
                 setRejectModal({ isOpen: false, userId: null, userName: '' });
                 rejectForm.reset();
             },
             onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs)[0]);
+                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
             }
         });
     };
 
+    // 2. Update Request Status
     const statusForm = useForm({ status: '' });
     const submitStatus = (e) => {
         e.preventDefault();
-        statusForm.post(`/admin/request/${statusModal.requestId}/update-status`, {
+        statusForm.transform((data) => ({ ...data, status: statusModal.nextStatus })).post(route('admin.request.update_status', statusModal.requestId), {
+            preserveScroll: true,
             onSuccess: () => setStatusModal({ isOpen: false, requestId: null, nextStatus: '', label: '' }),
             onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs)[0]);
+                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
             }
         });
     };
 
+    // 3. Delete Account
     const deleteForm = useForm({});
     const submitDelete = (e) => {
         e.preventDefault();
-        deleteForm.delete(`/admin/account/${deleteModal.userId}`, {
+        deleteForm.delete(route('admin.delete_account', deleteModal.userId), {
+            preserveScroll: true,
             onSuccess: () => setDeleteModal({ isOpen: false, userId: null })
         });
     };
 
+    // 4. Suspend Account (7 Days)
     const suspendForm = useForm({});
     const submitSuspend = (e) => {
         e.preventDefault();
-        suspendForm.post(`/admin/account/${suspendModal.userId}/suspend`, {
+        suspendForm.post(route('admin.suspend_account', suspendModal.userId), {
+            preserveScroll: true,
             onSuccess: () => setSuspendModal({ isOpen: false, userId: null, userName: '' })
         });
     };
 
-    // Announcements Form & NTC SMS Logic
+    // 5. Announcements & Curfew Logic
     const announcementForm = useForm({ message_body: '' });
     const [isLinkDetected, setIsLinkDetected] = useState(false);
     
@@ -128,14 +134,15 @@ export default function AdminDashboard() {
     const submitAnnouncement = (e) => {
         e.preventDefault();
         announcementForm.post(route('admin.announcements.broadcast'), {
+            preserveScroll: true,
             onSuccess: () => announcementForm.reset(),
             onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs)[0]);
+                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
             }
         });
     };
 
-    // Walk-in Forms
+    // 6. Walk-in Search & Store
     const walkinSearchForm = useForm({ contact_number: flash?.walkin_search_number || '' });
     const submitWalkinSearch = (e) => {
         e.preventDefault();
@@ -143,19 +150,10 @@ export default function AdminDashboard() {
     };
 
     const walkinStoreForm = useForm({
-        contact_number: '',
-        is_new_user: '1',
-        document_type_id: '',
-        purpose: '',
-        first_name: '',
-        last_name: '',
-        sex: '',
-        date_of_birth: '',
-        house_number: '',
-        purok_street: ''
+        contact_number: '', is_new_user: '1', document_type_id: '', purpose: '',
+        first_name: '', last_name: '', sex: '', date_of_birth: '', house_number: '', purok_street: ''
     });
 
-    // Update Walkin Store form when search results change
     useEffect(() => {
         if (flash?.walkin_searched) {
             walkinStoreForm.setData(data => ({
@@ -169,55 +167,40 @@ export default function AdminDashboard() {
     const submitWalkinStore = (e) => {
         e.preventDefault();
         walkinStoreForm.post(route('admin.walkin.store'), {
+            preserveScroll: true,
             onSuccess: () => {
                 walkinStoreForm.reset();
                 walkinSearchForm.reset();
+                setActiveTab('queue'); // Auto-jump to queue tab on success
             },
             onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs)[0]);
+                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
             }
         });
     };
 
-    // Analytics PDF Viewer logic (SPA Approach)
+    // 7. Security Settings (Password Update)
+    const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
+    const submitPasswordUpdate = (e) => {
+        e.preventDefault();
+        passwordForm.post(route('password.update'), {
+            preserveScroll: true,
+            onSuccess: () => passwordForm.reset(),
+            onError: (errs) => {
+                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
+            }
+        });
+    };
+
+    // 8. PDF Generators
     const [reportMonth, setReportMonth] = useState('all');
     const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
 
-    const generatePdf = async (e) => {
-        e.preventDefault();
-        setPdfModalOpen(true);
-        try {
-            const res = await axios.post(route('admin.reports.generate'), {
-                report_month: reportMonth,
-                report_year: reportYear
-            }, { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-            document.getElementById('pdfViewerFrame').src = url;
-            setPdfUrl(url);
-        } catch (error) {
-            console.error(error);
-            triggerToast('Failed to generate PDF.');
-            setPdfModalOpen(false);
-        }
-    };
-
-    const downloadPdfNow = () => {
-        if (!pdfUrl) return;
-        const a = document.createElement('a');
-        a.href = pdfUrl;
-        a.download = `BDLS_Analytics_${reportYear}_${reportMonth}.pdf`;
-        a.click();
-    };
-
     const openLogbook = async () => {
         setLogbookModalOpen(true);
-        try {
-            const url = route('admin.queue.print_logbook');
-            document.getElementById('logbookViewerFrame').src = url;
-            setLogbookUrl(url + '?download=1');
-        } catch (e) {
-            console.error(e);
-        }
+        const url = route('admin.queue.print_logbook');
+        document.getElementById('logbookViewerFrame').src = url;
+        setLogbookUrl(url + '?download=1');
     };
 
     const closePdfModal = () => {
@@ -230,23 +213,23 @@ export default function AdminDashboard() {
         document.getElementById('logbookViewerFrame').src = 'about:blank';
     };
 
+    // Helper for Search/Sort in Pending
     const handleSearchSort = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         router.get(route('admin.dashboard'), Object.fromEntries(formData.entries()), { preserveState: true });
     };
 
-    // Helper to extract query params
     const urlParams = new URLSearchParams(window.location.search);
     const searchParam = urlParams.get('search') || '';
     const sortParam = urlParams.get('sort') || 'latest';
 
     return (
-        <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} pendingCount={pendingCount} queueCount={queueCount}>
+        <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Head title="Admin Dashboard - BDLS" />
 
             {/* Local Error Toast */}
-            <div className="pointer-events-none fixed top-24 left-1/2 z-[1000] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
+            <div className="pointer-events-none fixed top-24 left-1/2 z- flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${localToast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
                     <svg className="h-6 w-6 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     <div>
@@ -255,16 +238,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* New Data Pill */}
-            {showNewDataPill && (
-                <div className="absolute top-4 left-1/2 z-30 -translate-x-1/2 transform">
-                    <button onClick={() => location.reload()} className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-6 py-2 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
-                        <svg className="animate-spin-slow h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        May bagong update. I-click para i-refresh.
-                    </button>
-                </div>
-            )}
 
             {/* --- TAB 1: PENDING REGISTRATIONS --- */}
             {activeTab === 'pending' && (
@@ -281,116 +254,125 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-                        <button onClick={() => setPendingSubTab('sub-pending')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-pending' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>Under Review ({pendingAccounts.total || 0})</button>
-                        <button onClick={() => setPendingSubTab('sub-approved')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-approved' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>Approved ({approvedAccounts.total || 0})</button>
-                        <button onClick={() => setPendingSubTab('sub-rejected')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-rejected' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 hover:bg-red-200 hover:text-red-700'}`}>Rejected / Locked ({rejectedAccounts.total || 0})</button>
+                        <button onClick={() => setPendingSubTab('sub-pending')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-pending' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>Under Review ({pendingAccounts.data?.length || 0})</button>
+                        <button onClick={() => setPendingSubTab('sub-approved')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-approved' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>Approved ({approvedAccounts.data?.length || 0})</button>
+                        <button onClick={() => setPendingSubTab('sub-rejected')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-rejected' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 hover:bg-red-200 hover:text-red-700'}`}>Rejected / Locked ({rejectedAccounts.data?.length || 0})</button>
                     </div>
 
                     {pendingSubTab === 'sub-pending' && (
-                        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                            {pendingAccounts.data && pendingAccounts.data.length > 0 ? pendingAccounts.data.map(user => (
-                                <div key={user.id} className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md sm:flex-row">
-                                    <div className="flex shrink-0 gap-2 sm:flex-col">
-                                        <div className="group relative">
-                                            <img src={route('secure.file', { filepath: user.id_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.id_photo_path }), title: 'Valid ID' })} />
-                                            <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">ID</span>
+                        <div>
+                            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                                {pendingAccounts.data && pendingAccounts.data.length > 0 ? pendingAccounts.data.map(user => (
+                                    <div key={user.id} className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md sm:flex-row">
+                                        <div className="flex shrink-0 gap-2 sm:flex-col">
+                                            <div className="group relative">
+                                                <img src={route('secure.file', { filepath: user.id_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.id_photo_path }), title: 'Valid ID' })} />
+                                                <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">ID</span>
+                                            </div>
+                                            <div className="group relative">
+                                                <img src={route('secure.file', { filepath: user.selfie_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.selfie_photo_path }), title: 'Selfie' })} />
+                                                <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">SELFIE</span>
+                                            </div>
                                         </div>
-                                        <div className="group relative">
-                                            <img src={route('secure.file', { filepath: user.selfie_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.selfie_photo_path }), title: 'Selfie' })} />
-                                            <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">SELFIE</span>
+                                        <div className="flex flex-1 flex-col justify-between">
+                                            <div>
+                                                <h3 className="mb-1 text-xl leading-tight font-black tracking-tight text-slate-900 uppercase">{user.last_name}, {user.first_name}, {user.middle_name}, {user.suffix}</h3>
+                                                <p className="mb-3 flex flex-wrap gap-x-2 gap-y-1 text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+                                                    <span>{user.sex}</span><span className="text-slate-300">|</span>
+                                                    <span>{user.age} YRS OLD</span><span className="text-slate-300">|</span>
+                                                    <span>DOB: {new Date(user.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span><span className="text-slate-300">|</span>
+                                                    <span className="font-mono text-slate-900">{user.contact_number}</span>
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Link href={route('admin.approve_account', user.id)} method="post" as="button" preserveScroll className="w-full rounded-lg bg-slate-900 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Approve</Link>
+                                                <button onClick={() => setRejectModal({ isOpen: true, userId: user.id, userName: `${user.first_name} ${user.last_name}` })} className="flex-1 rounded-lg border border-red-200 bg-red-50 py-2.5 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95">Reject</button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-1 flex-col justify-between">
-                                        <div>
-                                            <h3 className="mb-1 text-xl leading-tight font-black tracking-tight text-slate-900 uppercase">{user.last_name}, {user.first_name}, {user.middle_name}, {user.suffix}</h3>
-                                            <p className="mb-3 flex flex-wrap gap-x-2 gap-y-1 text-[11px] font-bold tracking-widest text-slate-500 uppercase">
-                                                <span>{user.sex}</span><span className="text-slate-300">|</span>
-                                                <span>{user.age} YRS OLD</span><span className="text-slate-300">|</span>
-                                                <span>DOB: {new Date(user.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span><span className="text-slate-300">|</span>
-                                                <span className="font-mono text-slate-900">{user.contact_number}</span>
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Link href={route('admin.approve_account', user.id)} method="post" as="button" preserveScroll className="w-full rounded-lg bg-slate-900 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Approve</Link>
-                                            <button onClick={() => setRejectModal({ isOpen: true, userId: user.id, userName: `${user.first_name} ${user.last_name}` })} className="flex-1 rounded-lg border border-red-200 bg-red-50 py-2.5 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95">Reject</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )) : <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang pending registrations.</p>}
+                                )) : <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang pending registrations.</p>}
+                            </div>
+                            <Pagination links={pendingAccounts.links} />
                         </div>
                     )}
 
                     {pendingSubTab === 'sub-approved' && (
-                        <div className="space-y-3">
-                            {approvedAccounts.data && approvedAccounts.data.length > 0 ? approvedAccounts.data.map(user => (
-                                <details key={user.id} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                                    <summary className="flex cursor-pointer list-none items-center justify-between p-4 transition-all hover:bg-slate-50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                            <span className="text-sm font-black text-slate-900 uppercase">{user.last_name}, {user.first_name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">{user.contact_number}</span>
-                                            <svg className="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        </div>
-                                    </summary>
-                                    <div className="grid grid-cols-1 gap-6 border-t border-slate-50 bg-slate-50/30 p-5 text-xs md:grid-cols-2 lg:grid-cols-3">
-                                        <div>
-                                            <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Contact Details</p>
-                                            <p className="font-bold text-slate-900">{user.contact_number}</p>
-                                            <p className="font-medium text-slate-500">{user.email || 'Walang email na nilagay.'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Personal Info</p>
-                                            <p className="font-bold text-slate-900 uppercase">{user.sex} | {user.age} YRS OLD</p>
-                                            <p className="font-medium text-slate-500 italic">DOB: {new Date(user.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
-                                        </div>
-                                        <div>
-                                            <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Address</p>
-                                            <p className="font-bold text-slate-900 uppercase">{user.house_number} {user.purok_street}</p>
-                                        </div>
-                                        <div className="flex items-center justify-between border-t border-slate-100 pt-2 lg:col-span-3">
-                                            <p className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">Terms Accepted: {user.terms_accepted_at ? new Date(user.terms_accepted_at).toLocaleString() : 'N/A'}</p>
+                        <div>
+                            <div className="space-y-3">
+                                {approvedAccounts.data && approvedAccounts.data.length > 0 ? approvedAccounts.data.map(user => (
+                                    <details key={user.id} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                                        <summary className="flex cursor-pointer list-none items-center justify-between p-4 transition-all hover:bg-slate-50">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex gap-2">
-                                                    <img src={route('secure.file', { filepath: user.id_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.id_photo_path }), title: 'Valid ID' })} />
-                                                    <img src={route('secure.file', { filepath: user.selfie_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.selfie_photo_path }), title: 'Selfie' })} />
-                                                </div>
-                                                <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                                                    <button onClick={() => setSuspendModal({ isOpen: true, userId: user.id, userName: `${user.first_name} ${user.last_name}` })} className="rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-amber-600 uppercase shadow-sm transition-all hover:bg-amber-100 active:scale-95">Suspend</button>
-                                                    <button onClick={() => setDeleteModal({ isOpen: true, userId: user.id })} className="flex items-center gap-1 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">
-                                                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                        Delete
-                                                    </button>
+                                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                                <span className="text-sm font-black text-slate-900 uppercase">{user.last_name}, {user.first_name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">{user.contact_number}</span>
+                                                <svg className="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                            </div>
+                                        </summary>
+                                        <div className="grid grid-cols-1 gap-6 border-t border-slate-50 bg-slate-50/30 p-5 text-xs md:grid-cols-2 lg:grid-cols-3">
+                                            <div>
+                                                <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Contact Details</p>
+                                                <p className="font-bold text-slate-900">{user.contact_number}</p>
+                                                <p className="font-medium text-slate-500">{user.email || 'Walang email na nilagay.'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Personal Info</p>
+                                                <p className="font-bold text-slate-900 uppercase">{user.sex} | {user.age} YRS OLD</p>
+                                                <p className="font-medium text-slate-500 italic">DOB: {new Date(user.date_of_birth).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
+                                            </div>
+                                            <div>
+                                                <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">Address</p>
+                                                <p className="font-bold text-slate-900 uppercase">{user.house_number} {user.purok_street}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between border-t border-slate-100 pt-2 lg:col-span-3">
+                                                <p className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">Terms Accepted: {user.terms_accepted_at ? new Date(user.terms_accepted_at).toLocaleString() : 'N/A'}</p>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex gap-2">
+                                                        <img src={route('secure.file', { filepath: user.id_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.id_photo_path }), title: 'Valid ID' })} />
+                                                        <img src={route('secure.file', { filepath: user.selfie_photo_path })} className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24" onClick={() => setImageModal({ isOpen: true, src: route('secure.file', { filepath: user.selfie_photo_path }), title: 'Selfie' })} />
+                                                    </div>
+                                                    <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                                                        <button onClick={() => setSuspendModal({ isOpen: true, userId: user.id, userName: `${user.first_name} ${user.last_name}` })} className="rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-amber-600 uppercase shadow-sm transition-all hover:bg-amber-100 active:scale-95">Suspend</button>
+                                                        <button onClick={() => setDeleteModal({ isOpen: true, userId: user.id })} className="flex items-center gap-1 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">
+                                                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                            Delete
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </details>
-                            )) : <p className="py-10 text-center font-bold text-slate-500 italic">Walang approved accounts.</p>}
+                                    </details>
+                                )) : <p className="py-10 text-center font-bold text-slate-500 italic">Walang approved accounts.</p>}
+                            </div>
+                            <Pagination links={approvedAccounts.links} />
                         </div>
                     )}
 
                     {pendingSubTab === 'sub-rejected' && (
-                        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                            {rejectedAccounts.data && rejectedAccounts.data.length > 0 ? rejectedAccounts.data.map(user => (
-                                <div key={user.id} className="flex flex-col justify-between rounded-xl border border-l-4 border-slate-200 border-l-red-500 bg-white p-5 shadow-sm">
-                                    <div>
-                                        <div className="mb-4 flex items-start justify-between">
-                                            <div>
-                                                <h3 className="text-lg leading-tight font-black tracking-tight text-slate-900 uppercase">{user.last_name}, {user.first_name}</h3>
-                                                <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">{user.contact_number} | Attempts: {user.rejection_count}/5</p>
+                        <div>
+                            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                                {rejectedAccounts.data && rejectedAccounts.data.length > 0 ? rejectedAccounts.data.map(user => (
+                                    <div key={user.id} className="flex flex-col justify-between rounded-xl border border-l-4 border-slate-200 border-l-red-500 bg-white p-5 shadow-sm">
+                                        <div>
+                                            <div className="mb-4 flex items-start justify-between">
+                                                <div>
+                                                    <h3 className="text-lg leading-tight font-black tracking-tight text-slate-900 uppercase">{user.last_name}, {user.first_name}</h3>
+                                                    <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">{user.contact_number} | Attempts: {user.rejection_count}/5</p>
+                                                </div>
+                                                <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">Rejected</span>
                                             </div>
-                                            <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">Rejected</span>
+                                            <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-3">
+                                                <p className="mb-1 text-[9px] font-black tracking-widest text-red-400 uppercase italic">Rason ng Rejection</p>
+                                                <p className="text-xs leading-snug font-bold text-red-700">{user.rejection_reason}</p>
+                                            </div>
                                         </div>
-                                        <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-3">
-                                            <p className="mb-1 text-[9px] font-black tracking-widest text-red-400 uppercase italic">Rason ng Rejection</p>
-                                            <p className="text-xs leading-snug font-bold text-red-700">{user.rejection_reason}</p>
-                                        </div>
+                                        <button onClick={() => setDeleteModal({ isOpen: true, userId: user.id })} className="w-full rounded-lg bg-red-600 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Delete Account</button>
                                     </div>
-                                    <button onClick={() => setDeleteModal({ isOpen: true, userId: user.id })} className="w-full rounded-lg bg-red-600 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95">Delete Account</button>
-                                </div>
-                            )) : <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang rejected accounts.</p>}
+                                )) : <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">Walang rejected accounts.</p>}
+                            </div>
+                            <Pagination links={rejectedAccounts.links} />
                         </div>
                     )}
                 </div>
@@ -400,119 +382,125 @@ export default function AdminDashboard() {
             {activeTab === 'queue' && (
                 <div className="animate-in fade-in duration-500">
                     <div className="mt-6 mb-6 flex gap-2 overflow-x-auto pb-2">
-                        <button onClick={() => setQueueSubTab('queue-active')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${queueSubTab === 'queue-active' ? 'bg-slate-900 text-white border border-slate-900' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-transparent'}`}>Active Queue ({activeQueue.total || 0})</button>
-                        <button onClick={() => setQueueSubTab('queue-received')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${queueSubTab === 'queue-received' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-transparent'}`}>Received History ({receivedQueue.total || 0})</button>
+                        <button onClick={() => setQueueSubTab('queue-active')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${queueSubTab === 'queue-active' ? 'bg-slate-900 text-white border border-slate-900' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-transparent'}`}>Active Queue ({activeQueue.data?.length || 0})</button>
+                        <button onClick={() => setQueueSubTab('queue-received')} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${queueSubTab === 'queue-received' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-transparent'}`}>Received History ({receivedQueue.data?.length || 0})</button>
                     </div>
 
                     {queueSubTab === 'queue-active' && (
-                        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                            <table className="w-full border-collapse text-left">
-                                <thead>
-                                    <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                        <th className="p-4 font-black">Queue #</th>
-                                        <th className="p-4 font-black">Residente</th>
-                                        <th className="p-4 font-black">Dokumento</th>
-                                        <th className="p-4 font-black">Status</th>
-                                        <th className="p-4 text-right font-black">Aksyon</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {activeQueue.data && activeQueue.data.length > 0 ? activeQueue.data.map(queue => {
-                                        const rawStatus = queue.status.toLowerCase();
-                                        let nextStatus = ''; let btnLabel = '';
-                                        const interviewDocs = [1, 2, 3, 4, 5, 6, 7, 8];
-                                        if(rawStatus === 'pending') { nextStatus = 'processing'; btnLabel = 'Process Request'; }
-                                        else if(rawStatus === 'processing') {
-                                            if(interviewDocs.includes(queue.document_type_id)) { 
-                                                nextStatus = 'for_interview'; btnLabel = 'Set for Interview'; 
-                                            } else { 
-                                                nextStatus = 'released'; btnLabel = 'Release Document'; 
+                        <div>
+                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                            <th className="p-4 font-black">Queue #</th>
+                                            <th className="p-4 font-black">Residente</th>
+                                            <th className="p-4 font-black">Dokumento</th>
+                                            <th className="p-4 font-black">Status</th>
+                                            <th className="p-4 text-right font-black">Aksyon</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {activeQueue.data && activeQueue.data.length > 0 ? activeQueue.data.map(queue => {
+                                            const rawStatus = queue.status.toLowerCase();
+                                            let nextStatus = ''; let btnLabel = '';
+                                            const interviewDocs = [1-8];
+                                            if(rawStatus === 'pending') { nextStatus = 'processing'; btnLabel = 'Process Request'; }
+                                            else if(rawStatus === 'processing') {
+                                                if(interviewDocs.includes(queue.document_type_id)) {
+                                                    nextStatus = 'for_interview'; btnLabel = 'Set for Interview';
+                                                } else {
+                                                    nextStatus = 'released'; btnLabel = 'Release Document';
+                                                }
                                             }
-                                        }
-                                        else if(rawStatus === 'for_interview') { nextStatus = 'released'; btnLabel = 'Release Document'; }
-                                        else if(rawStatus === 'released') { nextStatus = 'received'; btnLabel = 'Mark as Received'; }
+                                            else if(rawStatus === 'for_interview') { nextStatus = 'released'; btnLabel = 'Release Document'; }
+                                            else if(rawStatus === 'released') { nextStatus = 'received'; btnLabel = 'Mark as Received'; }
 
-                                        let badgeClass = '';
-                                        if (rawStatus === 'pending') badgeClass = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
-                                        if (rawStatus === 'processing') badgeClass = 'bg-blue-100 text-blue-700 border border-blue-200';
-                                        if (rawStatus === 'for_interview') badgeClass = 'bg-purple-100 text-purple-700 border border-purple-200';
-                                        if (rawStatus === 'released') badgeClass = 'bg-orange-100 text-orange-700 border border-orange-200';
-                                        if (rawStatus === 'rejected' || rawStatus === 'canceled') badgeClass = 'bg-red-100 text-red-700 border border-red-200';
+                                            let badgeClass = '';
+                                            if (rawStatus === 'pending') badgeClass = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+                                            if (rawStatus === 'processing') badgeClass = 'bg-blue-100 text-blue-700 border border-blue-200';
+                                            if (rawStatus === 'for_interview') badgeClass = 'bg-purple-100 text-purple-700 border border-purple-200';
+                                            if (rawStatus === 'released') badgeClass = 'bg-orange-100 text-orange-700 border border-orange-200';
+                                            if (rawStatus === 'rejected' || rawStatus === 'canceled') badgeClass = 'bg-red-100 text-red-700 border border-red-200';
 
-                                        return (
-                                            <tr key={queue.id} className="transition-colors hover:bg-slate-50">
-                                                <td className="p-4 text-xl font-black tracking-tighter text-slate-900">{queue.queue_number}</td>
-                                                <td className="p-4">
-                                                    <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">{queue.user?.last_name}, {queue.user?.first_name}</p>
-                                                    <p className="font-mono text-[10px] tracking-tight text-slate-500">{queue.user?.contact_number}</p>
-                                                </td>
-                                                <td className="p-4 text-xs font-bold text-slate-700 uppercase">{queue.document_type?.name ?? 'N/A'}</td>
-                                                <td className="p-4">
-                                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${badgeClass}`}>
-                                                        {rawStatus.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="flex justify-end gap-2 p-4 text-right">
-                                                    {btnLabel && (
-                                                        <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus, label: btnLabel })} className="rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">{btnLabel}</button>
-                                                    )}
-                                                    {(rawStatus === 'pending' || rawStatus === 'processing') && (
-                                                        <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request' })} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">Reject</button>
-                                                    )}
-                                                    {!btnLabel && rawStatus !== 'pending' && rawStatus !== 'processing' && (
-                                                        <span className="mt-2 text-xs font-bold text-slate-400 italic">No Action</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    }) : (
-                                        <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang aktibong nakapila.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                            return (
+                                                <tr key={queue.id} className="transition-colors hover:bg-slate-50">
+                                                    <td className="p-4 text-xl font-black tracking-tighter text-slate-900">{queue.queue_number}</td>
+                                                    <td className="p-4">
+                                                        <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">{queue.user?.last_name}, {queue.user?.first_name}</p>
+                                                        <p className="font-mono text-[10px] tracking-tight text-slate-500">{queue.user?.contact_number}</p>
+                                                    </td>
+                                                    <td className="p-4 text-xs font-bold text-slate-700 uppercase">{queue.document_type?.name ?? 'N/A'}</td>
+                                                    <td className="p-4">
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${badgeClass}`}>
+                                                            {rawStatus.replace('_', ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="flex justify-end gap-2 p-4 text-right">
+                                                        {btnLabel && (
+                                                            <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus, label: btnLabel })} className="rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">{btnLabel}</button>
+                                                        )}
+                                                        {(rawStatus === 'pending' || rawStatus === 'processing') && (
+                                                            <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request' })} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">Reject</button>
+                                                        )}
+                                                        {!btnLabel && rawStatus !== 'pending' && rawStatus !== 'processing' && (
+                                                            <span className="mt-2 text-xs font-bold text-slate-400 italic">No Action</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }) : (
+                                            <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang aktibong nakapila.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <Pagination links={activeQueue.links} />
                         </div>
                     )}
 
                     {queueSubTab === 'queue-received' && (
-                        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-4">
-                                <h3 className="text-sm font-bold tracking-widest text-slate-800 uppercase">Released Records</h3>
-                                <button onClick={openLogbook} className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                    Tingnan ang Logbook
-                                </button>
-                            </div>
-                            <table className="w-full border-collapse text-left">
-                                <thead>
-                                    <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                        <th className="p-4 font-black">Queue #</th>
-                                        <th className="p-4 font-black">Residente</th>
-                                        <th className="p-4 font-black">Dokumento</th>
-                                        <th className="p-4 font-black">Date Released</th>
-                                        <th className="p-4 text-right font-black">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {receivedQueue.data && receivedQueue.data.length > 0 ? receivedQueue.data.map(queue => (
-                                        <tr key={queue.id} className="bg-slate-50/50">
-                                            <td className="p-4 text-xl font-black tracking-tighter text-slate-400">{queue.queue_number}</td>
-                                            <td className="p-4 opacity-75">
-                                                <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">{queue.user?.last_name}, {queue.user?.first_name}</p>
-                                                <p className="font-mono text-[10px] text-slate-500">{queue.user?.contact_number}</p>
-                                            </td>
-                                            <td className="p-4 text-xs font-bold text-slate-600 uppercase">{queue.document_type?.name ?? 'N/A'}</td>
-                                            <td className="p-4 text-xs font-bold text-slate-500">{queue.released_at ? new Date(queue.released_at).toLocaleString() : 'N/A'}</td>
-                                            <td className="p-4 text-right">
-                                                <span className={`rounded-full border px-3 py-1 text-[9px] font-black tracking-widest uppercase ${queue.status === 'received' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
-                                                    {queue.status}
-                                                </span>
-                                            </td>
+                        <div>
+                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-4">
+                                    <h3 className="text-sm font-bold tracking-widest text-slate-800 uppercase">Released Records</h3>
+                                    <button onClick={openLogbook} className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                        Tingnan ang Logbook
+                                    </button>
+                                </div>
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                            <th className="p-4 font-black">Queue #</th>
+                                            <th className="p-4 font-black">Residente</th>
+                                            <th className="p-4 font-black">Dokumento</th>
+                                            <th className="p-4 font-black">Date Released</th>
+                                            <th className="p-4 text-right font-black">Status</th>
                                         </tr>
-                                    )) : (
-                                        <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang record ng release history.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {receivedQueue.data && receivedQueue.data.length > 0 ? receivedQueue.data.map(queue => (
+                                            <tr key={queue.id} className="bg-slate-50/50">
+                                                <td className="p-4 text-xl font-black tracking-tighter text-slate-400">{queue.queue_number}</td>
+                                                <td className="p-4 opacity-75">
+                                                    <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">{queue.user?.last_name}, {queue.user?.first_name}</p>
+                                                    <p className="font-mono text-[10px] text-slate-500">{queue.user?.contact_number}</p>
+                                                </td>
+                                                <td className="p-4 text-xs font-bold text-slate-600 uppercase">{queue.document_type?.name ?? 'N/A'}</td>
+                                                <td className="p-4 text-xs font-bold text-slate-500">{queue.released_at ? new Date(queue.released_at).toLocaleString() : 'N/A'}</td>
+                                                <td className="p-4 text-right">
+                                                    <span className={`rounded-full border px-3 py-1 text-[9px] font-black tracking-widest uppercase ${queue.status === 'received' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
+                                                        {queue.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang record ng release history.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <Pagination links={receivedQueue.links} />
                         </div>
                     )}
                 </div>
@@ -615,16 +603,16 @@ export default function AdminDashboard() {
                             <form onSubmit={submitAnnouncement}>
                                 <div className="mb-4">
                                     <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Mensahe (Message Body) <span className="text-red-500">*</span></label>
-                                    <textarea 
-                                        value={announcementForm.data.message_body} 
-                                        onChange={handleAnnouncementChange} 
-                                        rows="5" 
-                                        required 
-                                        disabled={isCurfew} 
-                                        placeholder={isCurfew ? 'Naka-disable ang pag-type tuwing curfew...' : 'I-type ang iyong anunsyo dito...'} 
+                                    <textarea
+                                        value={announcementForm.data.message_body}
+                                        onChange={handleAnnouncementChange}
+                                        rows="5"
+                                        required
+                                        disabled={isCurfew}
+                                        placeholder={isCurfew ? 'Naka-disable ang pag-type tuwing curfew...' : 'I-type ang iyong anunsyo dito...'}
                                         className={`w-full px-4 py-3 rounded-xl border ${announcementForm.errors.message_body || isLinkDetected ? 'border-red-500 bg-red-50 ring-1 ring-red-500' : 'border-slate-300 bg-slate-50'} focus:ring-2 focus:ring-slate-900 outline-none transition-all font-medium text-slate-800 resize-none ${isCurfew ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}
                                     ></textarea>
-                                    
+
                                     {announcementForm.errors.message_body && <p className="mt-2 text-xs font-bold text-red-600">{announcementForm.errors.message_body}</p>}
 
                                     <div className="mt-2 flex items-start justify-between">
@@ -654,79 +642,85 @@ export default function AdminDashboard() {
                     </div>
 
                     {auditSubTab === 'sub-audit-trail' && (
-                        <div className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div className="border-b border-slate-200 bg-slate-50 p-6">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">System Audit Logs</h2>
-                            </div>
-                            <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
-                                <table className="relative w-full border-collapse text-left">
-                                    <thead className="sticky top-0 z-10">
-                                        <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                            <th className="p-4 font-black">Petsa & Oras</th>
-                                            <th className="p-4 font-black">Admin</th>
-                                            <th className="p-4 font-black">Aksyon</th>
-                                            <th className="w-1/2 p-4 font-black">Detalye</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {auditLogs.data && auditLogs.data.length > 0 ? auditLogs.data.map(log => (
-                                            <tr key={log.id} className="transition-colors hover:bg-slate-50">
-                                                <td className="p-4 text-xs font-bold text-slate-600">{new Date(log.created_at).toLocaleString()}</td>
-                                                <td className="p-4 text-xs font-bold text-slate-900 uppercase">{log.admin?.first_name || 'System'} {log.admin?.last_name || ''}</td>
-                                                <td className="p-4"><span className="rounded bg-slate-900 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">{log.action}</span></td>
-                                                <td className="p-4 text-xs font-medium text-slate-600">{log.description}</td>
+                        <div>
+                            <div className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                <div className="border-b border-slate-200 bg-slate-50 p-6">
+                                    <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">System Audit Logs</h2>
+                                </div>
+                                <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
+                                    <table className="relative w-full border-collapse text-left">
+                                        <thead className="sticky top-0 z-10">
+                                            <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                                <th className="p-4 font-black">Petsa & Oras</th>
+                                                <th className="p-4 font-black">Admin</th>
+                                                <th className="p-4 font-black">Aksyon</th>
+                                                <th className="w-1/2 p-4 font-black">Detalye</th>
                                             </tr>
-                                        )) : (
-                                            <tr><td colSpan="4" className="p-12 text-center font-bold text-slate-400 italic">Wala pang naitalang galaw sa system.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {auditLogs.data && auditLogs.data.length > 0 ? auditLogs.data.map(log => (
+                                                <tr key={log.id} className="transition-colors hover:bg-slate-50">
+                                                    <td className="p-4 text-xs font-bold text-slate-600">{new Date(log.created_at).toLocaleString()}</td>
+                                                    <td className="p-4 text-xs font-bold text-slate-900 uppercase">{log.admin?.first_name || 'System'} {log.admin?.last_name || ''}</td>
+                                                    <td className="p-4"><span className="rounded bg-slate-900 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">{log.action}</span></td>
+                                                    <td className="p-4 text-xs font-medium text-slate-600">{log.description}</td>
+                                                </tr>
+                                            )) : (
+                                                <tr><td colSpan="4" className="p-12 text-center font-bold text-slate-400 italic">Wala pang naitalang galaw sa system.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+                            <Pagination links={auditLogs.links} />
                         </div>
                     )}
 
                     {auditSubTab === 'sub-notif-history' && (
-                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div className="border-b border-slate-200 bg-slate-50 p-6">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">Notification History</h2>
-                            </div>
-                            <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
-                                <table className="relative w-full border-collapse text-left">
-                                    <thead className="sticky top-0 z-10">
-                                        <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                            <th className="p-4 font-black">Petsa & Oras</th>
-                                            <th className="p-4 font-black">Residente</th>
-                                            <th className="p-4 font-black">Channel</th>
-                                            <th className="w-2/5 p-4 font-black">Mensahe</th>
-                                            <th className="p-4 text-right font-black">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {notificationLogs.data && notificationLogs.data.length > 0 ? notificationLogs.data.map(notif => (
-                                            <tr key={notif.id} className="transition-colors hover:bg-slate-50">
-                                                <td className="p-4 text-xs font-bold text-slate-600">{new Date(notif.created_at).toLocaleString()}</td>
-                                                <td className="p-4">
-                                                    <p className="text-xs font-bold text-slate-900 uppercase">{notif.user?.first_name || 'N/A'} {notif.user?.last_name || ''}</p>
-                                                    <p className="font-mono text-[9px] text-slate-500">{notif.recipient_contact}</p>
-                                                </td>
-                                                <td className="p-4">
-                                                    <span className={`rounded border px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${notif.channel?.toLowerCase() === 'sms' ? 'border-blue-200 bg-blue-100 text-blue-700' : 'border-purple-200 bg-purple-100 text-purple-700'}`}>
-                                                        {notif.channel?.toUpperCase()}
-                                                    </span>
-                                                </td>
-                                                <td className="line-clamp-2 p-4 text-[11px] font-medium text-slate-600" title={notif.message_content}>{notif.message_content}</td>
-                                                <td className="p-4 text-right">
-                                                    <span className={`rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase ${notif.status?.toLowerCase().includes('sent') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`} title={notif.provider_response}>
-                                                        {notif.status}
-                                                    </span>
-                                                </td>
+                        <div>
+                            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                <div className="border-b border-slate-200 bg-slate-50 p-6">
+                                    <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">Notification History</h2>
+                                </div>
+                                <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
+                                    <table className="relative w-full border-collapse text-left">
+                                        <thead className="sticky top-0 z-10">
+                                            <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                                <th className="p-4 font-black">Petsa & Oras</th>
+                                                <th className="p-4 font-black">Residente</th>
+                                                <th className="p-4 font-black">Channel</th>
+                                                <th className="w-2/5 p-4 font-black">Mensahe</th>
+                                                <th className="p-4 text-right font-black">Status</th>
                                             </tr>
-                                        )) : (
-                                            <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang record ng notifications.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {notificationLogs.data && notificationLogs.data.length > 0 ? notificationLogs.data.map(notif => (
+                                                <tr key={notif.id} className="transition-colors hover:bg-slate-50">
+                                                    <td className="p-4 text-xs font-bold text-slate-600">{new Date(notif.created_at).toLocaleString()}</td>
+                                                    <td className="p-4">
+                                                        <p className="text-xs font-bold text-slate-900 uppercase">{notif.user?.first_name || 'N/A'} {notif.user?.last_name || ''}</p>
+                                                        <p className="font-mono text-[9px] text-slate-500">{notif.recipient_contact}</p>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className={`rounded border px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${notif.channel?.toLowerCase() === 'sms' ? 'border-blue-200 bg-blue-100 text-blue-700' : 'border-purple-200 bg-purple-100 text-purple-700'}`}>
+                                                            {notif.channel?.toUpperCase()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="line-clamp-2 p-4 text-[11px] font-medium text-slate-600" title={notif.message_content}>{notif.message_content}</td>
+                                                    <td className="p-4 text-right">
+                                                        <span className={`rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase ${notif.status?.toLowerCase().includes('sent') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`} title={notif.provider_response}>
+                                                            {notif.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr><td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">Walang record ng notifications.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+                            <Pagination links={notificationLogs.links} />
                         </div>
                     )}
 
@@ -736,11 +730,13 @@ export default function AdminDashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">Generate System Analytics</h2>
                             </div>
                             <div className="mx-auto my-8 max-w-2xl p-8">
-                                <form onSubmit={generatePdf} className="flex flex-col gap-6">
+                                {/* SPA Form pointing to invisible iframe */}
+                                <form method="POST" action={route('admin.reports.generate')} target="pdfViewerFrame" onSubmit={() => setPdfModalOpen(true)} className="flex flex-col gap-6">
+                                    <input type="hidden" name="_token" value={usePage().props.csrf_token} /> 
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                             <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Piliin ang Buwan <span className="text-red-500">*</span></label>
-                                            <select value={reportMonth} onChange={e => setReportMonth(e.target.value)} required className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
+                                            <select name="report_month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} required className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
                                                 <option value="all">Buong Taon (All Months)</option>
                                                 {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
                                                     <option key={i} value={(i+1).toString().padStart(2, '0')}>{m}</option>
@@ -749,7 +745,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                             <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Piliin ang Taon <span className="text-red-500">*</span></label>
-                                            <select value={reportYear} onChange={e => setReportYear(e.target.value)} required className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
+                                            <select name="report_year" value={reportYear} onChange={e => setReportYear(e.target.value)} required className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900">
                                                 {Array.from({length: new Date().getFullYear() - 2023}, (_, i) => new Date().getFullYear() - i).map(y => (
                                                     <option key={y} value={y}>{y}</option>
                                                 ))}
@@ -767,7 +763,7 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* --- TAB 6: SETTINGS --- */}
+            {/* --- TAB 6: SETTINGS (PHASE 5 COMPLETED) --- */}
             {activeTab === 'settings' && (
                 <div className="animate-in fade-in duration-500">
                     <div className="mx-auto mt-8 max-w-2xl">
@@ -779,9 +775,31 @@ export default function AdminDashboard() {
                                 <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Security Settings</h2>
                             </div>
                             <p className="mb-6 text-sm font-medium text-slate-500">Mahalaga: Palitan agad ang iyong default password upang maiwasan ang unauthorized access sa Admin Portal.</p>
-                            
-                            {/* Will be fully implemented in Phase 5 */}
-                            <p className="font-bold text-amber-600">Settings implementation is scheduled for the next phase.</p>
+
+                            <form onSubmit={submitPasswordUpdate} className="space-y-5">
+                                <div>
+                                    <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Kasalukuyang Password <span className="text-red-500">*</span></label>
+                                    <input type="password" value={passwordForm.data.current_password} onChange={e => passwordForm.setData('current_password', e.target.value)} required className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 ${passwordForm.errors.current_password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                    {passwordForm.errors.current_password && <p className="mt-1 text-xs text-red-500">{passwordForm.errors.current_password}</p>}
+                                </div>
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Bagong Password <span className="text-red-500">*</span></label>
+                                        <input type="password" value={passwordForm.data.password} onChange={e => passwordForm.setData('password', e.target.value)} required minLength="8" className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 ${passwordForm.errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        {passwordForm.errors.password && <p className="mt-1 text-xs text-red-500">{passwordForm.errors.password}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">I-type Ulit (Confirm) <span className="text-red-500">*</span></label>
+                                        <input type="password" value={passwordForm.data.password_confirmation} onChange={e => passwordForm.setData('password_confirmation', e.target.value)} required minLength="8" className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 ${passwordForm.errors.password_confirmation ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end border-t border-slate-100 pt-4">
+                                    <button type="submit" disabled={passwordForm.processing} className="flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                                        {passwordForm.processing ? 'Sinasave...' : 'I-save ang Bagong Password'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -790,7 +808,7 @@ export default function AdminDashboard() {
             {/* --- MODALS --- */}
             {/* Image Modal */}
             {imageModal.isOpen && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm">
                     <div className="relative w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h3 className="text-lg font-black tracking-tighter text-slate-900 uppercase">{imageModal.title}</h3>
@@ -808,7 +826,7 @@ export default function AdminDashboard() {
 
             {/* Status Modal */}
             {statusModal.isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[10] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-900">
@@ -833,7 +851,7 @@ export default function AdminDashboard() {
 
             {/* Reject Account Modal */}
             {rejectModal.isOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
                         <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
                             <h3 className="flex items-center gap-2 text-lg font-black tracking-tight uppercase">
@@ -860,7 +878,7 @@ export default function AdminDashboard() {
 
             {/* Suspend Account Modal */}
             {suspendModal.isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
@@ -881,7 +899,7 @@ export default function AdminDashboard() {
 
             {/* Delete Account Modal */}
             {deleteModal.isOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
@@ -902,7 +920,7 @@ export default function AdminDashboard() {
 
             {/* PDF Viewers */}
             {pdfModalOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
@@ -912,18 +930,21 @@ export default function AdminDashboard() {
                             <button onClick={closePdfModal} className="text-3xl leading-none font-bold text-slate-400 transition-all hover:text-red-600">&times;</button>
                         </div>
                         <div className="relative w-full flex-1 bg-slate-200">
-                            {!pdfUrl && (
-                                <div className="absolute inset-0 z-0 flex items-center justify-center">
-                                    <svg className="h-10 w-10 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                </div>
-                            )}
+                            {/* SPA iframe trick to load Laravel PDF directly */}
                             <iframe name="pdfViewerFrame" id="pdfViewerFrame" className="relative z-10 h-full w-full bg-white"></iframe>
                         </div>
                         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-4">
-                            <button onClick={downloadPdfNow} disabled={!pdfUrl} className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                I-Download ang PDF
-                            </button>
+                            {/* Form para i-force download ang current generated PDF parameters */}
+                            <form method="POST" action={route('admin.reports.generate')} target="_blank">
+                                <input type="hidden" name="_token" value={usePage().props.csrf_token} /> 
+                                <input type="hidden" name="report_month" value={reportMonth} />
+                                <input type="hidden" name="report_year" value={reportYear} />
+                                <input type="hidden" name="is_download" value="1" />
+                                <button type="submit" className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95">
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    I-Download ang PDF
+                                </button>
+                            </form>
                             <button onClick={closePdfModal} className="rounded-xl bg-slate-900 px-8 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Isara</button>
                         </div>
                     </div>
@@ -931,7 +952,7 @@ export default function AdminDashboard() {
             )}
 
             {logbookModalOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
@@ -941,11 +962,6 @@ export default function AdminDashboard() {
                             <button onClick={closeLogbookModal} className="text-3xl leading-none font-bold text-slate-400 transition-all hover:text-red-600">&times;</button>
                         </div>
                         <div className="relative w-full flex-1 bg-slate-200">
-                            {!logbookUrl && (
-                                <div className="absolute inset-0 z-0 flex items-center justify-center">
-                                    <svg className="h-10 w-10 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                </div>
-                            )}
                             <iframe name="logbookViewerFrame" id="logbookViewerFrame" className="relative z-10 h-full w-full bg-white"></iframe>
                         </div>
                         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 p-4">
