@@ -2,9 +2,67 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
+// ==========================================
+// MODAL: RESUBMIT REQUIREMENTS
+// ==========================================
+const ResubmitModal = ({ isOpen, onClose }) => {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        id_photo_path: null,
+        selfie_photo_path: null,
+    });
+
+    const submit = (e) => {
+        e.preventDefault();
+        post(route('resident.resubmit_registration'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                onClose();
+            },
+        });
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[3] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+            <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
+                <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
+                    <h3 className="text-lg font-black tracking-tight uppercase">Resubmit Requirements</h3>
+                    <button onClick={onClose} className="text-2xl font-bold text-red-300 transition-all hover:text-red-700">&times;</button>
+                </div>
+                <form onSubmit={submit} className="p-6">
+                    <div className="mb-6 space-y-4">
+                        <div>
+                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Valid ID</label>
+                            <input type="file" onChange={e => setData('id_photo_path', e.target.files)} required className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" />
+                            {errors.id_photo_path && <p className="mt-1 text-xs text-red-500">{errors.id_photo_path}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Selfie with ID</label>
+                            <input type="file" onChange={e => setData('selfie_photo_path', e.target.files)} required className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" />
+                            {errors.selfie_photo_path && <p className="mt-1 text-xs text-red-500">{errors.selfie_photo_path}</p>}
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <button type="submit" disabled={processing} className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
+                            {processing ? 'Submitting...' : 'Submit for Re-review'}
+                        </button>
+                        <button type="button" onClick={onClose} className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// ==========================================
+// MODAL: CREATE SERVICE REQUEST
+// ==========================================
 const RequestModal = ({ isOpen, onClose, documents, auth }) => {
     const [requirements, setRequirements] = useState('');
     const [needsUpload, setNeedsUpload] = useState(false);
+    
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         document_type_id: '',
         purpose: '',
@@ -13,37 +71,35 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
         attachments: [],
     });
 
-    const triggerToast = (msg) => {
-        // We'll rely on the global layout toast or a local one if needed.
-        // For now, let's assume the controller returns flash messages.
-    };
-
     const handleDocumentChange = (id) => {
         const doc = documents.find(d => d.id === parseInt(id));
         setData('document_type_id', id);
-        setRequirements(doc ? doc.requirements_description : '');
-        setNeedsUpload(doc && doc.requirements_description && doc.requirements_description.toLowerCase() !== 'valid id');
+        
+        if (doc) {
+            setRequirements(doc.requirements_description);
+            setNeedsUpload(doc.requirements_description.toLowerCase() !== 'valid id');
+        } else {
+            setRequirements('');
+            setNeedsUpload(false);
+        }
         clearErrors('document_type_id');
     };
 
     const submit = (e) => {
         e.preventDefault();
         post(route('resident.request.store'), {
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 onClose();
             },
-            onError: (errs) => {
-                // The layout will handle the toast if we use flash, 
-                // but local errors are shown in the form.
-            }
         });
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity">
+        <div className="fixed inset-0 z-[3] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity">
             <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl">
                 <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-6">
                     <div>
@@ -63,7 +119,7 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                     May Kulang o Mali sa Form
                                 </div>
-                                <p className="text-xs font-medium text-red-600">{Object.values(errors)[0]}</p>
+                                <p className="text-xs font-medium text-red-600">{Object.values(errors)}</p>
                             </div>
                         )}
 
@@ -72,34 +128,27 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500">Buong Pangalan</label>
-                                    <p className="text-sm font-bold text-slate-900">{auth.user.first_name} {auth.user.middle_name} {auth.user.last_name} {auth.user.suffix}</p>
+                                    <p className="text-sm font-bold text-slate-900">{auth?.user?.first_name} {auth?.user?.middle_name} {auth?.user?.last_name} {auth?.user?.suffix}</p>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-500">Edad</label>
-                                    <p className="text-sm font-bold text-slate-900">{auth.user.age} taong gulang</p>
+                                    <p className="text-sm font-bold text-slate-900">{auth?.user?.age} taong gulang</p>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-semibold text-slate-500">Tirahan</label>
-                                    <p className="text-sm font-bold text-slate-900">{auth.user.house_number} {auth.user.purok_street}, Barangay Doña Lucia</p>
+                                    <p className="text-sm font-bold text-slate-900">{auth?.user?.house_number} {auth?.user?.purok_street}, Barangay Doña Lucia</p>
                                 </div>
                             </div>
                         </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">Uri ng Dokumento <span className="text-red-500">*</span></label>
-                            <select 
-                                value={data.document_type_id} 
-                                onChange={(e) => handleDocumentChange(e.target.value)} 
-                                required 
-                                className={`w-full px-4 py-3 rounded-xl border ${errors.document_type_id ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer`}
-                            >
+                            <select value={data.document_type_id} onChange={(e) => handleDocumentChange(e.target.value)} required className={`w-full px-4 py-3 rounded-xl border ${errors.document_type_id ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all cursor-pointer`}>
                                 <option value="">-- Pumili ng Dokumento --</option>
                                 {documents.map((doc) => (
                                     <option key={doc.id} value={doc.id}>{doc.name}</option>
                                 ))}
                             </select>
-                            {errors.document_type_id && <p className="mt-1 text-xs font-bold text-red-500">{errors.document_type_id}</p>}
-
                             {requirements && (
                                 <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-inner transition-all text-blue-700">
                                     <div className="mb-1 flex items-center gap-2">
@@ -113,50 +162,23 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">Layunin (Purpose) <span className="text-red-500">*</span></label>
-                            <input 
-                                type="text" 
-                                value={data.purpose} 
-                                onChange={(e) => { setData('purpose', e.target.value); clearErrors('purpose'); }} 
-                                placeholder="Hal. Requirement sa Trabaho..." 
-                                required 
-                                className={`w-full px-4 py-3 rounded-xl border ${errors.purpose ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all`} 
-                            />
-                            {errors.purpose && <p className="mt-1 text-xs font-bold text-red-500">{errors.purpose}</p>}
+                            <input type="text" value={data.purpose} onChange={(e) => { setData('purpose', e.target.value); clearErrors('purpose'); }} placeholder="Hal. Requirement sa Trabaho..." required className={`w-full px-4 py-3 rounded-xl border ${errors.purpose ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all`} />
                         </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">Kailan mo gustong kunin? <span className="text-red-500">*</span></label>
-                            <input 
-                                type="datetime-local" 
-                                value={data.preferred_pickup_time} 
-                                onChange={(e) => { setData('preferred_pickup_time', e.target.value); clearErrors('preferred_pickup_time'); }} 
-                                required 
-                                className={`w-full px-4 py-3 rounded-xl border ${errors.preferred_pickup_time ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all`} 
-                            />
-                            {errors.preferred_pickup_time && <p className="mt-1 text-xs font-bold text-red-500">{errors.preferred_pickup_time}</p>}
+                            <input type="datetime-local" value={data.preferred_pickup_time} onChange={(e) => { setData('preferred_pickup_time', e.target.value); clearErrors('preferred_pickup_time'); }} required className={`w-full px-4 py-3 rounded-xl border ${errors.preferred_pickup_time ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:ring-2 focus:ring-slate-900 outline-none bg-slate-50 transition-all`} />
                         </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">Karagdagang Detalye (Optional)</label>
-                            <textarea 
-                                value={data.additional_details} 
-                                onChange={(e) => setData('additional_details', e.target.value)} 
-                                rows="2" 
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
-                            ></textarea>
+                            <textarea value={data.additional_details} onChange={(e) => setData('additional_details', e.target.value)} rows="2" className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"></textarea>
                         </div>
 
                         {needsUpload && (
                             <div className={`p-5 bg-white border-2 border-dashed ${errors.attachments ? 'border-red-500 bg-red-50' : 'border-slate-300'} rounded-xl`}>
                                 <label className="mb-2 block text-sm font-bold text-slate-800">I-upload ang Karagdagang Dokumento <span className="text-red-500">*</span></label>
-                                <input 
-                                    type="file" 
-                                    onChange={(e) => setData('attachments', Array.from(e.target.files))} 
-                                    multiple 
-                                    accept="image/jpeg, image/png, image/jpg, application/pdf" 
-                                    className="w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-slate-800" 
-                                />
-                                {errors.attachments && <p className="mt-2 text-xs font-bold text-red-600">{errors.attachments}</p>}
+                                <input type="file" onChange={(e) => setData('attachments', Array.from(e.target.files))} multiple accept="image/jpeg, image/png, image/jpg, application/pdf" className="w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-slate-800" />
                             </div>
                         )}
 
@@ -173,75 +195,87 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
     );
 };
 
-const ResubmitModal = ({ isOpen, onClose }) => {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        id_photo_path: null,
-        selfie_photo_path: null,
-    });
-
-    const submit = (e) => {
-        e.preventDefault();
-        post(route('resident.resubmit_registration'), {
-            onSuccess: () => {
-                reset();
-                onClose();
-            },
-        });
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
-                <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Resubmit Requirements</h3>
-                    <button onClick={onClose} className="text-2xl font-bold text-red-300 transition-all hover:text-red-700">&times;</button>
-                </div>
-                <form onSubmit={submit} className="p-6">
-                    <div className="mb-6 space-y-4">
-                        <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Valid ID</label>
-                            <input type="file" onChange={e => setData('id_photo_path', e.target.files[0])} required className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" />
-                            {errors.id_photo_path && <p className="mt-1 text-xs text-red-500">{errors.id_photo_path}</p>}
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Selfie with ID</label>
-                            <input type="file" onChange={e => setData('selfie_photo_path', e.target.files[0])} required className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" />
-                            {errors.selfie_photo_path && <p className="mt-1 text-xs text-red-500">{errors.selfie_photo_path}</p>}
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <button type="submit" disabled={processing} className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
-                            {processing ? 'Submitting...' : 'Submit for Re-review'}
-                        </button>
-                        <button type="button" onClick={onClose} className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-export default function Dashboard({ documents, myRequests, pendingRequests, readyRequests, historyRequests, announcements, auth }) {
+// ==========================================
+// MAIN COMPONENT: RESIDENT DASHBOARD
+// ==========================================
+export default function Dashboard() {
+    const { documents, myRequests = [], pendingRequests = [], readyRequests = [], historyRequests = [], announcements = [], auth, errors = {} } = usePage().props;
+    
+    // Main Tabs State
     const [activeTab, setActiveTab] = useState('dashboard');
     const [activeSubTab, setActiveSubTab] = useState('track-pending');
+    
+    // Modals State
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
+    const [settingsModal, setSettingsModal] = useState(null); // 'changeContact', 'verifyContact', 'changeEmail', 'verifyEmail'
 
-    // 6. TASK 3: RESIDENT STATUS POLLING
+    // Timers for OTP Resend
+    const [contactTimer, setContactTimer] = useState(0);
+    const [emailTimer, setEmailTimer] = useState(0);
+
     useEffect(() => {
-        const interval = setInterval(() => {
-            router.reload({ 
-                only: ['auth'], 
-                preserveState: true,
-                onSuccess: (page) => {
-                    // If verified status changed, the page will naturally re-render with new auth props
-                }
-            });
-        }, 10000);
-        return () => clearInterval(interval);
-    }, []);
+        let ct, et;
+        if (contactTimer > 0) ct = setInterval(() => setContactTimer(prev => prev - 1), 1000);
+        if (emailTimer > 0) et = setInterval(() => setEmailTimer(prev => prev - 1), 1000);
+        return () => { clearInterval(ct); clearInterval(et); };
+    }, [contactTimer, emailTimer]);
+
+    // Error Interceptor for Modals Auto-Open (Fallback Routing)
+    useEffect(() => {
+        if (errors.otp_error || errors.contact_number) setSettingsModal('verifyContact');
+        else if (errors.email_otp) setSettingsModal('verifyEmail');
+    }, [errors]);
+
+    // ==========================================
+    // SETTINGS FORMS (Phase 5 Completed)
+    // ==========================================
+    const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
+    const contactForm = useForm({ contact_number: '' });
+    const verifyContactForm = useForm({ otp_code: '' });
+    const emailForm = useForm({ new_email: '' });
+    const verifyEmailForm = useForm({ email_otp: '' });
+
+    const submitPasswordUpdate = (e) => {
+        e.preventDefault();
+        passwordForm.post(route('password.update'), { preserveScroll: true, onSuccess: () => passwordForm.reset() });
+    };
+
+    const submitContactUpdate = (e) => {
+        e.preventDefault();
+        contactForm.post(route('resident.settings.update_contact'), { preserveScroll: true, onSuccess: () => setSettingsModal('verifyContact') });
+    };
+
+    const submitVerifyContact = (e) => {
+        e.preventDefault();
+        verifyContactForm.post(route('resident.settings.verify_contact'), { preserveScroll: true, onSuccess: () => { verifyContactForm.reset(); setSettingsModal(null); }});
+    };
+
+    const resendContactOtp = (e) => {
+        e.preventDefault();
+        setContactTimer(60);
+        router.post(route('resident.settings.update_contact'), { contact_number: auth?.user?.contact_number }, { preserveScroll: true });
+    };
+
+    const submitEmailUpdate = (e) => {
+        e.preventDefault();
+        emailForm.post(route('resident.email.add'), { preserveScroll: true, onSuccess: () => setSettingsModal('verifyEmail') });
+    };
+
+    const submitVerifyEmail = (e) => {
+        e.preventDefault();
+        verifyEmailForm.post(route('resident.email.verify'), { preserveScroll: true, onSuccess: () => { verifyEmailForm.reset(); setSettingsModal(null); }});
+    };
+
+    const resendEmailOtp = (e) => {
+        e.preventDefault();
+        setEmailTimer(60);
+        router.post(route('resident.email.send'), {}, { preserveScroll: true });
+    };
+
+    const toggleEmailPreference = (e) => {
+        router.post(route('resident.settings.email_preference'), { wants_email_notification: e.target.checked ? 1 : 0 }, { preserveScroll: true });
+    };
 
     const sidebarNav = [
         { id: 'dashboard', label: 'Dashboard', icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg> },
@@ -250,46 +284,20 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
     ];
 
     return (
-        <ResidentLayout>
-            <Head title="Dashboard - BDLS" />
+        <ResidentLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+            <Head title="Dashboard - BDLS" />   
 
-            {/* SIDEBAR INJECTED CONTENT - Since ResidentLayout is reusable, 
-                we handle the specific navigation buttons here by passing them or 
-                just using a local sidebar for this page if needed. 
-                But the mandate says CREATE THE LAYOUT. 
-                Let's assume the Layout is generic and we might need to sync the 
-                activeTab with the Layout via a context or just use local tabs here.
-                Actually, the easiest way to follow the old logic is to put the 
-                sidebar buttons inside the layout but they trigger the state here.
-                Wait, Layout is a wrapper. Let's refactor Layout slightly to accept 
-                nav items or just handle it here. */}
-            
-            {/* OVERRIDE: Let's assume we use the layout for the shell, and the 
-                tabs are switched within the children. */}
-
-            <div className="flex gap-4 mb-8 lg:hidden">
-                 {sidebarNav.map(nav => (
-                     <button 
-                        key={nav.id} 
-                        onClick={() => setActiveTab(nav.id)}
-                        className={`flex-1 flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${activeTab === nav.id ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}`}
-                     >
-                         {nav.icon}
-                         <span className="text-[10px] font-bold uppercase">{nav.label}</span>
-                     </button>
-                 ))}
-            </div>
-
+            {/* --- TAB 1: DASHBOARD --- */}
             {activeTab === 'dashboard' && (
-                <div id="tab-dashboard" className="animate-in fade-in duration-500">
-                    {auth.user.email && !auth.user.email_verified_at && (
+                <div className="animate-in fade-in duration-500">
+                    {auth?.user?.email && !auth?.user?.email_verified_at && (
                         <div className="mb-8 flex flex-col items-start justify-between gap-4 rounded-r-xl border-l-4 border-blue-500 bg-blue-50 p-4 shadow-sm sm:flex-row sm:items-center sm:p-5">
                             <div>
                                 <h3 className="flex items-center gap-2 text-lg font-bold text-blue-800">
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                     I-verify ang iyong Email
                                 </h3>
-                                <p className="mt-1 text-sm text-blue-600">Kasalukuyang naka-link ang <span className="font-bold">{auth.user.email}</span>. I-verify ito para makatanggap ng digital receipts.</p>
+                                <p className="mt-1 text-sm text-blue-600">Kasalukuyang naka-link ang <span className="font-bold">{auth?.user?.email}</span>. I-verify ito para makatanggap ng digital receipts.</p>
                             </div>
                             <div className="w-full sm:w-auto">
                                 <button type="button" onClick={() => setActiveTab('settings')} className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95 sm:w-auto">Pumunta sa Settings</button>
@@ -299,14 +307,14 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
 
                     <h1 className="mb-6 text-2xl font-bold text-slate-900">Resident Dashboard</h1>
 
-                    {!auth.user.is_verified ? (
-                        auth.user.rejection_count > 0 ? (
+                    {!auth?.user?.is_verified ? (
+                        auth?.user?.rejection_count > 0 ? (
                             <div className="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-6 shadow-sm">
                                 <div className="mb-2 flex items-center gap-3 text-lg font-bold text-red-800">
                                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                     Registration Rejected
                                 </div>
-                                <p className="mb-4 text-sm text-red-700">Mali ang iyong registration. Rason: <span className="font-bold underline">{auth.user.rejection_reason}</span>. Mayroon ka na lang {5 - auth.user.rejection_count} subok para mag-request.</p>
+                                <p className="mb-4 text-sm text-red-700">Mali ang iyong registration. Rason: <span className="font-bold underline">{auth?.user?.rejection_reason}</span>. Mayroon ka na lang {5 - auth?.user?.rejection_count} subok para mag-request.</p>
                                 <button type="button" onClick={() => setIsResubmitModalOpen(true)} className="rounded-lg bg-red-600 px-5 py-2.5 text-xs font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95">Re-upload Requirements</button>
                             </div>
                         ) : (
@@ -330,11 +338,10 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                         <p className="mb-8 max-w-md text-slate-500">Mag-request ng Barangay Clearance, Certificate of Indigency, at iba pang legal na papel nang hindi na pumipila nang matagal.</p>
                                     </div>
                                     <div>
-                                        {auth.user.locked_until && new Date(auth.user.locked_until) > new Date() ? (
+                                        {auth?.user?.locked_until && new Date(auth?.user?.locked_until) > new Date() ? (
                                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
                                                 <p className="text-sm font-bold text-amber-700">⚠️ Naka-Suspend ang iyong account.</p>
-                                                <p className="mt-1 text-xs text-amber-600">Maaari ka muling mag-request sa: <br />
-                                                <span className="font-black">{new Date(auth.user.locked_until).toLocaleString()}</span></p>
+                                                <p className="mt-1 text-xs text-amber-600">Maaari ka muling mag-request sa: <br /><span className="font-black">{new Date(auth?.user?.locked_until).toLocaleString()}</span></p>
                                             </div>
                                         ) : (
                                             <button onClick={() => setIsRequestModalOpen(true)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-red-700 focus:outline-none active:scale-95 sm:w-auto">
@@ -411,8 +418,9 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                 </div>
             )}
 
+            {/* --- TAB 2: TRACKING --- */}
             {activeTab === 'tracking' && (
-                <div id="tab-tracking" className="animate-in fade-in duration-500">
+                <div className="animate-in fade-in duration-500">
                     <h1 className="mb-6 text-2xl font-bold text-slate-900">Track My Requests</h1>
                     <div className="mb-6 flex gap-2 overflow-x-auto border-b border-slate-100 pb-2">
                         {[
@@ -421,11 +429,7 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                             { id: 'track-history', label: 'Received', count: myRequests.filter(r => r.status === 'received').length },
                             { id: 'track-rejected', label: 'Rejected / Canceled', count: myRequests.filter(r => ['rejected', 'canceled'].includes(r.status)).length },
                         ].map(sub => (
-                            <button 
-                                key={sub.id} 
-                                onClick={() => setActiveSubTab(sub.id)}
-                                className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap shadow-sm transition-all ${activeSubTab === sub.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                            >
+                            <button key={sub.id} onClick={() => setActiveSubTab(sub.id)} className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap shadow-sm transition-all ${activeSubTab === sub.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                                 {sub.label} ({sub.count})
                             </button>
                         ))}
@@ -446,13 +450,7 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                                 <p className="mt-1 text-xs text-slate-500"><span className="font-semibold">Layunin:</span> {req.purpose}</p>
                                                 <p className="text-xs text-slate-500"><span className="font-semibold">Petsa:</span> {new Date(req.created_at).toLocaleString()}</p>
                                             </div>
-                                            <Link 
-                                                href={route('resident.request.cancel', req.id)} 
-                                                method="post" 
-                                                as="button" 
-                                                onBefore={() => confirm('Sigurado kang gusto mong i-cancel ang request na ito?')}
-                                                className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                            >
+                                            <Link href={route('resident.request.cancel', req.id)} method="post" as="button" onBefore={() => confirm('Sigurado kang gusto mong i-cancel ang request na ito?')} className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">
                                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                 Cancel Request
                                             </Link>
@@ -461,20 +459,15 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                 ))
                             ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Wala kang pending na request.</p>
                         )}
-                        {/* Similar logic for other subtabs status, history, rejected */}
                         {activeSubTab === 'track-status' && (
-                             myRequests.filter(r => ['processing', 'for_interview', 'released'].includes(r.status)).length > 0 ? (
+                            myRequests.filter(r => ['processing', 'for_interview', 'released'].includes(r.status)).length > 0 ? (
                                 myRequests.filter(r => ['processing', 'for_interview', 'released'].includes(r.status)).map(req => (
                                     <div key={req.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div>
                                                 <div className="mb-2 flex items-center gap-3">
                                                     <span className="text-lg font-black tracking-tighter text-slate-900 uppercase">{req.queue_number}</span>
-                                                    <span className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm 
-                                                        ${req.status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : ''}
-                                                        ${req.status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : ''}
-                                                        ${req.status === 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : ''}
-                                                    `}>
+                                                    <span className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm ${req.status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200' : ''} ${req.status === 'for_interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' : ''} ${req.status === 'released' ? 'bg-orange-100 text-orange-700 border border-orange-200' : ''}`}>
                                                         {req.status.replace('_', ' ')}
                                                     </span>
                                                 </div>
@@ -485,10 +478,10 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                         </div>
                                     </div>
                                 ))
-                             ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Walang request na pinoproseso sa ngayon.</p>
+                            ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Walang request na pinoproseso sa ngayon.</p>
                         )}
                         {activeSubTab === 'track-history' && (
-                             myRequests.filter(r => r.status === 'received').length > 0 ? (
+                            myRequests.filter(r => r.status === 'received').length > 0 ? (
                                 myRequests.filter(r => r.status === 'received').map(req => (
                                     <div key={req.id} className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 transition-all hover:opacity-100">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -503,10 +496,10 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                         </div>
                                     </div>
                                 ))
-                             ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Wala kang nakaraang transaksyon.</p>
+                            ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Wala kang nakaraang transaksyon.</p>
                         )}
                         {activeSubTab === 'track-rejected' && (
-                             myRequests.filter(r => ['rejected', 'canceled'].includes(r.status)).length > 0 ? (
+                            myRequests.filter(r => ['rejected', 'canceled'].includes(r.status)).length > 0 ? (
                                 myRequests.filter(r => ['rejected', 'canceled'].includes(r.status)).map(req => (
                                     <div key={req.id} className="rounded-xl border border-red-200 bg-red-50 p-5 transition-all">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -522,55 +515,243 @@ export default function Dashboard({ documents, myRequests, pendingRequests, read
                                         </div>
                                     </div>
                                 ))
-                             ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Wala kang rejected o canceled na request.</p>
+                            ) : <p className="text-center py-10 font-bold text-slate-500 italic bg-slate-50 rounded-xl">Wala kang rejected o canceled na request.</p>
                         )}
                     </div>
                 </div>
             )}
 
+            {/* --- TAB 3: SETTINGS (FULLY IMPLEMENTED) --- */}
             {activeTab === 'settings' && (
-                <div id="tab-settings" className="animate-in fade-in duration-500">
-                     <h1 className="mb-6 text-2xl font-bold text-slate-900">Account Settings</h1>
-                     <div className="space-y-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
-                         <p className="text-slate-500 italic">Settings forms will be fully implemented in Phase 4. For now, view your account info.</p>
-                         <div>
+                <div className="animate-in fade-in duration-500">
+                    <h1 className="mb-6 text-2xl font-bold text-slate-900">Account Settings</h1>
+
+                    <div className="space-y-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                        
+                        {/* Contact Number Section */}
+                        <div>
                             <h2 className="mb-3 text-lg font-bold text-slate-900">Primary Contact Number</h2>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80">{auth.user.contact_number}</div>
-                                {auth.user.contact_verified_at ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">Verified</span>
+                                <div className="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80">{auth?.user?.contact_number}</div>
+                                {auth?.user?.contact_verified_at ? (
+                                    <>
+                                        <span className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Verified
+                                        </span>
+                                        {new Date() > new Date(new Date(auth.user.contact_verified_at).setDate(new Date(auth.user.contact_verified_at).getDate() + 30)) ? (
+                                            <button onClick={() => setSettingsModal('changeContact')} className="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                                        ) : (
+                                            <span className="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 italic sm:justify-start">
+                                                Locked ng 30 Araw
+                                            </span>
+                                        )}
+                                    </>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
+                                    <>
+                                        <span className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
+                                        <button onClick={() => setSettingsModal('verifyContact')} className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto">Verify OTP</button>
+                                        <button onClick={() => setSettingsModal('changeContact')} className="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                                    </>
                                 )}
                             </div>
-                         </div>
-                         <hr className="border-slate-100" />
-                         <div>
+                            <p className="mt-2 text-xs text-slate-500">Ito ang iyong login ID at channel para sa SMS updates.</p>
+                        </div>
+
+                        <hr className="border-slate-100" />
+
+                        {/* Email Address Section */}
+                        <div>
                             <h2 className="mb-3 text-lg font-bold text-slate-900">Email Address</h2>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm font-bold text-slate-700 sm:w-80">{auth.user.email || 'No email provided'}</div>
-                                {auth.user.email_verified_at ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">Verified</span>
+                                <div className={`block w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm sm:w-80 ${auth?.user?.email ? 'text-slate-700 font-bold' : 'text-slate-400 italic'}`}>{auth?.user?.email || 'Walang nakarehistrong email.'}</div>
+                                {auth?.user?.email ? (
+                                    auth?.user?.email_verified_at ? (
+                                        <>
+                                            <span className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700 sm:w-auto">
+                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Verified
+                                            </span>
+                                            {new Date() > new Date(new Date(auth.user.email_verified_at).setDate(new Date(auth.user.email_verified_at).getDate() + 30)) ? (
+                                                <button onClick={() => setSettingsModal('changeEmail')} className="w-full rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:w-auto">Palitan</button>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 italic sm:justify-start">
+                                                    Locked ng 30 Araw
+                                                </span>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
+                                            <button onClick={() => setSettingsModal('verifyEmail')} className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto">Verify OTP</button>
+                                        </>
+                                    )
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 sm:w-auto">Unverified</span>
+                                    <button onClick={() => setSettingsModal('changeEmail')} className="w-full rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 active:scale-95 sm:w-auto">Magdagdag ng Email</button>
                                 )}
                             </div>
-                         </div>
-                     </div>
+                            <p className="mt-2 text-xs text-slate-500">Optional: Para makatanggap ng kopya ng digital receipts.</p>
+                        </div>
+
+                        {/* Notification Preferences */}
+                        <div className="mt-8 border-t border-slate-100 pt-6">
+                            <h2 className="mb-4 text-lg font-bold text-slate-900">Notification Preferences</h2>
+                            <div className="space-y-3">
+                                <label className="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-800">SMS Notifications</p>
+                                        <p className="text-xs text-slate-500">Pangunahing channel para sa updates (Required).</p>
+                                    </div>
+                                    <div className="relative inline-flex cursor-not-allowed items-center">
+                                        <input type="checkbox" checked disabled className="peer sr-only" />
+                                        <div className="h-6 w-11 rounded-full bg-green-600 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-white after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                    </div>
+                                </label>
+
+                                {auth?.user?.email_verified_at ? (
+                                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:bg-slate-50">
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
+                                            <p className="text-xs text-slate-500">Makatanggap ng kopya ng updates sa email.</p>
+                                        </div>
+                                        <div className="relative inline-flex cursor-pointer items-center">
+                                            <input type="checkbox" onChange={toggleEmailPreference} checked={auth?.user?.wants_email_notification} className="peer sr-only" />
+                                            <div className="h-6 w-11 rounded-full bg-red-500 transition-colors peer-checked:bg-green-600 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                        </div>
+                                    </label>
+                                ) : (
+                                    <label className="flex cursor-not-allowed items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-80">
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Email / Digital Receipts</p>
+                                            <p className="mt-1 text-xs font-bold text-amber-600">⚠️ I-verify muna ang iyong email sa itaas upang magamit ito.</p>
+                                        </div>
+                                        <div className="relative inline-flex cursor-not-allowed items-center opacity-60">
+                                            <input type="checkbox" disabled className="peer sr-only" />
+                                            <div className="h-6 w-11 rounded-full bg-slate-400 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:content-['']"></div>
+                                        </div>
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
+                        <hr className="border-slate-100" />
+
+                        {/* Security Form */}
+                        <div>
+                            <h2 className="mb-4 text-lg font-bold text-slate-900">Security Settings</h2>
+                            <form onSubmit={submitPasswordUpdate} className="max-w-md space-y-4">
+                                <div>
+                                    <label className="mb-1 block text-sm font-bold text-slate-700">Kasalukuyang Password</label>
+                                    <input type="password" value={passwordForm.data.current_password} onChange={e => passwordForm.setData('current_password', e.target.value)} required className={`block w-full rounded-lg border bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900 ${passwordForm.errors.current_password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                    {passwordForm.errors.current_password && <p className="mt-1 text-xs text-red-500">{passwordForm.errors.current_password}</p>}
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-bold text-slate-700">Bagong Password</label>
+                                        <input type="password" value={passwordForm.data.password} onChange={e => passwordForm.setData('password', e.target.value)} minLength="8" required className={`block w-full rounded-lg border bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900 ${passwordForm.errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                                        {passwordForm.errors.password && <p className="mt-1 text-xs text-red-500">{passwordForm.errors.password}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-bold text-slate-700">Confirm Password</label>
+                                        <input type="password" value={passwordForm.data.password_confirmation} onChange={e => passwordForm.setData('password_confirmation', e.target.value)} minLength="8" required className="block w-full rounded-lg border border-slate-300 bg-slate-50 p-2.5 text-sm text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900" />
+                                    </div>
+                                </div>
+                                <button type="submit" disabled={passwordForm.processing} className="w-full rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-auto disabled:opacity-50">
+                                    {passwordForm.processing ? 'Saving...' : 'I-save ang Password'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            <RequestModal 
-                isOpen={isRequestModalOpen} 
-                onClose={() => setIsRequestModalOpen(false)} 
-                documents={documents}
-                auth={auth}
-            />
-            
-            <ResubmitModal 
-                isOpen={isResubmitModalOpen} 
-                onClose={() => setIsResubmitModalOpen(false)} 
-            />
+            {/* --- SETTINGS MODALS --- */}
+            {/* 1. Change Contact */}
+            {settingsModal === 'changeContact' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <h3 className="mb-2 text-lg font-black text-slate-900 uppercase">Palitan ang Numero</h3>
+                        <p className="mb-6 text-sm text-slate-500">I-type ang iyong bagong 11-digit mobile number.</p>
+                        <form onSubmit={submitContactUpdate}>
+                            <input type="tel" value={contactForm.data.contact_number} onChange={e => contactForm.setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))} required pattern="09[1, 4-11]{9}" maxLength="11" placeholder="09XXXXXXXXX" className="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-center font-mono text-xl font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" />
+                            {contactForm.errors.contact_number && <p className="-mt-4 mb-4 text-center text-xs font-bold text-red-500">{contactForm.errors.contact_number}</p>}
+                            <div className="flex gap-2">
+                                <button type="button" onClick={() => { setSettingsModal(null); contactForm.reset(); }} className="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                                <button type="submit" disabled={contactForm.processing} className="flex-1 rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">I-Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* 2. Verify Contact OTP */}
+            {settingsModal === 'verifyContact' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <h3 className="mb-2 text-lg font-black text-slate-900 uppercase">Verify Number</h3>
+                        <p className="mb-4 text-sm text-slate-500">I-enter ang 6-digit OTP na ipinadala sa {auth?.user?.contact_number}.</p>
+                        {errors.otp_error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{errors.otp_error}</div>}
+                        {errors.contact_number && <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{errors.contact_number}</div>}
+                        
+                        <form onSubmit={submitVerifyContact}>
+                            <input type="text" value={verifyContactForm.data.otp_code} onChange={e => verifyContactForm.setData('otp_code', e.target.value.replace(/[^0-9]/g, ''))} maxLength="6" required placeholder="000000" className={`mb-4 w-full rounded-lg border ${errors.otp_error ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900`} />
+                            <div className="mb-4 flex gap-2">
+                                <button type="button" onClick={() => { setSettingsModal(null); verifyContactForm.reset(); }} className="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                                <button type="submit" disabled={verifyContactForm.processing} className="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">Verify OTP</button>
+                            </div>
+                        </form>
+                        <div className="border-t border-slate-100 pt-4 text-center">
+                            <button onClick={resendContactOtp} disabled={contactTimer > 0} className="text-xs font-bold text-slate-500 transition-all hover:text-slate-900 hover:underline disabled:cursor-not-allowed disabled:no-underline">
+                                Resend SMS Code {contactTimer > 0 && <span className="font-mono text-red-600">({contactTimer}s)</span>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. Change Email */}
+            {settingsModal === 'changeEmail' && (
+                <div className="fixed inset-0 z-[3] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <h3 className="mb-2 text-lg font-black text-slate-900 uppercase">I-setup ang Email</h3>
+                        <p className="mb-6 text-sm text-slate-500">Makatatanggap ka ng verification code sa email na ito.</p>
+                        <form onSubmit={submitEmailUpdate}>
+                            <input type="email" value={emailForm.data.new_email} onChange={e => emailForm.setData('new_email', e.target.value)} required placeholder="juan@email.com" className="mb-6 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm outline-none focus:ring-2 focus:ring-slate-900" />
+                            {emailForm.errors.new_email && <p className="-mt-4 mb-4 text-center text-xs font-bold text-red-500">{emailForm.errors.new_email}</p>}
+                            <div className="flex gap-2">
+                                <button type="button" onClick={() => { setSettingsModal(null); emailForm.reset(); }} className="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                                <button type="submit" disabled={emailForm.processing} className="flex-1 rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">I-Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* 4. Verify Email OTP */}
+            {settingsModal === 'verifyEmail' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <h3 className="mb-2 text-lg font-black text-slate-900 uppercase">Verify Email</h3>
+                        <p className="mb-4 text-sm text-slate-500">I-enter ang 6-digit code na ipinadala sa iyong email.</p>
+                        {errors.email_otp && <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs font-bold text-red-600">{errors.email_otp}</div>}
+                        
+                        <form onSubmit={submitVerifyEmail}>
+                            <input type="text" value={verifyEmailForm.data.email_otp} onChange={e => verifyEmailForm.setData('email_otp', e.target.value.replace(/[^0-9]/g, ''))} maxLength="6" required placeholder="000000" className={`mb-4 w-full rounded-lg border ${errors.email_otp ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} bg-slate-50 p-3 text-center font-mono text-3xl font-bold tracking-[0.3em] outline-none focus:ring-2 focus:ring-slate-900`} />
+                            <div className="mb-4 flex gap-2">
+                                <button type="button" onClick={() => { setSettingsModal(null); verifyEmailForm.reset(); }} className="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                                <button type="submit" disabled={verifyEmailForm.processing} className="flex-1 rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">Verify OTP</button>
+                            </div>
+                        </form>
+                        <div className="border-t border-slate-100 pt-4 text-center">
+                            <button onClick={resendEmailOtp} disabled={emailTimer > 0} className="text-xs font-bold text-slate-500 transition-all hover:text-slate-900 hover:underline disabled:cursor-not-allowed disabled:no-underline">
+                                Resend Email Code {emailTimer > 0 && <span className="font-mono text-red-600">({emailTimer}s)</span>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- REQUEST MODALS --- */}
+            <RequestModal isOpen={isRequestModalOpen} onClose={() => setIsRequestModalOpen(false)} documents={documents} auth={auth} />
+            <ResubmitModal isOpen={isResubmitModalOpen} onClose={() => setIsResubmitModalOpen(false)} />
         </ResidentLayout>
     );
 }
