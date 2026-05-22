@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdminDashboardUpdated;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\SmsService;
@@ -148,7 +149,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
-        event(new \App\Events\AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         // ==========================================
         // ROLE-BASED ROUTING

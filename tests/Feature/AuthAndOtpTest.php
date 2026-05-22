@@ -18,12 +18,12 @@ class AuthAndOtpTest extends TestCase
         $user = User::factory()->create([
             'contact_number' => '09123456789',
             'contact_verified_at' => null, // Unverified Number
-            'role' => 'resident'
+            'role' => 'resident',
         ]);
 
         $response = $this->post(route('login.post'), [
             'login_id' => '09123456789',
-            'password' => 'password123' // Tumugma sa Factory Default
+            'password' => 'password123', // Tumugma sa Factory Default
         ]);
 
         $response->assertRedirect('/otp');
@@ -34,10 +34,10 @@ class AuthAndOtpTest extends TestCase
     public function test_rate_limiter_blocks_spam_otp_requests()
     {
         $ipAddress = '127.0.0.1';
-        RateLimiter::hit('resend_sms_otp_' . $ipAddress, 60);
+        RateLimiter::hit('resend_sms_otp_'.$ipAddress, 60);
 
         $response = $this->withServerVariables(['REMOTE_ADDR' => $ipAddress])
-                         ->post(route('otp.resend'));
+            ->post(route('otp.resend'));
 
         $response->assertSessionHasErrors('otp_error');
     }

@@ -18,7 +18,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            
+
             // FIX SA BUG 3: Ibigay ang CSRF Token para makapag-pasa sa mga Iframe Forms
             'csrf_token' => csrf_token(),
 

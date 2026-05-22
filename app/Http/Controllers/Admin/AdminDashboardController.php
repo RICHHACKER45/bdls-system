@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDashboardUpdated;
+use App\Events\ResidentRequestUpdated;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessAnnouncementSms;
 use App\Models\Announcement;
@@ -21,8 +23,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use App\Events\ResidentRequestUpdated;
-use App\Events\AdminDashboardUpdated;
 
 class AdminDashboardController extends Controller
 {
@@ -113,7 +113,7 @@ class AdminDashboardController extends Controller
 
         // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
         event(new ResidentRequestUpdated($user->id, 'Account Approved'));
-        event(new AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
     }
@@ -148,7 +148,7 @@ class AdminDashboardController extends Controller
 
         // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
         event(new ResidentRequestUpdated($user->id, 'Account Rejected'));
-        event(new AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
     }
@@ -239,7 +239,7 @@ class AdminDashboardController extends Controller
         // Sabihan ang mismong residente na nag-iba na ang status niya in real-time
         event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
         // Sabihan din ang sariling dashboard na mag-update ng listahan at counts
-        event(new AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         // ==========================================
         // THE FIX: Soft Delete for Rejected Requests
@@ -384,7 +384,7 @@ class AdminDashboardController extends Controller
             // ========================================================
         }); // <-- Dito nagtatapos ang DB::transaction()
 
-        event(new AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
         return redirect()

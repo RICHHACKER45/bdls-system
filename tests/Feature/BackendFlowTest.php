@@ -18,12 +18,12 @@ class BackendFlowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // THE FIX: I-save sa property para laging tama ang ID kahit mag-increment
         $this->docType = DocumentType::create([
             'name' => 'Barangay Clearance',
             'requirements_description' => 'Valid ID',
-            'is_active' => 1
+            'is_active' => 1,
         ]);
     }
 
@@ -39,13 +39,13 @@ class BackendFlowTest extends TestCase
             'purpose' => 'For Employment',
             'preferred_pickup_time' => now()->addDays(2)->toDateTimeString(),
             // THE FIX: Idinagdag natin ito para hindi mag "Undefined Array Key" ang Controller
-            'additional_details' => null, 
+            'additional_details' => null,
         ]);
 
         // THE FIX: I-check natin kung nag-Success Redirect (302) para harangin ang 500 Server Error WSoD
         $response->assertStatus(302);
         $response->assertSessionHasNoErrors();
-        
+
         $this->assertDatabaseHas('service_requests', [
             'user_id' => $resident->id,
             'request_channel' => 'Online',
@@ -94,9 +94,9 @@ class BackendFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)->post(route('admin.request.update_status', $request->id), [
-            'status' => 'rejected'
+            'status' => 'rejected',
         ]);
-        
+
         $response->assertSessionHasNoErrors();
 
         $this->assertSoftDeleted('service_requests', [

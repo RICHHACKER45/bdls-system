@@ -176,14 +176,14 @@ class ProfileController extends Controller
         ]);
     }
 
-     /**
+    /**
      * I-update kung gusto ng user makatanggap ng Email Notifications (Fallback)
      */
     public function updateEmailPreference(Request $request)
     {
         $user = Auth::user();
 
-        // THE LARAVEL WAY FIX: Gamitin ang boolean() para basahin ang JSON payload 
+        // THE LARAVEL WAY FIX: Gamitin ang boolean() para basahin ang JSON payload
         // galing sa React Inertia (1/0 o true/false)
         $user->wants_email_notification = $request->boolean('wants_email_notification') ? 1 : 0;
         $user->save();
@@ -194,7 +194,7 @@ class ProfileController extends Controller
             'active_tab' => 'settings',
         ]);
     }
-    
+
     /**
      * UNIVERSAL: Update Password (Admin & Resident)
      */
