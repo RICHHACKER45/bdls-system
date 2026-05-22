@@ -41,7 +41,9 @@ export default function ResetPassword({ errors, session }) {
                 <form onSubmit={submit} className="space-y-6">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label className="mb-1 block text-sm font-semibold text-slate-700">Bagong Password</label>
+                            <label className="mb-1 block text-sm font-semibold text-slate-700">
+                                Bagong Password
+                            </label>
                             <input
                                 type="password"
                                 name="password"
@@ -53,7 +55,9 @@ export default function ResetPassword({ errors, session }) {
                             />
                         </div>
                         <div>
-                            <label className="mb-1 block text-sm font-semibold text-slate-700">Confirm Password</label>
+                            <label className="mb-1 block text-sm font-semibold text-slate-700">
+                                Confirm Password
+                            </label>
                             <input
                                 type="password"
                                 name="password_confirmation"
@@ -76,7 +80,10 @@ export default function ResetPassword({ errors, session }) {
                 </form>
 
                 <div className="mt-6 text-center">
-                    <Link href={route('login')} className="text-xs font-bold text-slate-400 transition-all hover:text-slate-600">
+                    <Link
+                        href={route('login')}
+                        className="text-xs font-bold text-slate-400 transition-all hover:text-slate-600"
+                    >
                         I-cancel at bumalik sa Login
                     </Link>
                 </div>

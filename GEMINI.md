@@ -11,6 +11,7 @@ Your objective is to migrate my existing Laravel Blade + Vanilla JS application 
 ## 2. Directory Operations (Deletions & Exemptions)
 
 **WHAT TO DELETE/MERGE:**
+
 - Delete all files inside `public/js/` (`admin.js`, `resident.js`, `signup.js`, `otp.js`, `guest-cleanup.js`). Their logic MUST be migrated to React components.
 - Delete `resources/views/welcome.blade.php`.
 - Delete the entire `resources/views/auth/` directory.
@@ -18,6 +19,7 @@ Your objective is to migrate my existing Laravel Blade + Vanilla JS application 
 - Delete `resources/views/admin/admin-panel.blade.php` and `resources/views/admin/layouts/admin.blade.php`.
 
 **CRITICAL EXEMPTIONS (DO NOT TOUCH):**
+
 - DO NOT touch or delete `resources/views/admin/pdf/analytics.blade.php` and `resources/views/admin/pdf/release_logbook.blade.php`. The backend `Barryvdh\DomPDF` requires them.
 - DO NOT touch `resources/views/emails/bdls_notification.blade.php`.
 - DO NOT touch `resources/views/errors/` directory.
@@ -35,14 +37,14 @@ Your objective is to migrate my existing Laravel Blade + Vanilla JS application 
 Create the following React structures by combining the old Blade HTML and Vanilla JS logic:
 
 - **Layouts (`resources/js/Layouts/`):**
-  - `AdminLayout.jsx` (Migrated from `admin.blade.php` + sidebar logic from `admin.js`).
-  - `ResidentLayout.jsx` (Migrated from `resident/layouts/app.blade.php` + sidebar logic from `resident.js`).
+    - `AdminLayout.jsx` (Migrated from `admin.blade.php` + sidebar logic from `admin.js`).
+    - `ResidentLayout.jsx` (Migrated from `resident/layouts/app.blade.php` + sidebar logic from `resident.js`).
 
 - **Pages (`resources/js/Pages/`):**
-  - `Welcome.jsx`
-  - `Auth/Login.jsx`, `Auth/Signup.jsx`, `Auth/Otp.jsx`, `Auth/ForgotPassword.jsx`, `Auth/ResetPassword.jsx`.
-  - `Resident/Dashboard.jsx`
-  - `Admin/Dashboard.jsx`
+    - `Welcome.jsx`
+    - `Auth/Login.jsx`, `Auth/Signup.jsx`, `Auth/Otp.jsx`, `Auth/ForgotPassword.jsx`, `Auth/ResetPassword.jsx`.
+    - `Resident/Dashboard.jsx`
+    - `Admin/Dashboard.jsx`
 
 ## 5. Coding Standards & Hook Translations
 
@@ -151,7 +153,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 

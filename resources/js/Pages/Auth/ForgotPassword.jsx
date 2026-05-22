@@ -22,7 +22,12 @@ export default function ForgotPassword({ errors }) {
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition-all duration-200 hover:text-red-600 focus:ring-4 focus:ring-slate-200 active:scale-95 active:bg-slate-200"
                 >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                        ></path>
                     </svg>
                     Bumalik sa Login
                 </Link>
@@ -31,7 +36,12 @@ export default function ForgotPassword({ errors }) {
             <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8">
                 <div className="mb-6 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-900">
-                        <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg
+                            className="h-8 w-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -42,7 +52,8 @@ export default function ForgotPassword({ errors }) {
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900">Forgot Password</h2>
                     <p className="mt-2 text-sm text-slate-500">
-                        I-type ang iyong nakarehistrong contact number upang makatanggap ng 6-digit OTP code para sa pag-reset.
+                        I-type ang iyong nakarehistrong contact number upang makatanggap ng 6-digit
+                        OTP code para sa pag-reset.
                     </p>
                 </div>
 
@@ -54,12 +65,16 @@ export default function ForgotPassword({ errors }) {
 
                 <form onSubmit={submit}>
                     <div className="mb-6">
-                        <label className="mb-1 block text-center text-sm font-semibold text-slate-700">Contact Number</label>
+                        <label className="mb-1 block text-center text-sm font-semibold text-slate-700">
+                            Contact Number
+                        </label>
                         <input
                             type="tel"
                             name="contact_number"
                             value={data.contact_number}
-                            onChange={(e) => setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))}
+                            onChange={(e) =>
+                                setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))
+                            }
                             placeholder="09XXXXXXXXX"
                             required
                             maxLength="11"

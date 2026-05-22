@@ -43,13 +43,17 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
 
     const handleResend = (e) => {
         e.preventDefault();
-        router.post(resendRoute, {}, {
-            onSuccess: () => {
-                // Usually the server will return the updated cooldown in props
-                // but we can also manually reset if we know it's 60s
-                // However, let's rely on props if possible.
+        router.post(
+            resendRoute,
+            {},
+            {
+                onSuccess: () => {
+                    // Usually the server will return the updated cooldown in props
+                    // but we can also manually reset if we know it's 60s
+                    // However, let's rely on props if possible.
+                },
             }
-        });
+        );
     };
 
     // Update secondsLeft if cooldown prop changes (after resend)
@@ -62,14 +66,28 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
             <Head title="OTP Verification - Barangay Doña Lucia" />
 
             <div className="mx-4 w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-xl md:p-8">
-                <h2 className="mb-2 text-2xl font-bold text-slate-900">I-verify ang iyong Numero</h2>
-                <p className="mb-8 text-sm text-slate-500">Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.</p>
+                <h2 className="mb-2 text-2xl font-bold text-slate-900">
+                    I-verify ang iyong Numero
+                </h2>
+                <p className="mb-8 text-sm text-slate-500">
+                    Nagpadala kami ng 6-digit code sa iyong numero. I-enter ito sa ibaba.
+                </p>
 
                 {session?.success && (
                     <div className="mb-6 rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-left shadow-sm">
                         <div className="mb-1 flex items-center gap-2 font-bold text-green-700">
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                            <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M5 13l4 4L19 7"
+                                ></path>
                             </svg>
                             Success
                         </div>
@@ -80,7 +98,12 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
                 {Object.keys(errors).length > 0 && (
                     <div className="mb-6 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-left shadow-sm">
                         <div className="mb-1 flex items-center gap-2 font-bold text-red-700">
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -90,12 +113,17 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
                             </svg>
                             Verification Failed
                         </div>
-                        <p className="text-sm font-medium text-red-600">{Object.values(errors)[0]}</p>
+                        <p className="text-sm font-medium text-red-600">
+                            {Object.values(errors)[0]}
+                        </p>
                     </div>
                 )}
 
                 <form onSubmit={submit}>
-                    <div className="mb-8 flex justify-center gap-1 sm:gap-2 md:gap-3" id="otp-container">
+                    <div
+                        className="mb-8 flex justify-center gap-1 sm:gap-2 md:gap-3"
+                        id="otp-container"
+                    >
                         {data.otp.map((digit, index) => (
                             <input
                                 key={index}
@@ -128,7 +156,9 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
                         className="text-sm font-bold text-slate-900 transition-all hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                     >
                         Magpadala ulit ng code{' '}
-                        {secondsLeft > 0 && <span className="ml-1 font-mono text-red-600">({secondsLeft}s)</span>}
+                        {secondsLeft > 0 && (
+                            <span className="ml-1 font-mono text-red-600">({secondsLeft}s)</span>
+                        )}
                     </button>
                 </div>
             </div>

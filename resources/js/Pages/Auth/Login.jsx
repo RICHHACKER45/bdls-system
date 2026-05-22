@@ -22,7 +22,12 @@ export default function Login({ errors, session }) {
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition-all duration-200 hover:text-red-600 focus:ring-4 focus:ring-slate-200 focus:outline-none active:scale-95 active:bg-slate-200"
                 >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                        ></path>
                     </svg>
                     Bumalik sa Home
                 </Link>
@@ -37,7 +42,8 @@ export default function Login({ errors, session }) {
                             className="h-full w-full object-cover"
                             onError={(e) => {
                                 e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement.innerHTML = '<span class="text-2xl font-bold text-red-600">BDLS</span>';
+                                e.currentTarget.parentElement.innerHTML =
+                                    '<span class="text-2xl font-bold text-red-600">BDLS</span>';
                             }}
                         />
                     </div>
@@ -45,7 +51,8 @@ export default function Login({ errors, session }) {
                         Barangay Doña Lucia <span className="text-red-600">Services</span>
                     </h1>
                     <p className="max-w-md text-lg text-slate-600 md:text-xl">
-                        Ang iyong mabilis at direktang koneksyon para sa mga dokumento at serbisyo ng barangay.
+                        Ang iyong mabilis at direktang koneksyon para sa mga dokumento at serbisyo
+                        ng barangay.
                     </p>
                 </div>
 
@@ -56,7 +63,12 @@ export default function Login({ errors, session }) {
                         {Object.keys(errors).length > 0 && (
                             <div className="mb-4 rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4 text-left shadow-sm">
                                 <div className="mb-1 flex items-center gap-2 font-bold text-red-700">
-                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
                                         <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
@@ -66,19 +78,26 @@ export default function Login({ errors, session }) {
                                     </svg>
                                     Mali ang Login
                                 </div>
-                                <p className="text-sm font-medium text-red-600">{Object.values(errors)[0]}</p>
+                                <p className="text-sm font-medium text-red-600">
+                                    {Object.values(errors)[0]}
+                                </p>
                             </div>
                         )}
 
                         {session?.success && (
                             <div className="mb-4 rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4 text-left shadow-sm">
-                                <p className="text-sm font-medium text-green-600">{session.success}</p>
+                                <p className="text-sm font-medium text-green-600">
+                                    {session.success}
+                                </p>
                             </div>
                         )}
 
                         <form onSubmit={submit} className="space-y-5">
                             <div>
-                                <label htmlFor="login_id" className="mb-1 block text-sm font-semibold text-slate-700">
+                                <label
+                                    htmlFor="login_id"
+                                    className="mb-1 block text-sm font-semibold text-slate-700"
+                                >
                                     Contact Number o Email
                                 </label>
                                 <input
@@ -95,7 +114,10 @@ export default function Login({ errors, session }) {
 
                             <div>
                                 <div className="mb-1 flex items-center justify-between">
-                                    <label htmlFor="password" class="block text-sm font-semibold text-slate-700">
+                                    <label
+                                        htmlFor="password"
+                                        class="block text-sm font-semibold text-slate-700"
+                                    >
                                         Password
                                     </label>
                                     <Link
