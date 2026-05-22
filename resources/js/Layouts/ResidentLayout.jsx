@@ -8,27 +8,6 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-    // Idagdag ito malapit sa ibang useEffect sa Resident/Dashboard.jsx
-    useEffect(() => {
-        if (window.Echo && auth?.user?.id) {
-            // Makikinig lang si Resident sa sarili niyang PRIVATE channel
-            window.Echo.private(`App.Models.User.${auth.user.id}`)
-                .listen('ResidentRequestUpdated', (e) => {
-                    // SILENT REFRESH: Lilitaw agad ang bagong status nang hindi pinipindot ang F5!
-                    router.reload({
-                        only: ['myRequests', 'pendingRequests', 'readyRequests', 'historyRequests', 'auth'],
-                        preserveScroll: true,
-                        preserveState: true
-                    });
-                });
-        }
-        return () => {
-            if (window.Echo && auth?.user?.id) {
-                window.Echo.leaveChannel(`App.Models.User.${auth.user.id}`);
-            }
-        };
-    }, [auth?.user?.id]);
-
     // Toast Logic
     useEffect(() => {
         if (flash?.success_message || flash?.success) {
