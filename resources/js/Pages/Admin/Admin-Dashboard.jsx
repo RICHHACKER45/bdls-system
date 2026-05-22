@@ -3,7 +3,6 @@ import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 
-// Simpleng Pagination Component para sa mga Laravel Paginators
 const Pagination = ({ links }) => {
     if (!links || links.length <= 3) return null;
     return (
@@ -24,6 +23,26 @@ const Pagination = ({ links }) => {
 };
 
 export default function AdminDashboard() {
+     // Idagdag ito malapit sa ibang useEffect sa Admin-Dashboard.jsx
+    useEffect(() => {
+        if (window.Echo) {
+            // Makikinig ang Admin Portal sa public channel
+            window.Echo.channel('admin.updates')
+                .listen('AdminDashboardUpdated', (e) => {
+                    // SILENT REFRESH: Kukuha ng bagong data ang Inertia nang walang screen refresh o loading UI!
+                    router.reload({
+                        only: ['pendingAccounts', 'approvedAccounts', 'rejectedAccounts', 'activeQueue', 'receivedQueue', 'auditLogs', 'notificationLogs'],
+                        preserveScroll: true,
+                        preserveState: true // <-- ITO ANG MAGIC: Hindi mawawala ang tinatype o nakabukas na modal ng Admin
+                    });
+                });
+        }
+        
+        // Cleanup para hindi magdoble ang listener kapag umalis sa page
+        return () => {
+            if (window.Echo) window.Echo.leaveChannel('admin.updates');
+        };
+    }, []);
     const {
         pendingAccounts = { data: [], links: [] },
         approvedAccounts = { data: [], links: [] },
@@ -38,13 +57,11 @@ export default function AdminDashboard() {
         errors = {}
     } = usePage().props;
 
-    // Tabs & Sub-Tabs State
     const [activeTab, setActiveTab] = useState('pending');
     const [pendingSubTab, setPendingSubTab] = useState('sub-pending');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
     const [auditSubTab, setAuditSubTab] = useState('sub-audit-trail');
 
-    // Modals State
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '', title: '' });
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, userId: null });
     const [rejectModal, setRejectModal] = useState({ isOpen: false, userId: null, userName: '' });
@@ -52,10 +69,8 @@ export default function AdminDashboard() {
     const [suspendModal, setSuspendModal] = useState({ isOpen: false, userId: null, userName: '' });
     const [pdfModalOpen, setPdfModalOpen] = useState(false);
     const [logbookModalOpen, setLogbookModalOpen] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState('');
     const [logbookUrl, setLogbookUrl] = useState('');
 
-    // Local Toast
     const [localToast, setLocalToast] = useState({ visible: false, message: '' });
     const triggerToast = (msg) => {
         setLocalToast({ visible: true, message: msg });
@@ -63,30 +78,13 @@ export default function AdminDashboard() {
     };
 
     // ==========================================
-    // FORMS & SUBMIT HANDLERS
+    // BUG FIX 1: Separated Transform and Post!
     // ==========================================
-
-    // 1. Reject Registration
-    const rejectForm = useForm({ rejection_reason: '' });
-    const submitReject = (e) => {
-        e.preventDefault();
-        rejectForm.post(route('admin.reject_account', rejectModal.userId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setRejectModal({ isOpen: false, userId: null, userName: '' });
-                rejectForm.reset();
-            },
-            onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
-            }
-        });
-    };
-
-    // 2. Update Request Status
     const statusForm = useForm({ status: '' });
     const submitStatus = (e) => {
         e.preventDefault();
-        statusForm.transform((data) => ({ ...data, status: statusModal.nextStatus })).post(route('admin.request.update_status', statusModal.requestId), {
+        statusForm.transform((data) => ({ ...data, status: statusModal.nextStatus }));
+        statusForm.post(route('admin.request.update_status', statusModal.requestId), {
             preserveScroll: true,
             onSuccess: () => setStatusModal({ isOpen: false, requestId: null, nextStatus: '', label: '' }),
             onError: (errs) => {
@@ -95,7 +93,18 @@ export default function AdminDashboard() {
         });
     };
 
-    // 3. Delete Account
+    const rejectForm = useForm({ rejection_reason: '' });
+    const submitReject = (e) => {
+        e.preventDefault();
+        rejectForm.post(route('admin.reject_account', rejectModal.userId), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setRejectModal({ isOpen: false, userId: null, userName: '' });
+                rejectForm.reset();
+            }
+        });
+    };
+
     const deleteForm = useForm({});
     const submitDelete = (e) => {
         e.preventDefault();
@@ -105,7 +114,6 @@ export default function AdminDashboard() {
         });
     };
 
-    // 4. Suspend Account (7 Days)
     const suspendForm = useForm({});
     const submitSuspend = (e) => {
         e.preventDefault();
@@ -115,7 +123,6 @@ export default function AdminDashboard() {
         });
     };
 
-    // 5. Announcements & Curfew Logic
     const announcementForm = useForm({ message_body: '' });
     const [isLinkDetected, setIsLinkDetected] = useState(false);
     
@@ -135,14 +142,10 @@ export default function AdminDashboard() {
         e.preventDefault();
         announcementForm.post(route('admin.announcements.broadcast'), {
             preserveScroll: true,
-            onSuccess: () => announcementForm.reset(),
-            onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
-            }
+            onSuccess: () => announcementForm.reset()
         });
     };
 
-    // 6. Walk-in Search & Store
     const walkinSearchForm = useForm({ contact_number: flash?.walkin_search_number || '' });
     const submitWalkinSearch = (e) => {
         e.preventDefault();
@@ -171,36 +174,41 @@ export default function AdminDashboard() {
             onSuccess: () => {
                 walkinStoreForm.reset();
                 walkinSearchForm.reset();
-                setActiveTab('queue'); // Auto-jump to queue tab on success
-            },
-            onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
+                setActiveTab('queue');
             }
         });
     };
 
-    // 7. Security Settings (Password Update)
     const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
     const submitPasswordUpdate = (e) => {
         e.preventDefault();
-        passwordForm.post(route('password.update'), {
-            preserveScroll: true,
-            onSuccess: () => passwordForm.reset(),
-            onError: (errs) => {
-                if(Object.keys(errs).length > 0) triggerToast(Object.values(errs));
-            }
-        });
+        passwordForm.post(route('password.update'), { preserveScroll: true, onSuccess: () => passwordForm.reset() });
     };
 
-    // 8. PDF Generators
     const [reportMonth, setReportMonth] = useState('all');
     const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
 
+    // ==========================================
+    // BUG FIX 5: Asynchronous Iframe Rendering Check!
+    // ==========================================
     const openLogbook = async () => {
         setLogbookModalOpen(true);
-        const url = route('admin.queue.print_logbook');
-        document.getElementById('logbookViewerFrame').src = url;
-        setLogbookUrl(url + '?download=1');
+        // Hintaying ma-render ang Iframe bago hanapin (100ms)
+        setTimeout(() => {
+            const url = route('admin.queue.print_logbook');
+            document.getElementById('logbookViewerFrame').src = url;
+            setLogbookUrl(url + '?download=1');
+        }, 100);
+    };
+
+    const submitGeneratePdf = (e) => {
+        e.preventDefault();
+        const formTarget = e.target;
+        setPdfModalOpen(true);
+        // Hintaying lumitaw ang Iframe modal bago i-submit
+        setTimeout(() => {
+            formTarget.submit();
+        }, 100);
     };
 
     const closePdfModal = () => {
@@ -213,7 +221,6 @@ export default function AdminDashboard() {
         document.getElementById('logbookViewerFrame').src = 'about:blank';
     };
 
-    // Helper for Search/Sort in Pending
     const handleSearchSort = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -228,7 +235,6 @@ export default function AdminDashboard() {
         <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Head title="Admin Dashboard - BDLS" />
 
-            {/* Local Error Toast */}
             <div className="pointer-events-none fixed top-24 left-1/2 z- flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${localToast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
                     <svg className="h-6 w-6 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -730,8 +736,8 @@ export default function AdminDashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">Generate System Analytics</h2>
                             </div>
                             <div className="mx-auto my-8 max-w-2xl p-8">
-                                {/* SPA Form pointing to invisible iframe */}
-                                <form method="POST" action={route('admin.reports.generate')} target="pdfViewerFrame" onSubmit={() => setPdfModalOpen(true)} className="flex flex-col gap-6">
+                                {/* BUG FIX 3: SPA Form Pointing to Iframe with proper React timing */}
+                                <form method="POST" action={route('admin.reports.generate')} target="pdfViewerFrame" onSubmit={submitGeneratePdf} className="flex flex-col gap-6">
                                     <input type="hidden" name="_token" value={usePage().props.csrf_token} /> 
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -808,7 +814,7 @@ export default function AdminDashboard() {
             {/* --- MODALS --- */}
             {/* Image Modal */}
             {imageModal.isOpen && (
-                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm">
                     <div className="relative w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h3 className="text-lg font-black tracking-tighter text-slate-900 uppercase">{imageModal.title}</h3>
@@ -826,7 +832,7 @@ export default function AdminDashboard() {
 
             {/* Status Modal */}
             {statusModal.isOpen && (
-                <div className="fixed inset-0 z-[10] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-900">
@@ -851,7 +857,7 @@ export default function AdminDashboard() {
 
             {/* Reject Account Modal */}
             {rejectModal.isOpen && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
                         <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
                             <h3 className="flex items-center gap-2 text-lg font-black tracking-tight uppercase">
@@ -878,7 +884,7 @@ export default function AdminDashboard() {
 
             {/* Suspend Account Modal */}
             {suspendModal.isOpen && (
-                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
@@ -899,7 +905,7 @@ export default function AdminDashboard() {
 
             {/* Delete Account Modal */}
             {deleteModal.isOpen && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
@@ -920,7 +926,7 @@ export default function AdminDashboard() {
 
             {/* PDF Viewers */}
             {pdfModalOpen && (
-                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
@@ -952,7 +958,7 @@ export default function AdminDashboard() {
             )}
 
             {logbookModalOpen && (
-                <div className="fixed inset-0 z-[12] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
