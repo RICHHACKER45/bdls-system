@@ -24,9 +24,9 @@ class ResidentRequestUpdated implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        // Pakinggan ito sa PRIVATE channel ng mismong resident para secure (App.Models.User.{id})
+        // THE FIX: Tumugma sa pinasimpleng channel name sa routes/channels.php
         return [
-            new PrivateChannel('App.Models.User.'.$this->userId),
+            new PrivateChannel('resident.' . $this->userId),
         ];
     }
 }
