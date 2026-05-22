@@ -12,36 +12,36 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        // THE FIX: Itinugma sa BDLS Database Schema ang fake data!
         return [
-            'name' => fake()->name(),
+            'first_name' => fake()->firstName(),
+            'middle_name' => fake()->lastName(),
+            'last_name' => fake()->lastName(),
+            'sex' => fake()->randomElement(['Male', 'Female']),
+            'date_of_birth' => fake()->date('Y-m-d', '2005-01-01'), // Fake age around 20+
+            'house_number' => fake()->buildingNumber(),
+            'purok_street' => 'Purok ' . fake()->numberBetween(1, 7),
+            'contact_number' => '09' . fake()->numerify('#########'), // Fake 11-digit number
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => (static::$password ??= Hash::make('password')),
-            'remember_token' => Str::random(10),
+            'password' => (static::$password ??= Hash::make('password123')), // Default DB test password
+            'role' => 'resident',
+            'is_verified' => 1,
+            'contact_verified_at' => now(),
+            'terms_accepted_at' => now(),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
-        return $this->state(
-            fn (array $attributes) => [
-                'email_verified_at' => null,
-            ],
-        );
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+            'contact_verified_at' => null,
+            'is_verified' => 0,
+        ]);
     }
 }

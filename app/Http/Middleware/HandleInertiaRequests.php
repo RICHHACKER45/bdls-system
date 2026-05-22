@@ -7,37 +7,29 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
         return [
             ...parent::share($request),
-            //
+            
+            // FIX SA BUG 3: Ibigay ang CSRF Token para makapag-pasa sa mga Iframe Forms
+            'csrf_token' => csrf_token(),
+
+            // FIX SA BUG 2 at 4: Ibigay ang mga Flash Messages at Walk-in Data sa React
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'success_message' => fn () => $request->session()->get('success_message'),
+                'walkin_searched' => fn () => $request->session()->get('walkin_searched'),
+                'walkin_search_number' => fn () => $request->session()->get('walkin_search_number'),
+                'walkin_user' => fn () => $request->session()->get('walkin_user'),
+            ],
         ];
     }
 }

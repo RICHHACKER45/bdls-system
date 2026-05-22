@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Events\AdminDashboardUpdated;
 
 class ServiceRequestController extends Controller
 {
@@ -154,6 +155,9 @@ class ServiceRequestController extends Controller
                 $serviceRequest->id,
             );
         });
+        
+        // Paputukin ang event para lilitaw agad ang request sa screen ng mga naka-login na Admin!
+        event(new AdminDashboardUpdated());
 
         // 6. Ibalik sa Dashboard
         return redirect()

@@ -147,6 +147,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
+        event(new \App\Events\AdminDashboardUpdated());
+
         // ==========================================
         // ROLE-BASED ROUTING
         // ==========================================
