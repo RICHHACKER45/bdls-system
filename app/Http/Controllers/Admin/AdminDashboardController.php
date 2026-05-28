@@ -303,8 +303,7 @@ class AdminDashboardController extends Controller
             'last_name' => 'required_if:is_new_user,1|string|max:255',
             'sex' => 'required_if:is_new_user,1|string|in:Male,Female',
             'date_of_birth' => 'required_if:is_new_user,1|date',
-            'house_number' => 'required_if:is_new_user,1|string|max:255',
-            'purok_street' => 'required_if:is_new_user,1|string|max:255',
+            'address' => $validatedData['address'],
         ]);
 
         // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
