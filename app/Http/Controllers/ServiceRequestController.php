@@ -69,38 +69,7 @@ class ServiceRequestController extends Controller
         ]);
     }
 
-    /**
-     * TASK 4: Resubmit Registration Logic
-     */
-    public function resubmitRegistration(Request $request)
-    {
-        $request->validate([
-            'id_photo_path' => 'required|image|max:5120',
-            'selfie_photo_path' => 'required|image|max:5120',
-        ]);
-
-        $user = Auth::user();
-
-        // PALITAN ITO:
-        $idPath = $request->file('id_photo_path')->store('verification_ids', 'local');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
-
-        // Reset rejection data
-        $user->update([
-            'id_photo_path' => $idPath,
-            'selfie_photo_path' => $selfiePath,
-            'rejection_count' => 0,
-            'rejection_reason' => null,
-            'rejected_at' => null,
-            'locked_until' => null,
-        ]);
-
-        return back()->with(
-            'success_message',
-            'Requirements resubmitted. Your account is back under review.',
-        );
-    }
-
+    
     public function store(Request $request)
     {
         // 1. Validation Check
