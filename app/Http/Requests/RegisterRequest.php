@@ -11,7 +11,7 @@ class RegisterRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return true; // Dapat laging true ito para makapag-register ang lahat
     }
 
     /**
@@ -30,15 +30,16 @@ class RegisterRequest extends FormRequest
             'dob_day' => 'required|numeric|min:1|max:31',
             'dob_year' => 'required|numeric',
 
-            'house_number' => 'required|string|max:255',
-            'purok_street' => 'required|string|max:255',
+            // 1. PINAGSAMA NA NATIN ANG ADDRESS (Pinalitan ang house_number at purok_street)
+            'address' => 'required|string|max:255',
 
             'contact_number' => 'required|string|max:20|unique:users,contact_number',
             'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
 
+            // 2. NAIWAN ANG ID, PERO TULUYAN NANG BURADO ANG SELFIE DITO
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-            'selfie_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            
             'terms' => 'accepted',
         ];
     }
