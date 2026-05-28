@@ -18,7 +18,6 @@ class ServiceRequest extends Model
         'queue_number',
         'purpose',
         'additional_details',
-        'preferred_pickup_time',
         'status',
         'released_at',
         'released_by_admin_id',
@@ -27,7 +26,6 @@ class ServiceRequest extends Model
     protected function casts(): array
     {
         return [
-            'preferred_pickup_time' => 'datetime',
             'released_at' => 'datetime',
         ];
     }
