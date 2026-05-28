@@ -16,7 +16,7 @@ const ResubmitModal = ({ isOpen, onClose }) => {
         post(route('resident.resubmit_registration'), {
             preserveScroll: true,
             // THE ULTIMATE FIX: Pipilitin nito si Inertia na ipadala ang form bilang multipart/form-data
-            forceFormData: true, 
+            forceFormData: true,
             onSuccess: () => {
                 reset();
                 onClose();
@@ -30,41 +30,68 @@ const ResubmitModal = ({ isOpen, onClose }) => {
         <div className="fixed inset-0 z-[1] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
             <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
                 <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Resubmit Requirements</h3>
-                    <button onClick={onClose} className="text-2xl font-bold text-red-300 transition-all hover:text-red-700">&times;</button>
+                    <h3 className="text-lg font-black tracking-tight uppercase">
+                        Resubmit Requirements
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-2xl font-bold text-red-300 transition-all hover:text-red-700"
+                    >
+                        &times;
+                    </button>
                 </div>
                 <form onSubmit={submit} className="p-6">
                     <div className="mb-6 space-y-4">
                         <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Valid ID</label>
-                            <input 
-                                type="file" 
+                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                Upload Valid ID
+                            </label>
+                            <input
+                                type="file"
                                 // FIX: e.target.files para mismong File blob ang ma-extract
-                                onChange={e => setData('id_photo_path', e.target.files[0])} 
-                                required 
+                                onChange={(e) => setData('id_photo_path', e.target.files[0])}
+                                required
                                 accept="image/*"
-                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" 
+                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800"
                             />
-                            {errors.id_photo_path && <p className="mt-1 text-xs text-red-500">{errors.id_photo_path}</p>}
+                            {errors.id_photo_path && (
+                                <p className="mt-1 text-xs text-red-500">{errors.id_photo_path}</p>
+                            )}
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Upload Selfie with ID</label>
-                            <input 
-                                type="file" 
+                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                Upload Selfie with ID
+                            </label>
+                            <input
+                                type="file"
                                 // FIX: e.target.files para mismong File blob ang ma-extract
-                                onChange={e => setData('selfie_photo_path', e.target.files[0])} 
-                                required 
+                                onChange={(e) => setData('selfie_photo_path', e.target.files[0])}
+                                required
                                 accept="image/*"
-                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800" 
+                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800"
                             />
-                            {errors.selfie_photo_path && <p className="mt-1 text-xs text-red-500">{errors.selfie_photo_path}</p>}
+                            {errors.selfie_photo_path && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.selfie_photo_path}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <button type="submit" disabled={processing} className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                        >
                             {processing ? 'Submitting...' : 'Submit for Re-review'}
                         </button>
-                        <button type="button" onClick={onClose} className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">Cancel</button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </form>
             </div>
