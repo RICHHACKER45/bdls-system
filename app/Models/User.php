@@ -20,24 +20,6 @@ class User extends Authenticatable
     /**
      * ACCOUNT FILTERING SCOPES (The Laravel Way)
      */
-    public function scopePending(Builder $query): Builder
-    {
-        // THE FIX: Dapat 0 ang rejection count para maituring na "Under Review" lang.
-        return $query
-            ->where('is_verified', false)
-            ->where('rejection_count', 0)
-            ->whereNotNull('contact_verified_at');
-    }
-
-    public function scopeApproved(Builder $query): Builder
-    {
-        return $query->where('is_verified', true);
-    }
-
-    public function scopeRejected(Builder $query): Builder
-    {
-        return $query->where('is_verified', false)->where('rejection_count', '>', 0);
-    }
 
     /**
      * VIRTUAL ATTRIBUTE: Age
@@ -57,13 +39,11 @@ class User extends Authenticatable
         'suffix',
         'sex',
         'date_of_birth',
-        'house_number',
-        'purok_street',
+        'address',
         'contact_number',
         'email',
         'password',
         'id_photo_path',
-        'selfie_photo_path',
         'role',
         'otp_code',
         'otp_expires_at',
@@ -72,10 +52,6 @@ class User extends Authenticatable
         'email_otp_code',
         'email_otp_expires_at',
         'wants_email_notification',
-        'rejection_reason',
-        'rejection_count',
-        'rejected_at',
-        'locked_until',
         'is_verified',
         'terms_accepted_at',
     ];
@@ -100,8 +76,6 @@ class User extends Authenticatable
             'password' => 'hashed',
             'wants_email_notification' => 'boolean',
             'is_verified' => 'boolean',
-            'rejected_at' => 'datetime',
-            'locked_until' => 'datetime',
         ];
     }
 }
