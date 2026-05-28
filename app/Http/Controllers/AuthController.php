@@ -29,23 +29,23 @@ class AuthController extends Controller
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
         $dateOfBirth =
-            $validatedData['dob_year'].
-            '-'.
-            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT).
-            '-'.
+            $validatedData['dob_year'] .
+            '-' .
+            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT) .
+            '-' .
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
-        // PALITAN ITO:
+        // STEP 3: Kunin ang ID Photo (Mananatili muna ito hanggang wala pang OCR)
+        // TINANGGAL NA NATIN ANG $selfiePath DITO
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
 
         // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (
             $validatedData,
             $dateOfBirth,
             $idPhotoPath,
-            $selfiePath,
-            $request,
+            // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
+            $request
         ) {
             $otpCode = (string) rand(100000, 999999);
             $otpExpiresAt = now()->addMinutes(10);
@@ -58,19 +58,22 @@ class AuthController extends Controller
                 'suffix' => $validatedData['suffix'] ?? null,
                 'sex' => $validatedData['sex'],
                 'date_of_birth' => $dateOfBirth,
-                'house_number' => $validatedData['house_number'],
-                'purok_street' => $validatedData['purok_street'],
+                
+                // PINAGSAMA NA NATIN ANG ADDRESS
+                'address' => $validatedData['address'], 
+                
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-                'id_photo_path' => $idPhotoPath,
-                'selfie_photo_path' => $selfiePath,
+                
+                // NAWALA NA ANG selfie_photo_path DITO
+                'id_photo_path' => $idPhotoPath, 
+                
                 'role' => 'resident',
                 'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
-                // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
-                'terms_accepted_at' => now(), // Kukunin ng Laravel ang petsa at oras ngayon
+                'terms_accepted_at' => now(), 
             ]);
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)
@@ -81,7 +84,7 @@ class AuthController extends Controller
                 $message,
                 null,
                 false,
-                true,
+                true
             );
 
             $request->session()->put('registration_contact', $user->contact_number);
@@ -90,7 +93,7 @@ class AuthController extends Controller
         // Kapag lumabas na dito ang code, ibig sabihin 100% SUCCESS ang transaction!
         return redirect('/otp')->with(
             'success',
-            'Registration successful! Nagpadala kami ng code sa iyong numero.',
+            'Registration successful! Nagpadala kami ng code sa iyong numero.'
         );
     }
 
