@@ -29,10 +29,10 @@ class AuthController extends Controller
 
         // STEP 2: I-format ang Date of Birth (YYYY-MM-DD para sa SQL)
         $dateOfBirth =
-            $validatedData['dob_year'] .
-            '-' .
-            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT) .
-            '-' .
+            $validatedData['dob_year'].
+            '-'.
+            str_pad($validatedData['dob_month'], 2, '0', STR_PAD_LEFT).
+            '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
         // STEP 3: Kunin ang ID Photo (Mananatili muna ito hanggang wala pang OCR)
@@ -58,22 +58,22 @@ class AuthController extends Controller
                 'suffix' => $validatedData['suffix'] ?? null,
                 'sex' => $validatedData['sex'],
                 'date_of_birth' => $dateOfBirth,
-                
+
                 // PINAGSAMA NA NATIN ANG ADDRESS
-                'address' => $validatedData['address'], 
-                
+                'address' => $validatedData['address'],
+
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-                
+
                 // NAWALA NA ANG selfie_photo_path DITO
-                'id_photo_path' => $idPhotoPath, 
-                
+                'id_photo_path' => $idPhotoPath,
+
                 'role' => 'resident',
                 'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
-                'terms_accepted_at' => now(), 
+                'terms_accepted_at' => now(),
             ]);
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)

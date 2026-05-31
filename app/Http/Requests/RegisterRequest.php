@@ -39,7 +39,7 @@ class RegisterRequest extends FormRequest
 
             // 2. NAIWAN ANG ID, PERO TULUYAN NANG BURADO ANG SELFIE DITO
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-            
+
             'terms' => 'accepted',
         ];
     }

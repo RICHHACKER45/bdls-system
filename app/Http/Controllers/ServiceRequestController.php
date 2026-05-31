@@ -69,7 +69,6 @@ class ServiceRequestController extends Controller
         ]);
     }
 
-    
     public function store(Request $request)
     {
         // 1. Validation Check
