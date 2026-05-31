@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -13,13 +12,8 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * TASK 1: Fixed Scopes for zero-tolerance pending and multi-attempt rejection
-     */
-
-    /**
-     * ACCOUNT FILTERING SCOPES (The Laravel Way)
-     */
+    // BINURA: Tinanggal ko ang scopePending, scopeApproved, at scopeRejected
+    // Dahilan: Hindi na tayo gagamit ng manual rejection at approval ni Admin. Automated na tayo via Census.
 
     /**
      * VIRTUAL ATTRIBUTE: Age
@@ -39,11 +33,17 @@ class User extends Authenticatable
         'suffix',
         'sex',
         'date_of_birth',
+
+        // PINALITAN: address na lang ang natira, binura ang house_number at purok_street
         'address',
+
         'contact_number',
         'email',
         'password',
         'id_photo_path',
+
+        // BINURA: 'selfie_photo_path',
+
         'role',
         'otp_code',
         'otp_expires_at',
@@ -52,6 +52,12 @@ class User extends Authenticatable
         'email_otp_code',
         'email_otp_expires_at',
         'wants_email_notification',
+
+        // BINURA: 'rejection_reason', 'rejection_count', 'rejected_at',
+
+        // NAIWAN: Para ma-suspend ang spammer
+        'locked_until',
+
         'is_verified',
         'terms_accepted_at',
     ];
@@ -76,6 +82,11 @@ class User extends Authenticatable
             'password' => 'hashed',
             'wants_email_notification' => 'boolean',
             'is_verified' => 'boolean',
+
+            // BINURA: 'rejected_at' => 'datetime',
+
+            // NAIWAN:
+            'locked_until' => 'datetime',
         ];
     }
 }

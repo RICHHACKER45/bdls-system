@@ -18,6 +18,9 @@ class ServiceRequest extends Model
         'queue_number',
         'purpose',
         'additional_details',
+
+        // BINURA: 'preferred_pickup_time',
+
         'status',
         'released_at',
         'released_by_admin_id',
@@ -26,6 +29,7 @@ class ServiceRequest extends Model
     protected function casts(): array
     {
         return [
+            // BINURA: 'preferred_pickup_time' => 'datetime',
             'released_at' => 'datetime',
         ];
     }

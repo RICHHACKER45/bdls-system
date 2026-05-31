@@ -15,19 +15,21 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
-        // THE FIX: Itinugma sa BDLS Database Schema ang fake data!
         return [
             'first_name' => fake()->firstName(),
             'middle_name' => fake()->lastName(),
             'last_name' => fake()->lastName(),
             'sex' => fake()->randomElement(['Male', 'Female']),
-            'date_of_birth' => fake()->date('Y-m-d', '2005-01-01'), // Fake age around 20+
-            'house_number' => fake()->buildingNumber(),
-            'purok_street' => 'Purok '.fake()->numberBetween(1, 7),
-            'contact_number' => '09'.fake()->numerify('#########'), // Fake 11-digit number
+            'date_of_birth' => fake()->date('Y-m-d', '2005-01-01'),
+
+            // BINURA: 'house_number' at 'purok_street'
+            // PINALITAN: Pinagsama na lang sa iisang 'address'
+            'address' => fake()->buildingNumber().' Purok '.fake()->numberBetween(1, 7).', Brgy. Doña Lucia',
+
+            'contact_number' => '09'.fake()->numerify('#########'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => (static::$password ??= Hash::make('password123')), // Default DB test password
+            'password' => (static::$password ??= Hash::make('password123')),
             'role' => 'resident',
             'is_verified' => 1,
             'contact_verified_at' => now(),
