@@ -36,8 +36,8 @@ class AuthController extends Controller
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
         // STEP 3: Kunin ang ID Photo (Mananatili muna ito hanggang wala pang OCR)
-        // TINANGGAL NA NATIN ANG $selfiePath DITO
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
+        // BINURA: $selfiePath
 
         // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (
@@ -59,15 +59,15 @@ class AuthController extends Controller
                 'sex' => $validatedData['sex'],
                 'date_of_birth' => $dateOfBirth,
 
-                // PINAGSAMA NA NATIN ANG ADDRESS
+                // PINALITAN: Iisang address string na lang
                 'address' => $validatedData['address'],
 
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-
-                // NAWALA NA ANG selfie_photo_path DITO
                 'id_photo_path' => $idPhotoPath,
+
+                // BINURA: 'selfie_photo_path'
 
                 'role' => 'resident',
                 'is_verified' => false,
@@ -84,7 +84,7 @@ class AuthController extends Controller
                 $message,
                 null,
                 false,
-                true
+                true,
             );
 
             $request->session()->put('registration_contact', $user->contact_number);
@@ -93,7 +93,7 @@ class AuthController extends Controller
         // Kapag lumabas na dito ang code, ibig sabihin 100% SUCCESS ang transaction!
         return redirect('/otp')->with(
             'success',
-            'Registration successful! Nagpadala kami ng code sa iyong numero.'
+            'Registration successful! Nagpadala kami ng code sa iyong numero.',
         );
     }
 
