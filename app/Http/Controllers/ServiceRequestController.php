@@ -65,9 +65,11 @@ class ServiceRequestController extends Controller
     {
         return response()->json([
             'is_verified' => Auth::user()->is_verified,
-            'rejection_count' => Auth::user()->rejection_count,
+            // BINURA: 'rejection_count' dahil tinanggal na ito sa DB
         ]);
     }
+
+    // BINURA: public function resubmitRegistration(...) nang buo
 
     public function store(Request $request)
     {
@@ -75,7 +77,7 @@ class ServiceRequestController extends Controller
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-            'preferred_pickup_time' => 'required|date',
+            // BINURA: 'preferred_pickup_time'
             'additional_details' => 'nullable|string',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
@@ -97,7 +99,7 @@ class ServiceRequestController extends Controller
                 'queue_number' => $queueNumber,
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
-                'preferred_pickup_time' => $validated['preferred_pickup_time'],
+                // BINURA: 'preferred_pickup_time'
                 'status' => 'pending',
             ]);
 
