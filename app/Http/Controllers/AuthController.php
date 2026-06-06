@@ -39,6 +39,16 @@ class AuthController extends Controller
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
         // BINURA: $selfiePath
 
+         // ========================================================
+        // 🧪 EXPERIMENT TEST: MOCK AI & OCR DELAY
+        // ========================================================
+        // I-ba-bypass muna natin ang Google Cloud Vision API dito.
+        // Pinapatulog natin ang server ng 12 segundo para makita mo 
+        // ang transition at animation ng iyong React UI Wait Page!
+        sleep(12);
+        // ========================================================
+
+        
         // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (
             $validatedData,
