@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Google\Cloud\Vision\V1\ImageAnnotatorClient;
 
 class AuthController extends Controller
 {
@@ -39,13 +42,46 @@ class AuthController extends Controller
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
         // BINURA: $selfiePath
 
-         // ========================================================
-        // 🧪 EXPERIMENT TEST: MOCK AI & OCR DELAY
+        $fullImagePath = Storage::disk('local')->path($idPhotoPath);
+
         // ========================================================
-        // I-ba-bypass muna natin ang Google Cloud Vision API dito.
-        // Pinapatulog natin ang server ng 12 segundo para makita mo 
-        // ang transition at animation ng iyong React UI Wait Page!
-        sleep(12);
+        // 🤖 LIVE AUTOMATED KYC (GOOGLE CLOUD VISION OCR)
+        // ========================================================
+        $isAutoApproved = false; // Naka-lock by default
+
+        try {
+            if (env('GOOGLE_APPLICATION_CREDENTIALS')) {
+                $imageAnnotator = new ImageAnnotatorClient();
+                $image = file_get_contents($fullImagePath);
+                $response = $imageAnnotator->textDetection($image);
+                $texts = $response->getTextAnnotations();
+
+                if (count($texts) > 0) {
+                    $scannedText = strtoupper($texts->getDescription());
+                    $firstName = strtoupper($validatedData['first_name']);
+                    $lastName = strtoupper($validatedData['last_name']);
+
+                    // TINGNAN KUNG NASA ID ANG PANGALAN
+                    if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
+                        
+                        // TINGNAN KUNG NASA CENSUS
+                        $inCensus = DB::table('census_records')
+                            ->where('first_name', $validatedData['first_name'])
+                            ->where('last_name', $validatedData['last_name'])
+                            ->where('is_alive', 1)
+                            ->exists();
+
+                        if ($inCensus) {
+                            $isAutoApproved = true;
+                            Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                        }
+                    }
+                }
+                $imageAnnotator->close();
+            }
+        } catch (\Exception $e) {
+            Log::error("OCR KYC Failed: " . $e->getMessage());
+        }
         // ========================================================
 
         
