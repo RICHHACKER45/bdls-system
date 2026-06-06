@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
             // Personal Information
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
-            $table->string('suffix', 10)->nullable(); // Ibinalik
-            $table->string('sex', 10); // Dinagdag base sa ERD
+            $table->string('suffix', 10)->nullable();
+            $table->string('sex', 10);
             $table->date('date_of_birth');
-            $table->string('house_number');
-            $table->string('purok_street');
+
+            // BINURA: $table->string('house_number');
+            // PINALITAN: Ang purok_street ay ginawa nating address para isahan na lang
+            $table->string('address');
 
             // Contact & Authentication
             $table->string('contact_number', 20)->unique();
@@ -30,7 +33,7 @@ return new class extends Migration
 
             // Attachments (Uploads)
             $table->string('id_photo_path')->nullable();
-            $table->string('selfie_photo_path')->nullable();
+            // BINURA: $table->string('selfie_photo_path')->nullable(); (Dahil automated na sa ID)
 
             // Roles & System Flags
             $table->string('role', 20)->default('resident');
@@ -46,9 +49,9 @@ return new class extends Migration
             $table->tinyInteger('is_verified')->default(0);
 
             // THE LARAVEL WAY: Bagong Rejection Tracking Columns
-            $table->text('rejection_reason')->nullable();
-            $table->integer('rejection_count')->default(0);
-            $table->timestamp('rejected_at')->nullable();
+            // BINURA: rejection_reason, rejection_count, rejected_at (Dahil RateLimiter na ang gagamitin natin)
+
+            // NAIWAN: Ginagamit ito para sa 5-Request Spam Lock / Penalty
             $table->timestamp('locked_until')->nullable();
 
             $table->timestamp('terms_accepted_at')->nullable();

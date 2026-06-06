@@ -26,7 +26,7 @@ class ResidentRequestUpdated implements ShouldBroadcastNow
     {
         // THE FIX: Tumugma sa pinasimpleng channel name sa routes/channels.php
         return [
-            new PrivateChannel('resident.' . $this->userId),
+            new PrivateChannel('resident.'.$this->userId),
         ];
     }
 }

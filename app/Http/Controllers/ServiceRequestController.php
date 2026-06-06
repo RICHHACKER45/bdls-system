@@ -65,41 +65,11 @@ class ServiceRequestController extends Controller
     {
         return response()->json([
             'is_verified' => Auth::user()->is_verified,
-            'rejection_count' => Auth::user()->rejection_count,
+            // BINURA: 'rejection_count' dahil tinanggal na ito sa DB
         ]);
     }
 
-    /**
-     * TASK 4: Resubmit Registration Logic
-     */
-    public function resubmitRegistration(Request $request)
-    {
-        $request->validate([
-            'id_photo_path' => 'required|image|max:5120',
-            'selfie_photo_path' => 'required|image|max:5120',
-        ]);
-
-        $user = Auth::user();
-
-        // PALITAN ITO:
-        $idPath = $request->file('id_photo_path')->store('verification_ids', 'local');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
-
-        // Reset rejection data
-        $user->update([
-            'id_photo_path' => $idPath,
-            'selfie_photo_path' => $selfiePath,
-            'rejection_count' => 0,
-            'rejection_reason' => null,
-            'rejected_at' => null,
-            'locked_until' => null,
-        ]);
-
-        return back()->with(
-            'success_message',
-            'Requirements resubmitted. Your account is back under review.',
-        );
-    }
+    // BINURA: public function resubmitRegistration(...) nang buo
 
     public function store(Request $request)
     {
@@ -107,7 +77,7 @@ class ServiceRequestController extends Controller
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-            'preferred_pickup_time' => 'required|date',
+            // BINURA: 'preferred_pickup_time'
             'additional_details' => 'nullable|string',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
@@ -129,7 +99,7 @@ class ServiceRequestController extends Controller
                 'queue_number' => $queueNumber,
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
-                'preferred_pickup_time' => $validated['preferred_pickup_time'],
+                // BINURA: 'preferred_pickup_time'
                 'status' => 'pending',
             ]);
 

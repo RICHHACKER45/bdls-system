@@ -14,17 +14,22 @@ class UserSeeder extends Seeder
         User::create([
             'first_name' => 'Punong',
             'middle_name' => '',
-            'last_name' => 'Barangay', // Pwede mong palitan ng totoong apelyido ni Kapitan bukas
+            'last_name' => 'Barangay',
             'suffix' => '',
             'sex' => 'Male',
             'date_of_birth' => '1970-01-01',
-            'house_number' => 'Barangay Hall',
-            'purok_street' => 'Doña Lucia',
+
+            // BINURA: 'house_number' => 'Barangay Hall',
+            // PINALITAN:
+            'address' => 'Barangay Hall, Doña Lucia',
+
             'contact_number' => '09000000001',
             'email' => 'barangaycap@bdlsgov.ph',
-            'password' => Hash::make('Admin12345!'), // Ligtas na default password
+            'password' => Hash::make('Admin12345!'),
             'id_photo_path' => 'verification_ids/dummy_id.jpg',
-            'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+
+            // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+
             'role' => 'admin',
             'contact_verified_at' => now(),
             'email_verified_at' => now(),
@@ -37,17 +42,22 @@ class UserSeeder extends Seeder
         User::create([
             'first_name' => 'Barangay',
             'middle_name' => '',
-            'last_name' => 'Secretary', // Pwede mong palitan ng totoong apelyido ni Sec bukas
+            'last_name' => 'Secretary',
             'suffix' => '',
             'sex' => 'Female',
             'date_of_birth' => '1990-01-01',
-            'house_number' => 'Barangay Hall',
-            'purok_street' => 'Doña Lucia',
+
+            // BINURA: 'house_number' => 'Barangay Hall',
+            // PINALITAN:
+            'address' => 'Barangay Hall, Doña Lucia',
+
             'contact_number' => '09000000002',
             'email' => 'barangaysec@bdlsgov.ph',
             'password' => Hash::make('Admin12345!'),
             'id_photo_path' => 'verification_ids/dummy_id.jpg',
-            'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+
+            // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+
             'role' => 'admin',
             'contact_verified_at' => now(),
             'email_verified_at' => now(),

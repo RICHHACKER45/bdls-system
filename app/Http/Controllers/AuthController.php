@@ -35,17 +35,27 @@ class AuthController extends Controller
             '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
-        // PALITAN ITO:
+        // STEP 3: Kunin ang ID Photo (Mananatili muna ito hanggang wala pang OCR)
         $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
-        $selfiePath = $request->file('selfie_photo_path')->store('verification_selfies', 'local');
+        // BINURA: $selfiePath
 
+         // ========================================================
+        // 🧪 EXPERIMENT TEST: MOCK AI & OCR DELAY
+        // ========================================================
+        // I-ba-bypass muna natin ang Google Cloud Vision API dito.
+        // Pinapatulog natin ang server ng 12 segundo para makita mo 
+        // ang transition at animation ng iyong React UI Wait Page!
+        sleep(12);
+        // ========================================================
+
+        
         // STEP 4 & 5: Database Transaction
         DB::transaction(function () use (
             $validatedData,
             $dateOfBirth,
             $idPhotoPath,
-            $selfiePath,
-            $request,
+            // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
+            $request
         ) {
             $otpCode = (string) rand(100000, 999999);
             $otpExpiresAt = now()->addMinutes(10);
@@ -58,19 +68,22 @@ class AuthController extends Controller
                 'suffix' => $validatedData['suffix'] ?? null,
                 'sex' => $validatedData['sex'],
                 'date_of_birth' => $dateOfBirth,
-                'house_number' => $validatedData['house_number'],
-                'purok_street' => $validatedData['purok_street'],
+
+                // PINALITAN: Iisang address string na lang
+                'address' => $validatedData['address'],
+
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
                 'id_photo_path' => $idPhotoPath,
-                'selfie_photo_path' => $selfiePath,
+
+                // BINURA: 'selfie_photo_path'
+
                 'role' => 'resident',
                 'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
-                // AUTOMATIC AUDIT TRAIL (Hindi na ito ita-type ng user)
-                'terms_accepted_at' => now(), // Kukunin ng Laravel ang petsa at oras ngayon
+                'terms_accepted_at' => now(),
             ]);
 
             // TOTOONG SMS INTEGRATION: OTP Generation (Ligtas: 1 Credit)

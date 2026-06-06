@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "format": "npx prettier --write .",
+    "format": "concurrently \"npx prettier --write .\" \"php vendor/bin/pint --format agent\"",
     "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"npm run dev\" \"php artisan queue:work\" \"php artisan reverb:start\" ",
     "clear-all": "concurrently \"php artisan optimize:clear\" \"php artisan view:clear\" \"php artisan cache:clear\"",
     "dbreset": "php artisan migrate:fresh --seed"
