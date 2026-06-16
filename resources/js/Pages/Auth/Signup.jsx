@@ -165,22 +165,42 @@ export default function Signup() {
   };
 
   const submitRegistration = (e) => {
-    e.preventDefault();
-    setData('terms', true); 
-    
-    post(route('signup.post'), {
-      onFinish: () => reset('password', 'password_confirmation'),
-      onError: (errs) => {
-        if (Object.keys(errs).length > 0) {
-          triggerToast("Mayroong error sa iyong submission.");
-          if (errs.id_photo_path) setUiView(2);
-          else if (errs.terms) setUiView(3);
-          else setUiView(1);
-        }
-      },
-    });
-  };
+        e.preventDefault();
+        setData('terms', true);
 
+        post(route('signup.post'), {
+            onFinish: () => reset('password', 'password_confirmation'),
+            onError: (errs) => {
+                if (Object.keys(errs).length > 0) {
+                    triggerToast("Mayroong error sa iyong submission.");
+                    if (errs.id_photo_path) setUiView(2);
+                    else if (errs.terms) setUiView(3);
+                    else setUiView(1);
+                }
+            },
+        });
+    }; // ✅ TAMA: Isinara na natin ang submitRegistration dito!
+
+    // ==========================================
+    // 📸 LIVE ID SCANNER LOGIC (NASA LABAS NA!)
+    // ==========================================
+    const webcamRef = useRef(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
+
+    const captureId = useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setPreviewImage(imageSrc); 
+        setIsScanning(false); 
+
+        fetch(imageSrc)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], "live_id_capture.jpg", { type: "image/jpeg" });
+                setData('id_photo_path', file);
+            });
+    }, [webcamRef, setData]);
+  
   return (
     <div className="flex min-h-screen flex-col justify-center bg-slate-50 py-10 font-sans text-slate-900 antialiased">
       <Head title="Mag-Signup - Barangay Doña Lucia" />
