@@ -50,22 +50,30 @@ class AuthController extends Controller
         $isAutoApproved = false; // Naka-lock by default
 
         try {
-            if (env('GOOGLE_APPLICATION_CREDENTIALS')) {
-                $imageAnnotator = new ImageAnnotatorClient();
-                $image = file_get_contents($fullImagePath);
-                $response = $imageAnnotator->textDetection($image);
+            // SCALABLE FIX: Kumukuha na sa .env! 
+            // May fallback din na 'app/private/google-credentials.json' kung sakaling hindi pa na-update ng kagrupo mo ang .env nila.
+            $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
+            $credentialsPath = storage_path($envPath);
+
+            if (file_exists($credentialsPath)) {
+                $imageAnnotator = new \Google\Cloud\Vision\V1\ImageAnnotatorClient([
+                    'credentials' => $credentialsPath
+                ]);
+
+                $image = file_get_contents($fullImagePath); 
+                $response = $imageAnnotator->documentTextDetection($image);
                 $texts = $response->getTextAnnotations();
 
                 if (count($texts) > 0) {
-                    $scannedText = strtoupper($texts->getDescription());
+                    $scannedText = strtoupper($texts->getDescription()); 
                     $firstName = strtoupper($validatedData['first_name']);
                     $lastName = strtoupper($validatedData['last_name']);
 
-                    // TINGNAN KUNG NASA ID ANG PANGALAN
+                    // PANELIST REQUIREMENT: TINGNAN KUNG NASA ID ANG PANGALAN
                     if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
-                        
-                        // TINGNAN KUNG NASA CENSUS
-                        $inCensus = DB::table('census_records')
+
+                        // TINGNAN KUNG NASA CENSUS ANG PANGALAN
+                        $inCensus = \Illuminate\Support\Facades\DB::table('census_records')
                             ->where('first_name', $validatedData['first_name'])
                             ->where('last_name', $validatedData['last_name'])
                             ->where('is_alive', 1)
@@ -73,14 +81,16 @@ class AuthController extends Controller
 
                         if ($inCensus) {
                             $isAutoApproved = true;
-                            Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                            \Illuminate\Support\Facades\Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
                         }
                     }
                 }
                 $imageAnnotator->close();
+            } else {
+                \Illuminate\Support\Facades\Log::error("OCR Error: Hindi mahanap ang credentials file sa " . $credentialsPath);
             }
         } catch (\Exception $e) {
-            Log::error("OCR KYC Failed: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("OCR KYC Failed: " . $e->getMessage());
         }
         // ========================================================
 
