@@ -33,16 +33,12 @@ class User extends Authenticatable
         'suffix',
         'sex',
         'date_of_birth',
-
-        // PINALITAN: address na lang ang natira, binura ang house_number at purok_street
         'address',
-
         'contact_number',
         'email',
         'password',
-        'id_photo_path',
 
-        // BINURA: 'selfie_photo_path',
+        // 🛑 ZERO-RETENTION: Binura na natin ang 'id_photo_path' dito.
 
         'role',
         'otp_code',
@@ -53,10 +49,17 @@ class User extends Authenticatable
         'email_otp_expires_at',
         'wants_email_notification',
 
-        // BINURA: 'rejection_reason', 'rejection_count', 'rejected_at',
-
-        // NAIWAN: Para ma-suspend ang spammer
+        // ==========================================
+        // 🛡️ THE LARAVEL WAY: NEW SECURITY POLICIES
+        // ==========================================
+        'ocr_attempts',
+        'ocr_locked_until',
+        'otp_request_count',
+        'otp_request_locked_until',
+        'otp_failed_attempts',
         'locked_until',
+        'is_active',
+        'force_password_change',
 
         'is_verified',
         'terms_accepted_at',
@@ -83,10 +86,12 @@ class User extends Authenticatable
             'wants_email_notification' => 'boolean',
             'is_verified' => 'boolean',
 
-            // BINURA: 'rejected_at' => 'datetime',
-
-            // NAIWAN:
-            'locked_until' => 'datetime',
+            // 🛡️ BAGONG DATES AT BOOLEANS PARA SA SECURITY POLICIES:
+            'ocr_locked_until' => 'datetime',
+            'otp_request_locked_until' => 'datetime',
+            'locked_until' => 'datetime', // NAIWAN para sa 10-failed OTPs
+            'is_active' => 'boolean',
+            'force_password_change' => 'boolean',
         ];
     }
 }
