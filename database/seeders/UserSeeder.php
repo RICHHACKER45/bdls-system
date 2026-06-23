@@ -26,7 +26,6 @@ class UserSeeder extends Seeder
             'contact_number' => '09000000001',
             'email' => 'barangaycap@bdlsgov.ph',
             'password' => Hash::make('Admin12345!'),
-            'id_photo_path' => 'verification_ids/dummy_id.jpg',
 
             // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
 
@@ -53,8 +52,7 @@ class UserSeeder extends Seeder
 
             'contact_number' => '09000000002',
             'email' => 'barangaysec@bdlsgov.ph',
-            'password' => Hash::make('Admin12345!'),
-            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'password' => Hash::make('Admin12345!'), 
 
             // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
 

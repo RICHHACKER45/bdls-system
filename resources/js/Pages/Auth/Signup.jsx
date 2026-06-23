@@ -480,7 +480,7 @@ export default function Signup() {
             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
               <div className="mb-6 text-center">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">I-Scan ang Iyong ID</h1>
-                <p className="mt-2 text-sm text-slate-500">Kailangan ito para sa KYC verification ng barangay.</p>
+                <p className="mt-2 text-sm text-slate-500">Kailangan ito para sa Automated ID Verification ng barangay.</p>
               </div>
 
               <div className="mb-8">
@@ -666,7 +666,7 @@ export default function Signup() {
             {/* Dynamic Status Text */}
             <div className="space-y-2">
               <h2 className="text-xl font-black uppercase tracking-widest text-slate-900">
-                Automated KYC
+                Automated ID Verification
               </h2>
               <p className="min-h-[40px] text-sm font-bold text-slate-500 animate-pulse">
                 {loadingMessages[loadingTextIndex]}

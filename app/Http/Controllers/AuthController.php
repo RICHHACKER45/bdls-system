@@ -37,11 +37,8 @@ class AuthController extends Controller
             '-'.
             str_pad($validatedData['dob_day'], 2, '0', STR_PAD_LEFT);
 
-        // STEP 3: Kunin ang ID Photo (Mananatili muna ito hanggang wala pang OCR)
-        $idPhotoPath = $request->file('id_photo_path')->store('verification_ids', 'local');
-        // BINURA: $selfiePath
-
-        $fullImagePath = Storage::disk('local')->path($idPhotoPath);
+        // STEP 3: Kunin ang ID Photo (Zero-Retention Policy)
+        $fullImagePath = $request->file('id_photo_path')->getPathname();
 
         // ========================================================
         // 🤖 LIVE AUTOMATED KYC (PURE REST API - THE LARAVEL WAY)
@@ -173,7 +170,6 @@ class AuthController extends Controller
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-                'id_photo_path' => $idPhotoPath,
                 'is_verified' => $isAutoApproved,
                 // BINURA: 'selfie_photo_path'
 
