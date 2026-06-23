@@ -177,14 +177,11 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
                         <span className="max-w-[180px] truncate text-sm font-semibold text-slate-700 sm:max-w-xs">
                             Kamusta, {auth?.user?.first_name}!
                         </span>
-                        <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-white bg-slate-200 shadow-sm">
-                            <img
-                                src={route('secure.file', {
-                                    filepath: auth?.user?.selfie_photo_path,
-                                })}
-                                alt="Profile"
-                                className="h-full w-full object-cover"
-                            />
+                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-900 text-white shadow-sm">
+                            <span className="text-xs font-black uppercase">
+                                {auth?.user?.first_name?.charAt(0)}
+                                {auth?.user?.last_name?.charAt(0)}
+                            </span>
                         </div>
                     </div>
                 </header>
