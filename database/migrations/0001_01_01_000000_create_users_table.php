@@ -68,6 +68,9 @@ return new class extends Migration
             // 5. Admin Account Controls
             $table->tinyInteger('is_active')->default(1);
             $table->tinyInteger('force_password_change')->default(0);
+
+            // others
+            $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
