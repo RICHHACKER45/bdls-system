@@ -44,6 +44,8 @@ class AuthController extends Controller
         // 🤖 LIVE AUTOMATED KYC (PURE REST API - THE LARAVEL WAY)
         // ========================================================
         $isAutoApproved = false; // Naka-lock by default
+        $ocrErrorMessage = "Hindi mabasa nang malinaw ang ID.";
+        $currentAttempt = $request->input('ocr_attempt', 1);
 
         try {
             // SCALABILITY FIX: Kinukuha lahat sa .env ang mga mahahalagang config!
@@ -109,17 +111,20 @@ class AuthController extends Controller
                                 ->exists();
 
                             if ($inCensus) {
-                                $isAutoApproved = true;
-                                \Illuminate\Support\Facades\Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
-                            } else {
-                                \Illuminate\Support\Facades\Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
-                            }
+                            $isAutoApproved = true;
+                            \Illuminate\Support\Facades\Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
                         } else {
-                            \Illuminate\Support\Facades\Log::warning("OCR: Hindi nakita ang pangalan sa ID. Nakita: " . $scannedText);
+                            $ocrErrorMessage = "Hindi tumugma ang pangalan sa ID at sa Census.";
+                            \Illuminate\Support\Facades\Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
                         }
                     } else {
-                        \Illuminate\Support\Facades\Log::warning("OCR: Walang text na nakuha. Resulta: " . json_encode($visionResult));
+                        $ocrErrorMessage = "Hindi malinaw ang pangalan sa ID.";
+                        \Illuminate\Support\Facades\Log::warning("OCR: Hindi nakita ang pangalan sa ID. Nakita: " . $scannedText);
                     }
+                } else {
+                    $ocrErrorMessage = "Walang nabasang text sa ID. Masyadong malabo.";
+                    \Illuminate\Support\Facades\Log::warning("OCR: Walang text na nakuha. Resulta: " . json_encode($visionResult));
+                }
                 } 
                 // ADVANCED ERROR DETECTORS NI LARAVEL
                 elseif ($response->clientError()) {
@@ -142,13 +147,25 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::error("OCR KYC Exception: " . $e->getMessage());
         }
         // ========================================================
+
+        // ========================================================
+        // 🛑 THE BOUNCE BACK LOGIC (PHASE 2)
+        // ========================================================
+        if (!$isAutoApproved) {
+            if ($currentAttempt < 5) {
+                // Haharangin natin at ibabalik sa Camera kasama ang data (Walang DB Save)
+                return back()->withErrors([
+                    'id_photo_path' => "{$ocrErrorMessage} (Attempt {$currentAttempt} of 5)"
+                ])->withInput(); // <-- Ito ang magpapanatili ng tinype nila sa form!
+            }
+            // Kapag 5 na, lusot na siya pababa pero itatag natin bilang failed at naka-lock ng 20 mins.
+        }
         
         // STEP 4 & 5: Database Transaction
         // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
         DB::transaction(function () use (
             $validatedData,
             $dateOfBirth,
-            $idPhotoPath,
             $isAutoApproved,
             $request
             ) {
@@ -170,7 +187,11 @@ class AuthController extends Controller
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
+                
+                // 🛡️ BAGONG POLICIES NA ISASAVE SA DATABASE:
                 'is_verified' => $isAutoApproved,
+                'ocr_attempts' => $isAutoApproved ? 0 : 5,
+                'ocr_locked_until' => $isAutoApproved ? null : now()->addMinutes(20),
                 // BINURA: 'selfie_photo_path'
 
                 'role' => 'resident',

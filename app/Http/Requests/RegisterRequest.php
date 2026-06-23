@@ -38,6 +38,8 @@ class RegisterRequest extends FormRequest
 
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             // BINURA: 'selfie_photo_path'
+
+            'ocr_attempt' => 'required|integer|min:1|max:5', // 🛡️ FRONTEND TRACKER
             
             'terms' => 'accepted',
         ];

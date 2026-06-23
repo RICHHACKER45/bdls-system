@@ -40,7 +40,8 @@ export default function Signup() {
     password: '',
     password_confirmation: '',
     id_photo_path: null,
-    terms: false, 
+    terms: false,
+    ocr_attempt: 1, // 🛡️ BAGONG TRACKER PARA SA 5 ATTEMPTS
   });
 
   const loadingMessages = [
@@ -183,17 +184,28 @@ export default function Signup() {
         setData('terms', true);
 
         post(route('signup.post'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+            preserveState: true,
+            preserveScroll: true,
+            // 🛑 BUG FIX: Inalis natin ang `reset('password')` sa onFinish para hindi mabura ang tinype!
             onError: (errs) => {
                 if (Object.keys(errs).length > 0) {
-                    triggerToast("Mayroong error sa iyong submission.");
-                    if (errs.id_photo_path) setUiView(2);
+                    if (errs.id_photo_path) {
+                        triggerToast(errs.id_photo_path); // Ipakita ang "Attempt X of 5" error
+                        setData('ocr_attempt', data.ocr_attempt + 1); // Dagdagan ang bilang ng attempt
+                        setData('id_photo_path', null); // Burahin ang malabong litrato
+                        setPreviewImage(null); // I-reset ang Camera Preview
+                        setIsScanning(true); // Buksan ulit ang Live Scanner
+                        setUiView(2); // 🔄 I-bounce back ang user sa View 2 (Camera)
+                    }
                     else if (errs.terms) setUiView(3);
-                    else setUiView(1);
+                    else {
+                        triggerToast("Mayroong error sa iyong form.");
+                        setUiView(1);
+                    }
                 }
             },
         });
-    }; // ✅ TAMA: Isinara na natin ang submitRegistration dito!
+    };
 
     // ==========================================
     // 📸 LIVE ID SCANNER LOGIC (NASA LABAS NA!)
