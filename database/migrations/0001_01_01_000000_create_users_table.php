@@ -45,6 +45,7 @@ return new class extends Migration
             // Preferences & Verification
             $table->tinyInteger('wants_email_notification')->default(1);
             $table->tinyInteger('is_verified')->default(0);
+            $table->timestamp('terms_accepted_at')->nullable();
 
             // ==========================================
             // 🛡️ THE LARAVEL WAY: NEW SECURITY POLICIES
