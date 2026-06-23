@@ -33,7 +33,8 @@ class RegisterRequest extends FormRequest
             'password' => ['required', 'confirmed', Password::min(8)
                 ->mixedCase()
                 ->letters()
-                ->numbers(),
+                ->numbers()
+                ->symbols(), 
             ],
 
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',

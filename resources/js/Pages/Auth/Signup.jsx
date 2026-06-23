@@ -118,7 +118,9 @@ export default function Signup() {
         // ========================================================
         // 🟢 THE FIX: STRICT PASSWORD REGEX SA LOOB NG SUBMIT/NEXT BUTTON
         // ========================================================
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        // THE FIX: Pinalitan ang [A-Za-z\d] ng . para tumanggap ng kahit anong character,
+        // at nagdagdag ng (?=.*[\W_]) para mag-require ng kahit isang symbol.
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
         if (!data.password) {
             newErrors.password = requiredMsg;
@@ -698,33 +700,38 @@ export default function Signup() {
                                     )}
 
                                     {/* 🟢 LIVE VISUAL PASSWORD TRACKER (NO SYMBOLS) 🟢 */}
-                                    <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
-                                        <div className="flex flex-col gap-1.5 text-[11px] font-bold">
-                                            <span
-                                                className={`flex items-center gap-2 transition-colors ${data.password.length >= 8 ? 'text-green-600' : 'text-slate-400'}`}
-                                            >
-                                                {data.password.length >= 8 ? '✅' : '○'} Walong (8)
-                                                characters o higit pa
-                                            </span>
-                                            <span
-                                                className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
-                                            >
-                                                {/[A-Z]/.test(data.password) ? '✅' : '○'} May isang
-                                                malaking letra (A-Z)
-                                            </span>
-                                            <span
-                                                className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
-                                            >
-                                                {/[a-z]/.test(data.password) ? '✅' : '○'} May isang
-                                                maliit na letra (a-z)
-                                            </span>
-                                            <span
-                                                className={`flex items-center gap-2 transition-colors ${/\d/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
-                                            >
-                                                {/\d/.test(data.password) ? '✅' : '○'} May isang
-                                                numero (0-9)
-                                            </span>
-                                        </div>
+                                    <div className="flex flex-col gap-1.5 text-[11px] font-bold">
+                                        <span
+                                            className={`flex items-center gap-2 transition-colors ${data.password.length >= 8 ? 'text-green-600' : 'text-slate-400'}`}
+                                        >
+                                            {data.password.length >= 8 ? '✅' : '○'} Walong (8)
+                                            characters o higit pa
+                                        </span>
+                                        <span
+                                            className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
+                                        >
+                                            {/[A-Z]/.test(data.password) ? '✅' : '○'} May isang
+                                            malaking letra (A-Z)
+                                        </span>
+                                        <span
+                                            className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
+                                        >
+                                            {/[a-z]/.test(data.password) ? '✅' : '○'} May isang
+                                            maliit na letra (a-z)
+                                        </span>
+                                        <span
+                                            className={`flex items-center gap-2 transition-colors ${/\d/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
+                                        >
+                                            {/\d/.test(data.password) ? '✅' : '○'} May isang numero
+                                            (0-9)
+                                        </span>
+                                        {/* 🟢 IDAGDAG ITO: Requirement para sa Symbol 🟢 */}
+                                        <span
+                                            className={`flex items-center gap-2 transition-colors ${/[\W_]/.test(data.password) ? 'text-green-600' : 'text-slate-400'}`}
+                                        >
+                                            {/[\W_]/.test(data.password) ? '✅' : '○'} May isang
+                                            symbol (hal. @, !, #)
+                                        </span>
                                     </div>
                                 </div>
                                 <div>
