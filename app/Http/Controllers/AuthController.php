@@ -6,14 +6,15 @@ use App\Events\AdminDashboardUpdated;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\SmsService;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -44,7 +45,7 @@ class AuthController extends Controller
         // 🤖 LIVE AUTOMATED KYC (PURE REST API - THE LARAVEL WAY)
         // ========================================================
         $isAutoApproved = false; // Naka-lock by default
-        $ocrErrorMessage = "Hindi mabasa nang malinaw ang ID.";
+        $ocrErrorMessage = 'Hindi mabasa nang malinaw ang ID.';
         $currentAttempt = $request->input('ocr_attempt', 1);
 
         try {
@@ -52,14 +53,14 @@ class AuthController extends Controller
             $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
             $credentialsPath = storage_path($envPath);
             $apiUrl = env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate');
-            
+
             // BAGONG FIX: Dynamic Auth Scope mula sa .env!
             $authScope = env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform');
 
             if (file_exists($credentialsPath)) {
 
                 // 1. Kumuha ng Auth Token gamit ang dynamic scope
-                $credentials = new \Google\Auth\Credentials\ServiceAccountCredentials(
+                $credentials = new ServiceAccountCredentials(
                     [$authScope], // <-- Hindi na ito hardcoded!
                     $credentialsPath
                 );
@@ -70,97 +71,95 @@ class AuthController extends Controller
                 $base64Image = base64_encode(file_get_contents($fullImagePath));
 
                 // 3. I-send ang POST Request gamit ang dynamic URL mula sa .env
-                $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
+                $response = Http::withToken($accessToken)
                     ->timeout(20)
                     ->post($apiUrl, [
                         'requests' => [
                             [
                                 'image' => [
-                                    'content' => $base64Image
+                                    'content' => $base64Image,
                                 ],
                                 'features' => [
                                     [
-                                        'type' => 'DOCUMENT_TEXT_DETECTION'
-                                    ]
-                                ]
-                            ]
-                        ]
+                                        'type' => 'DOCUMENT_TEXT_DETECTION',
+                                    ],
+                                ],
+                            ],
+                        ],
                     ]);
 
                 // 4. "THE LARAVEL WAY" ERROR HANDLING
                 if ($response->successful()) {
                     // CODE 200: SUCCESSFUL REQUEST
                     $visionResult = $response->json();
-                    
+
                     // Ligtas na pagkuha sa array gamit ang data_get
                     $scannedText = data_get($visionResult, 'responses.0.textAnnotations.0.description');
 
-                    if (!empty($scannedText)) {
+                    if (! empty($scannedText)) {
                         $scannedText = strtoupper($scannedText);
                         $firstName = strtoupper($validatedData['first_name']);
                         $lastName = strtoupper($validatedData['last_name']);
 
                         // TINGNAN KUNG NASA ID ANG PANGALAN
                         if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
-                            
+
                             // TINGNAN KUNG NASA CENSUS
-                            $inCensus = \Illuminate\Support\Facades\DB::table('census_records')
+                            $inCensus = DB::table('census_records')
                                 ->where('first_name', $validatedData['first_name'])
                                 ->where('last_name', $validatedData['last_name'])
                                 ->where('is_alive', 1)
                                 ->exists();
 
                             if ($inCensus) {
-                            $isAutoApproved = true;
-                            \Illuminate\Support\Facades\Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                                $isAutoApproved = true;
+                                Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                            } else {
+                                $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Census.';
+                                Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                            }
                         } else {
-                            $ocrErrorMessage = "Hindi tumugma ang pangalan sa ID at sa Census.";
-                            \Illuminate\Support\Facades\Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                            $ocrErrorMessage = 'Hindi malinaw ang pangalan sa ID.';
+                            Log::warning('OCR: Hindi nakita ang pangalan sa ID. Nakita: '.$scannedText);
                         }
                     } else {
-                        $ocrErrorMessage = "Hindi malinaw ang pangalan sa ID.";
-                        \Illuminate\Support\Facades\Log::warning("OCR: Hindi nakita ang pangalan sa ID. Nakita: " . $scannedText);
+                        $ocrErrorMessage = 'Walang nabasang text sa ID. Masyadong malabo.';
+                        Log::warning('OCR: Walang text na nakuha. Resulta: '.json_encode($visionResult));
                     }
-                } else {
-                    $ocrErrorMessage = "Walang nabasang text sa ID. Masyadong malabo.";
-                    \Illuminate\Support\Facades\Log::warning("OCR: Walang text na nakuha. Resulta: " . json_encode($visionResult));
                 }
-                } 
                 // ADVANCED ERROR DETECTORS NI LARAVEL
                 elseif ($response->clientError()) {
                     // 4xx Errors (Halimbawa: 400 Bad Request, 401 Unauthorized, 403 Quota Exceeded)
-                    \Illuminate\Support\Facades\Log::error("OCR Client Error (HTTP {$response->status()}): May mali sa data o expired ang credentials. Detalye: " . $response->body());
-                } 
-                elseif ($response->serverError()) {
+                    Log::error("OCR Client Error (HTTP {$response->status()}): May mali sa data o expired ang credentials. Detalye: ".$response->body());
+                } elseif ($response->serverError()) {
                     // 5xx Errors (Halimbawa: 500 Internal Server Error - Down ang Google)
-                    \Illuminate\Support\Facades\Log::error("OCR Server Error (HTTP {$response->status()}): Nag-crash ang servers ng Google. Detalye: " . $response->body());
-                } 
-                else {
+                    Log::error("OCR Server Error (HTTP {$response->status()}): Nag-crash ang servers ng Google. Detalye: ".$response->body());
+                } else {
                     // Iba pang kakaibang HTTP Errors
-                    \Illuminate\Support\Facades\Log::error("OCR Unknown Error (HTTP {$response->status()}): " . $response->body());
+                    Log::error("OCR Unknown Error (HTTP {$response->status()}): ".$response->body());
                 }
 
             } else {
-                \Illuminate\Support\Facades\Log::error("OCR Error: Hindi mahanap ang credentials file sa " . $credentialsPath);
+                Log::error('OCR Error: Hindi mahanap ang credentials file sa '.$credentialsPath);
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("OCR KYC Exception: " . $e->getMessage());
+            Log::error('OCR KYC Exception: '.$e->getMessage());
         }
         // ========================================================
 
         // ========================================================
         // 🛑 THE BOUNCE BACK LOGIC (PHASE 2)
         // ========================================================
-        if (!$isAutoApproved) {
+        if (! $isAutoApproved) {
             if ($currentAttempt < 5) {
                 // Haharangin natin at ibabalik sa Camera kasama ang data (Walang DB Save)
                 return back()->withErrors([
-                    'id_photo_path' => "{$ocrErrorMessage} (Attempt {$currentAttempt} of 5)"
+                    'id_photo_path' => "{$ocrErrorMessage} (Attempt {$currentAttempt} of 5)",
                 ])->withInput(); // <-- Ito ang magpapanatili ng tinype nila sa form!
             }
             // Kapag 5 na, lusot na siya pababa pero itatag natin bilang failed at naka-lock ng 20 mins.
         }
-        
+
         // STEP 4 & 5: Database Transaction
         // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
         DB::transaction(function () use (
@@ -168,8 +167,8 @@ class AuthController extends Controller
             $dateOfBirth,
             $isAutoApproved,
             $request
-            ) {
-                $otpCode = (string) rand(100000, 999999);
+        ) {
+            $otpCode = (string) rand(100000, 999999);
             $otpExpiresAt = now()->addMinutes(10);
 
             // I-save sa database (Naka-pending pa ito sa transaction)
@@ -187,7 +186,7 @@ class AuthController extends Controller
                 'contact_number' => $validatedData['contact_number'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-                
+
                 // 🛡️ BAGONG POLICIES NA ISASAVE SA DATABASE:
                 'is_verified' => $isAutoApproved,
                 'ocr_attempts' => $isAutoApproved ? 0 : 5,

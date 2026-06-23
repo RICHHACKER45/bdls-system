@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('password');
 
             // 🛑 ZERO-RETENTION POLICY: Tinanggal na ang id_photo_path at selfie_photo_path
-            
+
             // Roles & System Flags
             $table->string('role', 20)->default('resident');
             $table->string('otp_code', 10)->nullable();
@@ -50,7 +50,7 @@ return new class extends Migration
             // ==========================================
             // 🛡️ THE LARAVEL WAY: NEW SECURITY POLICIES
             // ==========================================
-            
+
             // 1. OCR ID Scanning Trackers (Dating 'KYC')
             $table->integer('ocr_attempts')->default(0);
             $table->timestamp('ocr_locked_until')->nullable();
@@ -61,7 +61,7 @@ return new class extends Migration
 
             // 3. OTP Brute-Force Trackers
             $table->integer('otp_failed_attempts')->default(0);
-            
+
             // 4. General Account Lockout (Gagamitin kapag naka-10 failed OTP or suspended)
             $table->timestamp('locked_until')->nullable();
 

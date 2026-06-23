@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('suffix', 10)->nullable();
             $table->string('sex', 10);
             $table->date('date_of_birth');
-            $table->string('address'); 
+            $table->string('address');
             $table->boolean('is_alive')->default(true); // Para alam kung active resident pa
             $table->timestamps();
         });

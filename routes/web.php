@@ -91,7 +91,7 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'approveAccount',
             ])->name('approve_account');
-            
+
             // BINURA: reject_account at suspend_account routes
 
             Route::delete('/account/{user}', [
@@ -105,11 +105,11 @@ Route::middleware(['auth'])->group(function () {
                 'updateRequestStatus',
             ])->name('request.update_status');
             // // AJAX Polling para sa Live Queue
-            ////Route::get('/api/queue-count', [
-            ////     AdminDashboardController::class,
-            ////     'checkQueueCount',
-            //// ])->name('api.queue_count');
-            //// WALK-IN MODULE ROUTES
+            // //Route::get('/api/queue-count', [
+            // //     AdminDashboardController::class,
+            // //     'checkQueueCount',
+            // // ])->name('api.queue_count');
+            // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
                 'searchWalkinAccount',
@@ -179,5 +179,3 @@ Route::middleware(['auth'])->group(function () {
             ])->name('request.cancel');
         });
 });
-
- 
