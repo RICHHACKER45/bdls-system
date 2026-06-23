@@ -18,16 +18,12 @@ class UserSeeder extends Seeder
             'suffix' => '',
             'sex' => 'Male',
             'date_of_birth' => '1970-01-01',
-
-            // BINURA: 'house_number' => 'Barangay Hall',
-            // PINALITAN:
             'address' => 'Barangay Hall, Doña Lucia',
-
             'contact_number' => '09000000001',
             'email' => 'barangaycap@bdlsgov.ph',
             'password' => Hash::make('Admin12345!'),
-
-            // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            
+            // 🛑 BINURA: id_photo_path at selfie_photo_path
 
             'role' => 'admin',
             'contact_verified_at' => now(),
@@ -45,16 +41,12 @@ class UserSeeder extends Seeder
             'suffix' => '',
             'sex' => 'Female',
             'date_of_birth' => '1990-01-01',
-
-            // BINURA: 'house_number' => 'Barangay Hall',
-            // PINALITAN:
             'address' => 'Barangay Hall, Doña Lucia',
-
             'contact_number' => '09000000002',
             'email' => 'barangaysec@bdlsgov.ph',
-            'password' => Hash::make('Admin12345!'), 
-
-            // BINURA: 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'password' => Hash::make('Admin12345!'),
+            
+            // 🛑 BINURA: id_photo_path at selfie_photo_path
 
             'role' => 'admin',
             'contact_verified_at' => now(),
