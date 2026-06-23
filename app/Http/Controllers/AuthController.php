@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Google\Cloud\Vision\V1\ImageAnnotatorClient;
 
 class AuthController extends Controller
 {
@@ -45,65 +44,118 @@ class AuthController extends Controller
         $fullImagePath = Storage::disk('local')->path($idPhotoPath);
 
         // ========================================================
-        // 🤖 LIVE AUTOMATED KYC (GOOGLE CLOUD VISION OCR)
+        // 🤖 LIVE AUTOMATED KYC (PURE REST API - THE LARAVEL WAY)
         // ========================================================
         $isAutoApproved = false; // Naka-lock by default
 
         try {
-            // SCALABLE FIX: Kumukuha na sa .env! 
-            // May fallback din na 'app/private/google-credentials.json' kung sakaling hindi pa na-update ng kagrupo mo ang .env nila.
+            // SCALABILITY FIX: Kinukuha lahat sa .env ang mga mahahalagang config!
             $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
             $credentialsPath = storage_path($envPath);
+            $apiUrl = env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate');
+            
+            // BAGONG FIX: Dynamic Auth Scope mula sa .env!
+            $authScope = env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform');
 
             if (file_exists($credentialsPath)) {
-                $imageAnnotator = new \Google\Cloud\Vision\V1\ImageAnnotatorClient([
-                    'credentials' => $credentialsPath
-                ]);
 
-                $image = file_get_contents($fullImagePath); 
-                $response = $imageAnnotator->documentTextDetection($image);
-                $texts = $response->getTextAnnotations();
+                // 1. Kumuha ng Auth Token gamit ang dynamic scope
+                $credentials = new \Google\Auth\Credentials\ServiceAccountCredentials(
+                    [$authScope], // <-- Hindi na ito hardcoded!
+                    $credentialsPath
+                );
+                $token = $credentials->fetchAuthToken();
+                $accessToken = $token['access_token'];
 
-                if (count($texts) > 0) {
-                    $scannedText = strtoupper($texts->getDescription()); 
-                    $firstName = strtoupper($validatedData['first_name']);
-                    $lastName = strtoupper($validatedData['last_name']);
+                // 2. I-convert ang Image to BASE64
+                $base64Image = base64_encode(file_get_contents($fullImagePath));
 
-                    // PANELIST REQUIREMENT: TINGNAN KUNG NASA ID ANG PANGALAN
-                    if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
+                // 3. I-send ang POST Request gamit ang dynamic URL mula sa .env
+                $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
+                    ->timeout(20)
+                    ->post($apiUrl, [
+                        'requests' => [
+                            [
+                                'image' => [
+                                    'content' => $base64Image
+                                ],
+                                'features' => [
+                                    [
+                                        'type' => 'DOCUMENT_TEXT_DETECTION'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]);
 
-                        // TINGNAN KUNG NASA CENSUS ANG PANGALAN
-                        $inCensus = \Illuminate\Support\Facades\DB::table('census_records')
-                            ->where('first_name', $validatedData['first_name'])
-                            ->where('last_name', $validatedData['last_name'])
-                            ->where('is_alive', 1)
-                            ->exists();
+                // 4. "THE LARAVEL WAY" ERROR HANDLING
+                if ($response->successful()) {
+                    // CODE 200: SUCCESSFUL REQUEST
+                    $visionResult = $response->json();
+                    
+                    // Ligtas na pagkuha sa array gamit ang data_get
+                    $scannedText = data_get($visionResult, 'responses.0.textAnnotations.0.description');
 
-                        if ($inCensus) {
-                            $isAutoApproved = true;
-                            \Illuminate\Support\Facades\Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                    if (!empty($scannedText)) {
+                        $scannedText = strtoupper($scannedText);
+                        $firstName = strtoupper($validatedData['first_name']);
+                        $lastName = strtoupper($validatedData['last_name']);
+
+                        // TINGNAN KUNG NASA ID ANG PANGALAN
+                        if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
+                            
+                            // TINGNAN KUNG NASA CENSUS
+                            $inCensus = \Illuminate\Support\Facades\DB::table('census_records')
+                                ->where('first_name', $validatedData['first_name'])
+                                ->where('last_name', $validatedData['last_name'])
+                                ->where('is_alive', 1)
+                                ->exists();
+
+                            if ($inCensus) {
+                                $isAutoApproved = true;
+                                \Illuminate\Support\Facades\Log::info("AUTO-KYC SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                            } else {
+                                \Illuminate\Support\Facades\Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                            }
+                        } else {
+                            \Illuminate\Support\Facades\Log::warning("OCR: Hindi nakita ang pangalan sa ID. Nakita: " . $scannedText);
                         }
+                    } else {
+                        \Illuminate\Support\Facades\Log::warning("OCR: Walang text na nakuha. Resulta: " . json_encode($visionResult));
                     }
+                } 
+                // ADVANCED ERROR DETECTORS NI LARAVEL
+                elseif ($response->clientError()) {
+                    // 4xx Errors (Halimbawa: 400 Bad Request, 401 Unauthorized, 403 Quota Exceeded)
+                    \Illuminate\Support\Facades\Log::error("OCR Client Error (HTTP {$response->status()}): May mali sa data o expired ang credentials. Detalye: " . $response->body());
+                } 
+                elseif ($response->serverError()) {
+                    // 5xx Errors (Halimbawa: 500 Internal Server Error - Down ang Google)
+                    \Illuminate\Support\Facades\Log::error("OCR Server Error (HTTP {$response->status()}): Nag-crash ang servers ng Google. Detalye: " . $response->body());
+                } 
+                else {
+                    // Iba pang kakaibang HTTP Errors
+                    \Illuminate\Support\Facades\Log::error("OCR Unknown Error (HTTP {$response->status()}): " . $response->body());
                 }
-                $imageAnnotator->close();
+
             } else {
                 \Illuminate\Support\Facades\Log::error("OCR Error: Hindi mahanap ang credentials file sa " . $credentialsPath);
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("OCR KYC Failed: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("OCR KYC Exception: " . $e->getMessage());
         }
         // ========================================================
-
         
         // STEP 4 & 5: Database Transaction
+        // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
         DB::transaction(function () use (
             $validatedData,
             $dateOfBirth,
             $idPhotoPath,
-            // TINANGGAL NA NATIN ANG $selfiePath DITO SA 'use' ARRAY
+            $isAutoApproved,
             $request
-        ) {
-            $otpCode = (string) rand(100000, 999999);
+            ) {
+                $otpCode = (string) rand(100000, 999999);
             $otpExpiresAt = now()->addMinutes(10);
 
             // I-save sa database (Naka-pending pa ito sa transaction)
@@ -122,11 +174,10 @@ class AuthController extends Controller
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
                 'id_photo_path' => $idPhotoPath,
-
+                'is_verified' => $isAutoApproved,
                 // BINURA: 'selfie_photo_path'
 
                 'role' => 'resident',
-                'is_verified' => false,
                 'otp_code' => $otpCode,
                 'otp_expires_at' => $otpExpiresAt,
                 'terms_accepted_at' => now(),
