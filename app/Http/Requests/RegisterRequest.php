@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
@@ -29,7 +30,11 @@ class RegisterRequest extends FormRequest
 
             'contact_number' => 'required|string|max:20|unique:users,contact_number',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+            ],
 
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             // BINURA: 'selfie_photo_path'

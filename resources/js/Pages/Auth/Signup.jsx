@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, Head, useForm } from '@inertiajs/react';
+import Webcam from "react-webcam";
 
 export default function Signup() {
+
+  
   // UI States: 1 = Form, 2 = ID Scan, 3 = Terms & Submission
   const [uiView, setUiView] = useState(1);
   const [previews, setPreviews] = useState({ id: null });
@@ -15,13 +18,13 @@ export default function Signup() {
   
   // T&C Scroll State
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
-
+  
   // WAIT PAGE / PROCESSING STATES
   const [timeLeft, setTimeLeft] = useState(180); // 3 Minutes (180 seconds)
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
-
+  
   const idInputRef = useRef(null);
-
+  
   const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
     first_name: '',
     middle_name: '',
@@ -50,12 +53,12 @@ export default function Signup() {
   useEffect(() => {
     let timerInterval;
     let textInterval;
-
+    
     if (processing) {
       timerInterval = setInterval(() => {
         setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
       }, 1000);
-
+      
       textInterval = setInterval(() => {
         setLoadingTextIndex((prev) => {
           if (prev < loadingMessages.length - 1) return prev + 1;
@@ -78,7 +81,7 @@ export default function Signup() {
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
-
+  
   const triggerToast = (message) => {
     setToast({ visible: true, message });
     setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 5000);
@@ -99,31 +102,42 @@ export default function Signup() {
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    const requiredMsg = 'Kailangan itong punan.';
+        const newErrors = {};
+        const requiredMsg = 'Kailangan itong punan.';
 
-    if (!data.first_name) newErrors.first_name = requiredMsg;
-    if (!data.last_name) newErrors.last_name = requiredMsg;
-    if (!data.sex) newErrors.sex = requiredMsg;
-    if (!data.dob_month || !data.dob_day || !data.dob_year) newErrors.dob_year = 'Kumpletuhin ang petsa ng kapanganakan.';
-    if (!data.address) newErrors.address = requiredMsg;
-    
-    if (!data.contact_number) newErrors.contact_number = requiredMsg;
-    else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = 'Dapat magsimula sa 09 at may 11 numero.';
+        if (!data.first_name) newErrors.first_name = requiredMsg;
+        if (!data.last_name) newErrors.last_name = requiredMsg;
+        if (!data.sex) newErrors.sex = requiredMsg;
+        if (!data.dob_month || !data.dob_day || !data.dob_year) newErrors.dob_year = 'Kumpletuhin ang petsa ng kapanganakan.';
+        if (!data.address) newErrors.address = requiredMsg;
 
-    if (!data.password) newErrors.password = requiredMsg;
-    else if (data.password.length < 8) newErrors.password = 'Ang password ay dapat hindi bababa sa 8 characters.';
+        if (!data.contact_number) newErrors.contact_number = requiredMsg;
+        else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = 'Dapat magsimula sa 09 at may 11 numero.';
 
-    if (data.password !== data.password_confirmation) newErrors.password_confirmation = 'Hindi magtugma ang password.';
+        // ========================================================
+        // 🟢 THE FIX: STRICT PASSWORD REGEX SA LOOB NG SUBMIT/NEXT BUTTON
+        // ========================================================
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-    setLocalErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      triggerToast('Paki-kumpleto ang mga required fields sa form.');
-      return false;
-    }
-    return true;
-  };
+        if (!data.password) {
+            newErrors.password = requiredMsg;
+        } else if (!passwordRegex.test(data.password)) {
+            // Ito ang pipigil sa kanila kapag pinindot ang Next!
+            newErrors.password = 'Sundin ang password requirements sa kahon.';
+        }
+
+        if (data.password !== data.password_confirmation) {
+            newErrors.password_confirmation = 'Hindi magtugma ang password.';
+        }
+
+        setLocalErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            triggerToast('Paki-kumpleto nang tama ang mga required fields sa form.');
+            return false;
+        }
+        return true;
+    };
 
   const goToIdScan = () => {
     if (validateForm()) setUiView(2);
@@ -136,11 +150,11 @@ export default function Signup() {
     }
     setUiView(3);
   };
-
+  
   const handleIdCapture = (e) => {
     const file = e.target.files;
     if (!file || file.length === 0) return;
-
+    
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       triggerToast('Ang file ay masyadong malaki. Maximum size ay 5MB.');
@@ -151,12 +165,12 @@ export default function Signup() {
     setData('id_photo_path', file);
     setLocalErrors((prev) => ({ ...prev, id_photo_path: null }));
     clearErrors('id_photo_path');
-
+    
     const reader = new FileReader();
     reader.onload = (e) => setPreviews({ id: e.target.result });
     reader.readAsDataURL(file);
   };
-
+  
   const handleScroll = (e) => {
     const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 20;
     if (bottom) {
@@ -165,22 +179,75 @@ export default function Signup() {
   };
 
   const submitRegistration = (e) => {
-    e.preventDefault();
-    setData('terms', true); 
-    
-    post(route('signup.post'), {
-      onFinish: () => reset('password', 'password_confirmation'),
-      onError: (errs) => {
-        if (Object.keys(errs).length > 0) {
-          triggerToast("Mayroong error sa iyong submission.");
-          if (errs.id_photo_path) setUiView(2);
-          else if (errs.terms) setUiView(3);
-          else setUiView(1);
-        }
-      },
-    });
-  };
+        e.preventDefault();
+        setData('terms', true);
 
+        post(route('signup.post'), {
+            onFinish: () => reset('password', 'password_confirmation'),
+            onError: (errs) => {
+                if (Object.keys(errs).length > 0) {
+                    triggerToast("Mayroong error sa iyong submission.");
+                    if (errs.id_photo_path) setUiView(2);
+                    else if (errs.terms) setUiView(3);
+                    else setUiView(1);
+                }
+            },
+        });
+    }; // ✅ TAMA: Isinara na natin ang submitRegistration dito!
+
+    // ==========================================
+    // 📸 LIVE ID SCANNER LOGIC (NASA LABAS NA!)
+    // ==========================================
+    const webcamRef = useRef(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
+
+    const captureId = useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setPreviewImage(imageSrc); 
+        setIsScanning(false); 
+
+        fetch(imageSrc)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], "live_id_capture.jpg", { type: "image/jpeg" });
+                setData('id_photo_path', file);
+            });
+    }, [webcamRef, setData]);
+
+        // ==========================================
+        // 🚦 PASSWORD STRENGTH CALCULATOR 🚦
+        // ==========================================
+        const getPasswordStrength = (pass) => {
+            let score = 0;
+            if (pass.length >= 8) score += 1;
+            if (/[A-Z]/.test(pass)) score += 1;
+            if (/[a-z]/.test(pass)) score += 1;
+            if (/\d/.test(pass)) score += 1;
+            return score;
+        };
+
+        const strengthScore = getPasswordStrength(data.password);
+        let strengthLabel = "";
+        let strengthColor = "bg-slate-200";
+        let strengthTextColor = "text-slate-500";
+
+        if (data.password.length > 0) {
+            if (strengthScore <= 2) {
+                strengthLabel = "WEAK";
+                strengthColor = "bg-red-500";
+                strengthTextColor = "text-red-500";
+            } else if (strengthScore === 3) {
+                strengthLabel = "MEDIUM";
+                strengthColor = "bg-amber-500"; // Tailwind's perfect yellow-orange
+                strengthTextColor = "text-amber-500";
+            } else if (strengthScore === 4) {
+                strengthLabel = "STRONG";
+                strengthColor = "bg-green-500";
+                strengthTextColor = "text-green-500";
+            }
+        }
+  
   return (
     <div className="flex min-h-screen flex-col justify-center bg-slate-50 py-10 font-sans text-slate-900 antialiased">
       <Head title="Mag-Signup - Barangay Doña Lucia" />
@@ -325,6 +392,7 @@ export default function Signup() {
                 <div className="h-px flex-1 bg-slate-200"></div>
               </div>
 
+              {/* mobile number & email address */}
               <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-slate-700">Mobile Number <span className="text-red-500">*</span></label>
@@ -336,15 +404,53 @@ export default function Signup() {
                   <input type="email" placeholder="juan@email.com" autoComplete="off" value={data.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                   {errors.email && <p className="mt-1 text-xs font-bold text-red-500">{errors.email}</p>}
                 </div>
+
+                {/* password */}
                 <div>
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} placeholder="********" autoComplete="off" value={data.password} onChange={(e) => handleInputChange('password', e.target.value)} className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 hover:text-slate-900">
-                      {showPassword ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
-                  {(localErrors.password || errors.password) && <p className="mt-1 text-xs font-bold text-red-500">{localErrors.password || errors.password}</p>}
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                        <input type={showPassword ? 'text' : 'password'} placeholder="********" autoComplete="off" value={data.password} onChange={(e) => handleInputChange('password', e.target.value)} className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 hover:text-slate-900">
+                        {showPassword ? 'HIDE' : 'SHOW'}
+                        </button>
+                    </div>
+                    {(localErrors.password || errors.password) && <p className="mt-1 text-xs font-bold text-red-500">{localErrors.password || errors.password}</p>}
+
+                    {/* 🚦 PASSWORD STRENGTH METER 🚦 */}
+                    {data.password.length > 0 && (
+                        <div className="mt-3">
+                            <div className="flex justify-between mb-1">
+                                <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Strength:</span>
+                                <span className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}>
+                                    {strengthLabel}
+                                </span>
+                            </div>
+                            {/* The 3 Segment Bars */}
+                            <div className="flex gap-1 h-1.5 w-full">
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}></div>
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}></div>
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 🟢 LIVE VISUAL PASSWORD TRACKER (NO SYMBOLS) 🟢 */}
+                    <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <div className="flex flex-col gap-1.5 text-[11px] font-bold">
+                            <span className={`flex items-center gap-2 transition-colors ${data.password.length >= 8 ? "text-green-600" : "text-slate-400"}`}>
+                                {data.password.length >= 8 ? "✅" : "○"} Walong (8) characters o higit pa
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/[A-Z]/.test(data.password) ? "✅" : "○"} May isang malaking letra (A-Z)
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/[a-z]/.test(data.password) ? "✅" : "○"} May isang maliit na letra (a-z)
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/\d/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/\d/.test(data.password) ? "✅" : "○"} May isang numero (0-9)
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-slate-700">Confirm Password <span className="text-red-500">*</span></label>
@@ -368,7 +474,7 @@ export default function Signup() {
           )}
 
           {/* =========================================
-              VIEW 2: ON-THE-SPOT ID SCANNER 
+              VIEW 2: ON-THE-SPOT ID SCANNER (ENTERPRISE WEBCAM
               ========================================= */}
           {uiView === 2 && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
@@ -377,44 +483,90 @@ export default function Signup() {
                 <p className="mt-2 text-sm text-slate-500">Kailangan ito para sa KYC verification ng barangay.</p>
               </div>
 
-              <div className="mb-8 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <input
-                  type="file"
-                  ref={idInputRef}
-                  onChange={handleIdCapture}
-                  accept="image/*"
-                  capture="environment" 
-                  className="sr-only"
-                />
-                
-                {!previews.id ? (
-                  <div className="flex flex-col items-center justify-center py-10">
-                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-200 text-slate-500">
+              <div className="mb-8">
+                {/* BUTTON PARA BUKSAN ANG CAMERA */}
+                {!isScanning && !previewImage && (
+                  <button
+                      type="button"
+                      onClick={() => setIsScanning(true)}
+                      className="w-full rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-12 text-center font-bold text-slate-500 transition-all hover:bg-slate-100 active:scale-95"
+                  >
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-200 text-slate-500">
                       <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                       </svg>
                     </div>
-                    <button type="button" onClick={() => idInputRef.current.click()} className="rounded-lg bg-slate-900 px-6 py-3 font-bold text-white shadow-md hover:bg-slate-800 active:scale-95">
-                      Buksan ang Camera
-                    </button>
-                    <p className="mt-3 text-xs text-slate-400">Siguraduhing maliwanag at nababasa ang ID.</p>
+                    Buksan ang Live Scanner
+                  </button>
+                )}
+
+                {/* ANG LIVE CAMERA FRAME */}
+                {isScanning && (
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
+                      <Webcam
+                          audio={false}
+                          ref={webcamRef}
+                          screenshotFormat="image/jpeg"
+                          videoConstraints={{ facingMode: "environment" }}
+                          className="w-full object-cover opacity-80"
+                      />
+                      
+                      {/* ID Frame Guide (Kahon sa gitna para sa user) */}
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <div className="h-3/5 w-4/5 rounded-xl border-2 border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
+                      </div>
+                      <p className="absolute top-4 w-full text-center text-xs font-bold tracking-widest text-white drop-shadow-md uppercase">
+                          I-posisyon ang ID sa loob ng kahon
+                      </p>
+
+                      <button
+                          type="button"
+                          onClick={captureId}
+                          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all active:scale-95"
+                      >
+                          📸 Capture
+                      </button>
                   </div>
-                ) : (
+                )}
+
+                {/* PREVIEW NG NAKUHAANG ID */}
+                {previewImage && (
                   <div className="flex flex-col items-center">
-                    <img src={previews.id} alt="ID Preview" className="mb-4 max-h-64 w-full rounded-xl object-contain shadow-sm" />
-                    <button type="button" onClick={() => idInputRef.current.click()} className="rounded-lg border border-slate-300 bg-white px-6 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-100 active:scale-95">
-                      Ulitin ang Pag-scan
-                    </button>
+                    <div className="relative w-full overflow-hidden rounded-2xl border border-slate-300 shadow-sm">
+                      <img src={previewImage} alt="ID Preview" className="mb-4 max-h-64 w-full rounded-xl bg-slate-100 object-contain shadow-sm" />
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                            setPreviewImage(null);
+                            setIsScanning(true);
+                            setData('id_photo_path', null);
+                        }} 
+                        className="absolute right-3 bottom-6 rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95"
+                      >
+                        Ulitin ang Pag-scan
+                      </button>
+                    </div>
                   </div>
+                )}
+
+                {/* ERROR MESSAGE FALLBACK */}
+                {errors?.id_photo_path && (
+                    <p className="mt-2 text-center text-xs font-bold text-red-500">{errors.id_photo_path}</p>
                 )}
               </div>
 
+              {/* NAVIGATION BUTTONS */}
               <div className="flex flex-col-reverse gap-4 sm:flex-row">
                 <button type="button" onClick={() => setUiView(1)} className="w-full rounded-xl border border-slate-300 bg-transparent px-8 py-4 font-bold text-slate-700 transition-all hover:bg-slate-100 active:scale-95 sm:w-1/3">
                   Bumalik
                 </button>
-                <button type="button" onClick={goToTerms} className="w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:w-2/3">
+                <button 
+                  type="button" 
+                  onClick={goToTerms} 
+                  disabled={!previewImage} 
+                  className="w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:w-2/3"
+                >
                   Next: Terms & Conditions
                 </button>
               </div>
