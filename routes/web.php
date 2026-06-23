@@ -6,6 +6,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -18,12 +19,12 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // ==========================================
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', function () {
-        return view('auth.login');
+        return Inertia\Inertia::render('Auth/Login');
     })->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
     Route::get('/signup', function () {
-        return view('auth.signup');
+        return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
 
@@ -45,9 +46,10 @@ Route::middleware(['guest'])->group(function () {
 // 3. OTP ROUTES (Para sa Account Verification)
 // ==========================================
 Route::get('/otp', function () {
-    return view('auth.otp', [
+    return Inertia\Inertia::render('Auth/Otp', [
         'verifyRoute' => route('otp.verify'),
         'resendRoute' => route('otp.resend'),
+        'cooldown' => RateLimiter::availableIn('resend_sms_otp_'.request()->ip()),
     ]);
 })->name('otp.show');
 Route::post('/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
@@ -89,12 +91,9 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'approveAccount',
             ])->name('approve_account');
-            Route::post('/account/{user}/reject', [
-                AdminDashboardController::class,
-                'rejectAccount',
-            ])->name('reject_account');
+            
+            // BINURA: reject_account at suspend_account routes
 
-            // TASK 1: Admin Delete Functionality
             Route::delete('/account/{user}', [
                 AdminDashboardController::class,
                 'destroyAccount',
@@ -105,12 +104,12 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'updateRequestStatus',
             ])->name('request.update_status');
-            // AJAX Polling para sa Live Queue
-            Route::get('/api/queue-count', [
-                AdminDashboardController::class,
-                'checkQueueCount',
-            ])->name('api.queue_count');
-            // WALK-IN MODULE ROUTES
+            // // AJAX Polling para sa Live Queue
+            ////Route::get('/api/queue-count', [
+            ////     AdminDashboardController::class,
+            ////     'checkQueueCount',
+            //// ])->name('api.queue_count');
+            //// WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
                 'searchWalkinAccount',
@@ -137,11 +136,6 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'printReleaseLogbook',
             ])->name('queue.print_logbook');
-            // 1-WEEK PENALTY ROUTE
-            Route::post('/account/{user}/suspend', [
-                AdminDashboardController::class,
-                'suspendAccount',
-            ])->name('suspend_account');
         });
 
     // ==========================================
@@ -159,19 +153,10 @@ Route::middleware(['auth'])->group(function () {
                 'checkVerificationStatus',
             ])->name('api.status');
 
-            // TASK 4: Resubmit Registration
-            Route::post('/request/resubmit', [
-                ServiceRequestController::class,
-                'resubmitRegistration',
-            ])->name('resubmit_registration');
-
+            // BINURA: resubmit_registration route
             // Email & Notification Preferences
-            Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name(
-                'email.send',
-            );
-            Route::post('/email/verify-otp', [ProfileController::class, 'verifyEmailOtp'])->name(
-                'email.verify',
-            );
+            Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');
+            Route::post('/email/verify-otp', [ProfileController::class, 'verifyEmailOtp'])->name('email.verify');
             Route::post('/email/add', [ProfileController::class, 'addEmail'])->name('email.add');
             Route::post('/settings/update-contact', [ProfileController::class, 'updateContactNumber'])->name('settings.update_contact');
             Route::post('/settings/verify-contact', [ProfileController::class, 'verifyContactOtp'])->name('settings.verify_contact');
@@ -194,3 +179,5 @@ Route::middleware(['auth'])->group(function () {
             ])->name('request.cancel');
         });
 });
+
+ 

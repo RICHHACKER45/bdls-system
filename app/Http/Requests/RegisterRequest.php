@@ -3,20 +3,15 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         return [
@@ -30,22 +25,24 @@ class RegisterRequest extends FormRequest
             'dob_day' => 'required|numeric|min:1|max:31',
             'dob_year' => 'required|numeric',
 
-            'house_number' => 'required|string|max:255',
-            'purok_street' => 'required|string|max:255',
+            // PINALITAN: Pinagsama na natin ang address
+            'address' => 'required|string|max:255',
 
             'contact_number' => 'required|string|max:20|unique:users,contact_number',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+            ],
 
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
-            'selfie_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            // BINURA: 'selfie_photo_path'
+            
             'terms' => 'accepted',
         ];
     }
 
-    /**
-     * Custom error messages.
-     */
     public function messages(): array
     {
         return [

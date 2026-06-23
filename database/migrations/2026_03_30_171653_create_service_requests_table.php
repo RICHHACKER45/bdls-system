@@ -19,7 +19,9 @@ return new class extends Migration
             $table->string('queue_number', 50)->nullable();
             $table->string('purpose', 255);
             $table->text('additional_details')->nullable();
-            $table->dateTime('preferred_pickup_time');
+
+            // BINURA: $table->dateTime('preferred_pickup_time'); (Hindi na kailangan dahil real-time na ang text)
+
             $table->string('status', 20)->default('Pending'); // Pending, For Interview, Processing, Released
             $table->timestamp('released_at')->nullable();
             $table

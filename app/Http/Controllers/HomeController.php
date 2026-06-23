@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class HomeController extends Controller
 {
@@ -20,6 +21,6 @@ class HomeController extends Controller
             return redirect()->route('resident.dashboard');
         }
 
-        return view('welcome');
+        return Inertia::render('Welcome');
     }
 }

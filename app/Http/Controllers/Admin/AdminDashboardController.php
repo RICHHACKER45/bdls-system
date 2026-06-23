@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminDashboardUpdated;
+use App\Events\ResidentRequestUpdated;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessAnnouncementSms;
 use App\Models\Announcement;
@@ -20,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
 {
@@ -68,25 +71,18 @@ class AdminDashboardController extends Controller
         $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
         $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
 
-        return view(
-            'admin.admin-panel',
-            compact(
-                'pendingAccounts',
-                'approvedAccounts',
-                'rejectedAccounts',
-                'activeQueue',
-                'receivedQueue',
-                'documents',
-                'auditLogs',
-                'notificationLogs', // <--- IDINAGDAG NATIN ITO
-            ),
-        );
-    }
-
-    public function checkPendingCount()
-    {
-        // TASK 1: Use pending scope for accurate count
-        return response()->json(['count' => User::pending()->count()]);
+        // THE ENTERPRISE FIX: Inertia Render with Auth Prop
+        return Inertia::render('Admin/Admin-Dashboard', [
+            'pendingAccounts' => $pendingAccounts,
+            'approvedAccounts' => $approvedAccounts,
+            'rejectedAccounts' => $rejectedAccounts,
+            'activeQueue' => $activeQueue,
+            'receivedQueue' => $receivedQueue,
+            'documents' => $documents,
+            'auditLogs' => $auditLogs,
+            'notificationLogs' => $notificationLogs,
+            'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
+        ]);
     }
 
     public function approveAccount(User $user, SmsService $smsService)
@@ -109,39 +105,13 @@ class AdminDashboardController extends Controller
             'description' => "Inaprubahan ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
         ]);
 
+        // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
+        event(new ResidentRequestUpdated($user->id, 'Account Approved'));
+        event(new AdminDashboardUpdated);
+
         return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
     }
 
-    public function rejectAccount(Request $request, User $user, SmsService $smsService)
-    {
-        $request->validate(['rejection_reason' => 'required|string|max:60']);
-
-        $user->rejection_count += 1;
-        $user->rejection_reason = $request->rejection_reason;
-        $user->rejected_at = now();
-
-        if ($user->rejection_count >= 5) {
-            $user->locked_until = now()->addHours(24);
-            $message = 'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
-        } else {
-            $message =
-                "Registration rejected. Rason: {$request->rejection_reason}. May ".
-                (5 - $user->rejection_count).
-                ' attempts ka pa.';
-        }
-
-        $user->save();
-        $smsService->sendSms($user->id, $user->contact_number, $message);
-
-        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_REJECTION',
-            'description' => "Ni-reject ang account ni {$user->first_name} {$user->last_name}. Rason: {$request->rejection_reason}.",
-        ]);
-
-        return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
-    }
 
     /**
      * TASK 1: Admin Delete Functionality (Secured with Audit Trail)
@@ -226,6 +196,11 @@ class AdminDashboardController extends Controller
                 "'.",
         ]);
 
+        // Sabihan ang mismong residente na nag-iba na ang status niya in real-time
+        event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
+        // Sabihan din ang sariling dashboard na mag-update ng listahan at counts
+        event(new AdminDashboardUpdated);
+
         // ==========================================
         // THE FIX: Soft Delete for Rejected Requests
         // ==========================================
@@ -238,17 +213,6 @@ class AdminDashboardController extends Controller
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
 
-    public function checkQueueCount()
-    {
-        return response()->json([
-            'count' => ServiceRequest::whereIn('status', [
-                'pending',
-                'for_interview',
-                'processing',
-                'released',
-            ])->count(),
-        ]);
-    }
 
     /**
      * PHASE 1: Walk-In Search-First Logic
@@ -288,8 +252,7 @@ class AdminDashboardController extends Controller
             'last_name' => 'required_if:is_new_user,1|string|max:255',
             'sex' => 'required_if:is_new_user,1|string|in:Male,Female',
             'date_of_birth' => 'required_if:is_new_user,1|date',
-            'house_number' => 'required_if:is_new_user,1|string|max:255',
-            'purok_street' => 'required_if:is_new_user,1|string|max:255',
+            'address' => $validatedData['address'],
         ]);
 
         // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
@@ -337,7 +300,6 @@ class AdminDashboardController extends Controller
                 'request_channel' => 'Walk-in',
                 'queue_number' => $queueNumber,
                 'purpose' => $request->purpose,
-                'preferred_pickup_time' => now()->addDay(), // Default pick-up time
                 'status' => 'pending',
             ]);
 
@@ -368,6 +330,8 @@ class AdminDashboardController extends Controller
 
             // ========================================================
         }); // <-- Dito nagtatapos ang DB::transaction()
+
+        event(new AdminDashboardUpdated);
 
         // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
         return redirect()
@@ -532,26 +496,82 @@ class AdminDashboardController extends Controller
         return $pdf->stream($filename);
     }
 
-    /**
-     * MODULE: Account Suspension (1-Week Penalty for No-Show)
-     */
-    public function suspendAccount(User $user, SmsService $smsService)
-    {
-        // 1. I-lock ng 7 araw (T&C Rule 6)
-        $user->locked_until = now()->addDays(7);
-        $user->save();
-
-        // 2. I-text ang Residente
-        $message = 'BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).';
-        $smsService->sendSms($user->id, $user->contact_number, $message);
-
-        // 3. I-record sa CCTV
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_SUSPENSION',
-            'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}.",
-        ]);
-
-        return back()->with('active_tab', 'pending')->with('success_message', 'Resident suspended for 7 days.');
     }
-}
+    
+    #region deprecated codes
+    //deprecated codes
+    //// MODULE: Account Suspension (1-Week Penalty for No-Show)
+    // public function suspendAccount(User $user, SmsService $smsService)
+    // {
+    //     // 1. I-lock ng 7 araw (T&C Rule 6)
+    //     $user->locked_until = now()->addDays(7);
+    //     $user->save();
+
+    //     // 2. I-text ang Residente
+    //     $message = 'BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).';
+    //     $smsService->sendSms($user->id, $user->contact_number, $message);
+
+    //     // 3. I-record sa CCTV
+    //     AuditLog::create([
+    //         'admin_id' => Auth::id(),
+    //         'action' => 'ACCOUNT_SUSPENSION',
+    //         'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}.",
+    //     ]);
+
+    //     return back()->with('active_tab', 'pending')->with('success_message', 'Resident suspended for 7 days.');
+    // }
+
+    // public function checkQueueCount()
+    // {
+    //     return response()->json([
+    //         'count' => ServiceRequest::whereIn('status', [
+    //             'pending',
+    //             'for_interview',
+    //             'processing',
+    //             'released',
+    //         ])->count(),
+    //     ]);
+    // }
+
+     // public function rejectAccount(Request $request, User $user, SmsService $smsService)
+    // {
+    //     $request->validate(['rejection_reason' => 'required|string|max:60']);
+
+    //     $user->rejection_count += 1;
+    //     $user->rejection_reason = $request->rejection_reason;
+    //     $user->rejected_at = now();
+
+    //     if ($user->rejection_count >= 5) {
+    //         $user->locked_until = now()->addHours(24);
+    //         $message = 'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
+    //     } else {
+    //         $message =
+    //             "Registration rejected. Rason: {$request->rejection_reason}. May ".
+    //             (5 - $user->rejection_count).
+    //             ' attempts ka pa.';
+    //     }
+
+    //     $user->save();
+    //     $smsService->sendSms($user->id, $user->contact_number, $message);
+
+    //     // SYSTEM AUDIT LOG RECORDER (Process 6.0)
+    //     AuditLog::create([
+    //         'admin_id' => Auth::id(),
+    //         'action' => 'ACCOUNT_REJECTION',
+    //         'description' => "Ni-reject ang account ni {$user->first_name} {$user->last_name}. Rason: {$request->rejection_reason}.",
+    //     ]);
+
+    //     // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
+    //     event(new ResidentRequestUpdated($user->id, 'Account Rejected'));
+    //     event(new AdminDashboardUpdated);
+
+    //     return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
+    // }
+
+    //// public function checkPendingCount()
+    //// {
+    //     // TASK 1: Use pending scope for accurate count
+    ////     return response()->json(['count' => User::pending()->count()]);
+    //// }
+
+    #endregion

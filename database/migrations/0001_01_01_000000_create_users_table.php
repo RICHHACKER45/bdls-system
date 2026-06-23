@@ -13,25 +13,26 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
             // Personal Information
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
-            $table->string('suffix', 10)->nullable(); // Ibinalik
-            $table->string('sex', 10); // Dinagdag base sa ERD
+            $table->string('suffix', 10)->nullable();
+            $table->string('sex', 10);
             $table->date('date_of_birth');
-            $table->string('house_number');
-            $table->string('purok_street');
+
+            // BINURA: $table->string('house_number');
+            // PINALITAN: Ang purok_street ay ginawa nating address para isahan na lang
+            $table->string('address');
 
             // Contact & Authentication
             $table->string('contact_number', 20)->unique();
             $table->string('email')->nullable()->unique();
             $table->string('password');
 
-            // Attachments (Uploads)
-            $table->string('id_photo_path')->nullable();
-            $table->string('selfie_photo_path')->nullable();
-
+            // 🛑 ZERO-RETENTION POLICY: Tinanggal na ang id_photo_path at selfie_photo_path
+            
             // Roles & System Flags
             $table->string('role', 20)->default('resident');
             $table->string('otp_code', 10)->nullable();
@@ -45,14 +46,27 @@ return new class extends Migration
             $table->tinyInteger('wants_email_notification')->default(1);
             $table->tinyInteger('is_verified')->default(0);
 
-            // THE LARAVEL WAY: Bagong Rejection Tracking Columns
-            $table->text('rejection_reason')->nullable();
-            $table->integer('rejection_count')->default(0);
-            $table->timestamp('rejected_at')->nullable();
+            // ==========================================
+            // 🛡️ THE LARAVEL WAY: NEW SECURITY POLICIES
+            // ==========================================
+            
+            // 1. OCR ID Scanning Trackers (Dating 'KYC')
+            $table->integer('ocr_attempts')->default(0);
+            $table->timestamp('ocr_locked_until')->nullable();
+
+            // 2. OTP Resend Anti-Spam Trackers
+            $table->integer('otp_request_count')->default(0);
+            $table->timestamp('otp_request_locked_until')->nullable();
+
+            // 3. OTP Brute-Force Trackers
+            $table->integer('otp_failed_attempts')->default(0);
+            
+            // 4. General Account Lockout (Gagamitin kapag naka-10 failed OTP or suspended)
             $table->timestamp('locked_until')->nullable();
 
-            $table->timestamp('terms_accepted_at')->nullable();
-            $table->timestamps(); // created_at, updated_at
+            // 5. Admin Account Controls
+            $table->tinyInteger('is_active')->default(1);
+            $table->tinyInteger('force_password_change')->default(0);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

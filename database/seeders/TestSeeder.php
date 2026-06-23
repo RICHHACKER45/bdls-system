@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\ServiceRequest;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class TestSeeder extends Seeder
 {
@@ -15,54 +14,71 @@ class TestSeeder extends Seeder
         $defaultPassword = Hash::make('password123');
 
         // ==========================================
-        // 1. CREATE RESIDENTS (Approved, Pending, Rejected, Suspended)
+        // 1. CREATE RESIDENTS (Approved, Pending, Suspended)
         // ==========================================
 
         // RESIDENT 1: Juan (Approved & Active)
         $juan = User::create([
             'first_name' => 'Juan', 'last_name' => 'Dela Cruz', 'sex' => 'Male',
-            'date_of_birth' => '1990-05-15', 'house_number' => '123', 'purok_street' => 'Purok 1',
+            'date_of_birth' => '1990-05-15',
+
+            // PINALITAN: Pinagsamang address
+            'address' => '123 Purok 1, Brgy. Doña Lucia',
+
             'contact_number' => '09111111111', 'email' => 'juan@test.com', 'password' => $defaultPassword,
-            'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+
+            // BINURA: selfie_photo_path
+
             'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1, 'terms_accepted_at' => now(),
         ]);
 
         // RESIDENT 2: Pedro (Approved & Walk-in User)
         $pedro = User::create([
             'first_name' => 'Pedro', 'last_name' => 'Penduko', 'sex' => 'Male',
-            'date_of_birth' => '1985-10-20', 'house_number' => '456', 'purok_street' => 'Purok 2',
+            'date_of_birth' => '1985-10-20',
+            'address' => '456 Purok 2, Brgy. Doña Lucia',
             'contact_number' => '09222222222', 'email' => 'pedro@test.com', 'password' => $defaultPassword,
-            'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
             'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1, 'terms_accepted_at' => now(),
         ]);
 
         // RESIDENT 3: Maria (Pending - Under Review)
         User::create([
             'first_name' => 'Maria', 'last_name' => 'Clara', 'sex' => 'Female',
-            'date_of_birth' => '1998-08-20', 'house_number' => '789', 'purok_street' => 'Purok 3',
+            'date_of_birth' => '1998-08-20',
+            'address' => '789 Purok 3, Brgy. Doña Lucia',
             'contact_number' => '09333333333', 'email' => 'maria@test.com', 'password' => $defaultPassword,
-            'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
             'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 0, 'terms_accepted_at' => now(),
         ]);
 
-        // RESIDENT 4: Crispin (Rejected Account - May Rason)
+        // RESIDENT 4: Crispin (Dating Rejected, Ngayon Pending na lang dahil deleted na ang rejection_reason at count)
         User::create([
             'first_name' => 'Crispin', 'last_name' => 'Basilio', 'sex' => 'Male',
-            'date_of_birth' => '2000-12-25', 'house_number' => '101', 'purok_street' => 'Purok 4',
+            'date_of_birth' => '2000-12-25',
+            'address' => '101 Purok 4, Brgy. Doña Lucia',
             'contact_number' => '09444444444', 'password' => $defaultPassword,
-            'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
-            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 0, 
-            'rejection_count' => 3, 'rejection_reason' => 'Malabo ang Valid ID. Hindi mabasa.', 'rejected_at' => now(), 'terms_accepted_at' => now(),
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 0,
+
+            // BINURA: rejection_count, rejection_reason, rejected_at
+
+            'terms_accepted_at' => now(),
         ]);
 
-        // RESIDENT 5: Lolo Tasyo (Suspended Account - No Show Penalty)
+        // RESIDENT 5: Lolo Tasyo (Suspended Account - Spam Penalty)
         User::create([
             'first_name' => 'Tasyo', 'last_name' => 'Pilosopo', 'sex' => 'Male',
-            'date_of_birth' => '1950-02-14', 'house_number' => '202', 'purok_street' => 'Purok 5',
+            'date_of_birth' => '1950-02-14',
+            'address' => '202 Purok 5, Brgy. Doña Lucia',
             'contact_number' => '09555555555', 'password' => $defaultPassword,
-            'id_photo_path' => 'verification_ids/dummy_id.jpg', 'selfie_photo_path' => 'verification_selfies/dummy_selfie.jpg',
-            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1, 
-            'locked_until' => now()->addDays(7), 'terms_accepted_at' => now(),
+            'id_photo_path' => 'verification_ids/dummy_id.jpg',
+            'role' => 'resident', 'contact_verified_at' => now(), 'is_verified' => 1,
+
+            // NAIWAN: locked_until para ma-test pa rin natin ang account suspension penalty
+            'locked_until' => now()->addDays(7),
+            'terms_accepted_at' => now(),
         ]);
 
         // ==========================================
@@ -96,11 +112,12 @@ class TestSeeder extends Seeder
                 'request_channel' => $req['channel'],
                 'queue_number' => $req['queue'],
                 'purpose' => $req['purpose'],
-                'preferred_pickup_time' => now()->addDays(2),
+
+                // BINURA: 'preferred_pickup_time' => now()->addDays(2),
+
                 'status' => $req['status'],
                 'released_at' => $req['released_at'] ?? null,
-                // Soft delete if canceled/rejected per your system design
-                'deleted_at' => in_array($req['status'], ['canceled', 'rejected']) ? now() : null, 
+                'deleted_at' => in_array($req['status'], ['canceled', 'rejected']) ? now() : null,
             ]);
         }
     }
