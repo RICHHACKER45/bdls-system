@@ -102,31 +102,42 @@ export default function Signup() {
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    const requiredMsg = 'Kailangan itong punan.';
+        const newErrors = {};
+        const requiredMsg = 'Kailangan itong punan.';
 
-    if (!data.first_name) newErrors.first_name = requiredMsg;
-    if (!data.last_name) newErrors.last_name = requiredMsg;
-    if (!data.sex) newErrors.sex = requiredMsg;
-    if (!data.dob_month || !data.dob_day || !data.dob_year) newErrors.dob_year = 'Kumpletuhin ang petsa ng kapanganakan.';
-    if (!data.address) newErrors.address = requiredMsg;
-    
-    if (!data.contact_number) newErrors.contact_number = requiredMsg;
-    else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = 'Dapat magsimula sa 09 at may 11 numero.';
-    
-    if (!data.password) newErrors.password = requiredMsg;
-    else if (data.password.length < 8) newErrors.password = 'Ang password ay dapat hindi bababa sa 8 characters.';
-    
-    if (data.password !== data.password_confirmation) newErrors.password_confirmation = 'Hindi magtugma ang password.';
+        if (!data.first_name) newErrors.first_name = requiredMsg;
+        if (!data.last_name) newErrors.last_name = requiredMsg;
+        if (!data.sex) newErrors.sex = requiredMsg;
+        if (!data.dob_month || !data.dob_day || !data.dob_year) newErrors.dob_year = 'Kumpletuhin ang petsa ng kapanganakan.';
+        if (!data.address) newErrors.address = requiredMsg;
 
-    setLocalErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      triggerToast('Paki-kumpleto ang mga required fields sa form.');
-      return false;
-    }
-    return true;
-  };
+        if (!data.contact_number) newErrors.contact_number = requiredMsg;
+        else if (!/^09\d{9}$/.test(data.contact_number)) newErrors.contact_number = 'Dapat magsimula sa 09 at may 11 numero.';
+
+        // ========================================================
+        // 🟢 THE FIX: STRICT PASSWORD REGEX SA LOOB NG SUBMIT/NEXT BUTTON
+        // ========================================================
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+        if (!data.password) {
+            newErrors.password = requiredMsg;
+        } else if (!passwordRegex.test(data.password)) {
+            // Ito ang pipigil sa kanila kapag pinindot ang Next!
+            newErrors.password = 'Sundin ang password requirements sa kahon.';
+        }
+
+        if (data.password !== data.password_confirmation) {
+            newErrors.password_confirmation = 'Hindi magtugma ang password.';
+        }
+
+        setLocalErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            triggerToast('Paki-kumpleto nang tama ang mga required fields sa form.');
+            return false;
+        }
+        return true;
+    };
 
   const goToIdScan = () => {
     if (validateForm()) setUiView(2);
@@ -203,6 +214,39 @@ export default function Signup() {
                 setData('id_photo_path', file);
             });
     }, [webcamRef, setData]);
+
+        // ==========================================
+        // 🚦 PASSWORD STRENGTH CALCULATOR 🚦
+        // ==========================================
+        const getPasswordStrength = (pass) => {
+            let score = 0;
+            if (pass.length >= 8) score += 1;
+            if (/[A-Z]/.test(pass)) score += 1;
+            if (/[a-z]/.test(pass)) score += 1;
+            if (/\d/.test(pass)) score += 1;
+            return score;
+        };
+
+        const strengthScore = getPasswordStrength(data.password);
+        let strengthLabel = "";
+        let strengthColor = "bg-slate-200";
+        let strengthTextColor = "text-slate-500";
+
+        if (data.password.length > 0) {
+            if (strengthScore <= 2) {
+                strengthLabel = "WEAK";
+                strengthColor = "bg-red-500";
+                strengthTextColor = "text-red-500";
+            } else if (strengthScore === 3) {
+                strengthLabel = "MEDIUM";
+                strengthColor = "bg-amber-500"; // Tailwind's perfect yellow-orange
+                strengthTextColor = "text-amber-500";
+            } else if (strengthScore === 4) {
+                strengthLabel = "STRONG";
+                strengthColor = "bg-green-500";
+                strengthTextColor = "text-green-500";
+            }
+        }
   
   return (
     <div className="flex min-h-screen flex-col justify-center bg-slate-50 py-10 font-sans text-slate-900 antialiased">
@@ -348,6 +392,7 @@ export default function Signup() {
                 <div className="h-px flex-1 bg-slate-200"></div>
               </div>
 
+              {/* mobile number & email address */}
               <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-slate-700">Mobile Number <span className="text-red-500">*</span></label>
@@ -359,15 +404,53 @@ export default function Signup() {
                   <input type="email" placeholder="juan@email.com" autoComplete="off" value={data.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
                   {errors.email && <p className="mt-1 text-xs font-bold text-red-500">{errors.email}</p>}
                 </div>
+
+                {/* password */}
                 <div>
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} placeholder="********" autoComplete="off" value={data.password} onChange={(e) => handleInputChange('password', e.target.value)} className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 hover:text-slate-900">
-                      {showPassword ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
-                  {(localErrors.password || errors.password) && <p className="mt-1 text-xs font-bold text-red-500">{localErrors.password || errors.password}</p>}
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                        <input type={showPassword ? 'text' : 'password'} placeholder="********" autoComplete="off" value={data.password} onChange={(e) => handleInputChange('password', e.target.value)} className={`w-full rounded-lg border px-4 py-3 pr-20 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.password || errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-3 text-xs font-bold text-slate-400 hover:text-slate-900">
+                        {showPassword ? 'HIDE' : 'SHOW'}
+                        </button>
+                    </div>
+                    {(localErrors.password || errors.password) && <p className="mt-1 text-xs font-bold text-red-500">{localErrors.password || errors.password}</p>}
+
+                    {/* 🚦 PASSWORD STRENGTH METER 🚦 */}
+                    {data.password.length > 0 && (
+                        <div className="mt-3">
+                            <div className="flex justify-between mb-1">
+                                <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Strength:</span>
+                                <span className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}>
+                                    {strengthLabel}
+                                </span>
+                            </div>
+                            {/* The 3 Segment Bars */}
+                            <div className="flex gap-1 h-1.5 w-full">
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}></div>
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}></div>
+                                <div className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 🟢 LIVE VISUAL PASSWORD TRACKER (NO SYMBOLS) 🟢 */}
+                    <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <div className="flex flex-col gap-1.5 text-[11px] font-bold">
+                            <span className={`flex items-center gap-2 transition-colors ${data.password.length >= 8 ? "text-green-600" : "text-slate-400"}`}>
+                                {data.password.length >= 8 ? "✅" : "○"} Walong (8) characters o higit pa
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/[A-Z]/.test(data.password) ? "✅" : "○"} May isang malaking letra (A-Z)
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/[a-z]/.test(data.password) ? "✅" : "○"} May isang maliit na letra (a-z)
+                            </span>
+                            <span className={`flex items-center gap-2 transition-colors ${/\d/.test(data.password) ? "text-green-600" : "text-slate-400"}`}>
+                                {/\d/.test(data.password) ? "✅" : "○"} May isang numero (0-9)
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-slate-700">Confirm Password <span className="text-red-500">*</span></label>
@@ -391,7 +474,7 @@ export default function Signup() {
           )}
 
           {/* =========================================
-              VIEW 2: ON-THE-SPOT ID SCANNER (ENTERPRISE WEBCAM)
+              VIEW 2: ON-THE-SPOT ID SCANNER (ENTERPRISE WEBCAM
               ========================================= */}
           {uiView === 2 && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
