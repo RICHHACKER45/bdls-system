@@ -24,7 +24,6 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
     }, [flash]);
 
     const adminTabs = [
-
         {
             id: 'queue',
             label: 'Queue & Processing',

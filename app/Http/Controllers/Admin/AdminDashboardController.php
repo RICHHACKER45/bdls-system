@@ -48,8 +48,6 @@ class AdminDashboardController extends Controller
             $query->latest();
         }
 
-
-
         // 5. QUEUE LOGIC: Separate Active Queue from Received History
         $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
 
@@ -79,8 +77,6 @@ class AdminDashboardController extends Controller
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
     }
-
-
 
     public function updateRequestStatus(
         Request $request,
@@ -443,4 +439,3 @@ class AdminDashboardController extends Controller
         return $pdf->stream($filename);
     }
 }
-

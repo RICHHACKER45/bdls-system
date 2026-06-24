@@ -27,7 +27,7 @@ Route::middleware(['guest'])->group(function () {
         return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
-    Route::post('/signup/validate-step', [\App\Http\Controllers\AuthController::class, 'validateStepOne'])->name('signup.validate_step');
+    Route::post('/signup/validate-step', [AuthController::class, 'validateStepOne'])->name('signup.validate_step');
 
     // ==========================================
     // SMS FORGOT PASSWORD ROUTES (3-Step Flow)
@@ -82,9 +82,6 @@ Route::middleware(['auth'])->group(function () {
             // Wala nang mahabang logic dito.
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-
-
-
             // QUEUE MANAGEMENT ROUTE
             Route::post('/request/{serviceRequest}/update-status', [
                 AdminDashboardController::class,
@@ -137,8 +134,8 @@ Route::middleware(['auth'])->group(function () {
 
             // Live KYC ID Verification Route
             Route::post('/verify-id', [
-                ServiceRequestController::class, 
-                'verifyId'
+                ServiceRequestController::class,
+                'verifyId',
             ])->name('verify_id');
 
             // BINURA: resubmit_registration route

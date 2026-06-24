@@ -32,12 +32,7 @@ export default function AdminDashboard() {
             window.Echo.channel('admin.updates').listen('AdminDashboardUpdated', (e) => {
                 // SILENT REFRESH: Kukuha ng bagong data ang Inertia nang walang screen refresh o loading UI!
                 router.reload({
-                    only: [
-                        'activeQueue',
-                        'receivedQueue',
-                        'auditLogs',
-                        'notificationLogs',
-                    ],
+                    only: ['activeQueue', 'receivedQueue', 'auditLogs', 'notificationLogs'],
                     preserveScroll: true,
                     preserveState: true, // <-- ITO ANG MAGIC: Hindi mawawala ang tinatype o nakabukas na modal ng Admin
                 });
@@ -97,12 +92,6 @@ export default function AdminDashboard() {
             },
         });
     };
-
-
-
-
-
-
 
     const announcementForm = useForm({ message_body: '' });
     const [isLinkDetected, setIsLinkDetected] = useState(false);
@@ -1363,9 +1352,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
-
-
-
 
             {/* PDF Viewers */}
             {pdfModalOpen && (

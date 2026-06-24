@@ -36,8 +36,8 @@ class AuthController extends Controller
         ]);
 
         // Check for duplicate Name + Date of Birth combination
-        $dob = $request->dob_year . '-' . str_pad($request->dob_month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($request->dob_day, 2, '0', STR_PAD_LEFT);
-        $duplicateResident = \App\Models\User::where('first_name', $request->first_name)
+        $dob = $request->dob_year.'-'.str_pad($request->dob_month, 2, '0', STR_PAD_LEFT).'-'.str_pad($request->dob_day, 2, '0', STR_PAD_LEFT);
+        $duplicateResident = User::where('first_name', $request->first_name)
             ->where('last_name', $request->last_name)
             ->where('date_of_birth', $dob)
             ->exists();
@@ -47,8 +47,8 @@ class AuthController extends Controller
                 'message' => 'The given data was invalid.',
                 'errors' => [
                     'first_name' => ['Ang pangalan at kapanganakan na ito ay rehistrado na.'],
-                    'last_name' => ['Ang pangalan at kapanganakan na ito ay rehistrado na.']
-                ]
+                    'last_name' => ['Ang pangalan at kapanganakan na ito ay rehistrado na.'],
+                ],
             ], 422);
         }
 
@@ -80,107 +80,107 @@ class AuthController extends Controller
 
         if ($request->input('simulate_error') == true || $request->input('simulate_error') === 'true') {
             $isAutoApproved = false;
-            $ocrErrorMessage = "DEV MODE: Simulated OCR Failure.";
+            $ocrErrorMessage = 'DEV MODE: Simulated OCR Failure.';
             $currentAttempt = 5; // Force it to 5 to skip the bounce-back and trigger lockout
-            \Illuminate\Support\Facades\Log::info("DEV MODE: Forced error simulation triggered.");
+            Log::info('DEV MODE: Forced error simulation triggered.');
         } elseif (env('OCR_DRIVER', 'live') === 'mock') {
             $isAutoApproved = true;
-            \Illuminate\Support\Facades\Log::info("DEV MODE: Bypassed Google Vision API. Auto-approved para makatipid sa credits.");
+            Log::info('DEV MODE: Bypassed Google Vision API. Auto-approved para makatipid sa credits.');
         } else {
             try {
-            // SCALABILITY FIX: Kinukuha lahat sa .env ang mga mahahalagang config!
-            $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
-            $credentialsPath = storage_path($envPath);
-            $apiUrl = env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate');
+                // SCALABILITY FIX: Kinukuha lahat sa .env ang mga mahahalagang config!
+                $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
+                $credentialsPath = storage_path($envPath);
+                $apiUrl = env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate');
 
-            // BAGONG FIX: Dynamic Auth Scope mula sa .env!
-            $authScope = env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform');
+                // BAGONG FIX: Dynamic Auth Scope mula sa .env!
+                $authScope = env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform');
 
-            if (file_exists($credentialsPath)) {
+                if (file_exists($credentialsPath)) {
 
-                // 1. Kumuha ng Auth Token gamit ang dynamic scope
-                $credentials = new ServiceAccountCredentials(
-                    [$authScope], // <-- Hindi na ito hardcoded!
-                    $credentialsPath
-                );
-                $token = $credentials->fetchAuthToken();
-                $accessToken = $token['access_token'];
+                    // 1. Kumuha ng Auth Token gamit ang dynamic scope
+                    $credentials = new ServiceAccountCredentials(
+                        [$authScope], // <-- Hindi na ito hardcoded!
+                        $credentialsPath
+                    );
+                    $token = $credentials->fetchAuthToken();
+                    $accessToken = $token['access_token'];
 
-                // 2. I-convert ang Image to BASE64
-                $base64Image = base64_encode(file_get_contents($fullImagePath));
+                    // 2. I-convert ang Image to BASE64
+                    $base64Image = base64_encode(file_get_contents($fullImagePath));
 
-                // 3. I-send ang POST Request gamit ang dynamic URL mula sa .env
-                $response = Http::withToken($accessToken)
-                    ->timeout(20)
-                    ->post($apiUrl, [
-                        'requests' => [
-                            [
-                                'image' => [
-                                    'content' => $base64Image,
-                                ],
-                                'features' => [
-                                    [
-                                        'type' => 'DOCUMENT_TEXT_DETECTION',
+                    // 3. I-send ang POST Request gamit ang dynamic URL mula sa .env
+                    $response = Http::withToken($accessToken)
+                        ->timeout(20)
+                        ->post($apiUrl, [
+                            'requests' => [
+                                [
+                                    'image' => [
+                                        'content' => $base64Image,
+                                    ],
+                                    'features' => [
+                                        [
+                                            'type' => 'DOCUMENT_TEXT_DETECTION',
+                                        ],
                                     ],
                                 ],
                             ],
-                        ],
-                    ]);
+                        ]);
 
-                // 4. "THE LARAVEL WAY" ERROR HANDLING
-                if ($response->successful()) {
-                    // CODE 200: SUCCESSFUL REQUEST
-                    $visionResult = $response->json();
+                    // 4. "THE LARAVEL WAY" ERROR HANDLING
+                    if ($response->successful()) {
+                        // CODE 200: SUCCESSFUL REQUEST
+                        $visionResult = $response->json();
 
-                    // Ligtas na pagkuha sa array gamit ang data_get
-                    $scannedText = data_get($visionResult, 'responses.0.textAnnotations.0.description');
+                        // Ligtas na pagkuha sa array gamit ang data_get
+                        $scannedText = data_get($visionResult, 'responses.0.textAnnotations.0.description');
 
-                    if (! empty($scannedText)) {
-                        $scannedText = strtoupper($scannedText);
-                        $firstName = strtoupper($validatedData['first_name']);
-                        $lastName = strtoupper($validatedData['last_name']);
+                        if (! empty($scannedText)) {
+                            $scannedText = strtoupper($scannedText);
+                            $firstName = strtoupper($validatedData['first_name']);
+                            $lastName = strtoupper($validatedData['last_name']);
 
-                        // TINGNAN KUNG NASA ID ANG PANGALAN
-                        if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
+                            // TINGNAN KUNG NASA ID ANG PANGALAN
+                            if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
 
-                            // TINGNAN KUNG NASA CENSUS
-                            $inCensus = DB::table('census_records')
-                                ->where('first_name', $validatedData['first_name'])
-                                ->where('last_name', $validatedData['last_name'])
-                                ->where('is_alive', 1)
-                                ->exists();
+                                // TINGNAN KUNG NASA CENSUS
+                                $inCensus = DB::table('census_records')
+                                    ->where('first_name', $validatedData['first_name'])
+                                    ->where('last_name', $validatedData['last_name'])
+                                    ->where('is_alive', 1)
+                                    ->exists();
 
-                            if ($inCensus) {
-                                $isAutoApproved = true;
-                                Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                                if ($inCensus) {
+                                    $isAutoApproved = true;
+                                    Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                                } else {
+                                    $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Census.';
+                                    Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                                }
                             } else {
-                                $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Census.';
-                                Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                                $ocrErrorMessage = 'Hindi malinaw ang pangalan sa ID.';
+                                Log::warning('OCR: Hindi nakita ang pangalan sa ID. Nakita: '.$scannedText);
                             }
                         } else {
-                            $ocrErrorMessage = 'Hindi malinaw ang pangalan sa ID.';
-                            Log::warning('OCR: Hindi nakita ang pangalan sa ID. Nakita: '.$scannedText);
+                            $ocrErrorMessage = 'Walang nabasang text sa ID. Masyadong malabo.';
+                            Log::warning('OCR: Walang text na nakuha. Resulta: '.json_encode($visionResult));
                         }
-                    } else {
-                        $ocrErrorMessage = 'Walang nabasang text sa ID. Masyadong malabo.';
-                        Log::warning('OCR: Walang text na nakuha. Resulta: '.json_encode($visionResult));
                     }
-                }
-                // ADVANCED ERROR DETECTORS NI LARAVEL
-                elseif ($response->clientError()) {
-                    // 4xx Errors (Halimbawa: 400 Bad Request, 401 Unauthorized, 403 Quota Exceeded)
-                    Log::error("OCR Client Error (HTTP {$response->status()}): May mali sa data o expired ang credentials. Detalye: ".$response->body());
-                } elseif ($response->serverError()) {
-                    // 5xx Errors (Halimbawa: 500 Internal Server Error - Down ang Google)
-                    Log::error("OCR Server Error (HTTP {$response->status()}): Nag-crash ang servers ng Google. Detalye: ".$response->body());
-                } else {
-                    // Iba pang kakaibang HTTP Errors
-                    Log::error("OCR Unknown Error (HTTP {$response->status()}): ".$response->body());
-                }
+                    // ADVANCED ERROR DETECTORS NI LARAVEL
+                    elseif ($response->clientError()) {
+                        // 4xx Errors (Halimbawa: 400 Bad Request, 401 Unauthorized, 403 Quota Exceeded)
+                        Log::error("OCR Client Error (HTTP {$response->status()}): May mali sa data o expired ang credentials. Detalye: ".$response->body());
+                    } elseif ($response->serverError()) {
+                        // 5xx Errors (Halimbawa: 500 Internal Server Error - Down ang Google)
+                        Log::error("OCR Server Error (HTTP {$response->status()}): Nag-crash ang servers ng Google. Detalye: ".$response->body());
+                    } else {
+                        // Iba pang kakaibang HTTP Errors
+                        Log::error("OCR Unknown Error (HTTP {$response->status()}): ".$response->body());
+                    }
 
-            } else {
-                Log::error('OCR Error: Hindi mahanap ang credentials file sa '.$credentialsPath);
-            }
+                } else {
+                    Log::error('OCR Error: Hindi mahanap ang credentials file sa '.$credentialsPath);
+                }
             } catch (\Exception $e) {
                 Log::error('OCR KYC Exception: '.$e->getMessage());
             }

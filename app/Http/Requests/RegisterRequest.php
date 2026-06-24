@@ -34,7 +34,7 @@ class RegisterRequest extends FormRequest
                 ->mixedCase()
                 ->letters()
                 ->numbers()
-                ->symbols(), 
+                ->symbols(),
             ],
 
             'id_photo_path' => 'required|image|mimes:jpeg,png,jpg|max:5120',
