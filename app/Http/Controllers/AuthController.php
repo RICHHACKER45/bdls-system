@@ -48,7 +48,11 @@ class AuthController extends Controller
         $ocrErrorMessage = 'Hindi mabasa nang malinaw ang ID.';
         $currentAttempt = $request->input('ocr_attempt', 1);
 
-        try {
+        if (env('OCR_DRIVER', 'live') === 'mock') {
+            $isAutoApproved = true;
+            \Illuminate\Support\Facades\Log::info("DEV MODE: Bypassed Google Vision API. Auto-approved para makatipid sa credits.");
+        } else {
+            try {
             // SCALABILITY FIX: Kinukuha lahat sa .env ang mga mahahalagang config!
             $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
             $credentialsPath = storage_path($envPath);
@@ -142,8 +146,9 @@ class AuthController extends Controller
             } else {
                 Log::error('OCR Error: Hindi mahanap ang credentials file sa '.$credentialsPath);
             }
-        } catch (\Exception $e) {
-            Log::error('OCR KYC Exception: '.$e->getMessage());
+            } catch (\Exception $e) {
+                Log::error('OCR KYC Exception: '.$e->getMessage());
+            }
         }
         // ========================================================
 

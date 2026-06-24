@@ -800,6 +800,23 @@ export default function Signup() {
                             </div>
 
                             <div className="mb-8">
+                                {/* DEV MODE BYPASS */}
+                                {!isScanning && !previewImage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const dummyFile = new File(["dummy content"], "mock_id.jpg", { type: "image/jpeg" });
+                                            setData('id_photo_path', dummyFile);
+                                            setPreviewImage("https://via.placeholder.com/400x250.png?text=MOCK+ID+BYPASS");
+                                            setIsScanning(false);
+                                            triggerToast("Dev Mode: Simulated ID Capture!");
+                                        }}
+                                        className="mb-4 w-full rounded-xl bg-purple-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 active:scale-95"
+                                    >
+                                        🛠️ DEV MODE: Bypass Camera & Scanner
+                                    </button>
+                                )}
+
                                 {/* BUTTON PARA BUKSAN ANG CAMERA */}
                                 {!isScanning && !previewImage && (
                                     <button
