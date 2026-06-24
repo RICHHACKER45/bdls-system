@@ -27,6 +27,7 @@ Route::middleware(['guest'])->group(function () {
         return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
+    Route::post('/signup/validate-step', [\App\Http\Controllers\AuthController::class, 'validateStepOne'])->name('signup.validate_step');
 
     // ==========================================
     // SMS FORGOT PASSWORD ROUTES (3-Step Flow)
@@ -91,7 +92,7 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'approveAccount',
             ])->name('approve_account');
-            
+
             // BINURA: reject_account at suspend_account routes
 
             Route::delete('/account/{user}', [
@@ -105,11 +106,11 @@ Route::middleware(['auth'])->group(function () {
                 'updateRequestStatus',
             ])->name('request.update_status');
             // // AJAX Polling para sa Live Queue
-            ////Route::get('/api/queue-count', [
-            ////     AdminDashboardController::class,
-            ////     'checkQueueCount',
-            //// ])->name('api.queue_count');
-            //// WALK-IN MODULE ROUTES
+            // //Route::get('/api/queue-count', [
+            // //     AdminDashboardController::class,
+            // //     'checkQueueCount',
+            // // ])->name('api.queue_count');
+            // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
                 'searchWalkinAccount',
@@ -153,6 +154,12 @@ Route::middleware(['auth'])->group(function () {
                 'checkVerificationStatus',
             ])->name('api.status');
 
+            // Live KYC ID Verification Route
+            Route::post('/verify-id', [
+                ServiceRequestController::class, 
+                'verifyId'
+            ])->name('verify_id');
+
             // BINURA: resubmit_registration route
             // Email & Notification Preferences
             Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');
@@ -179,5 +186,3 @@ Route::middleware(['auth'])->group(function () {
             ])->name('request.cancel');
         });
 });
-
- 
