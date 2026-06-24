@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, Head, useForm } from '@inertiajs/react';
 import Webcam from 'react-webcam';
+import axios from 'axios';
 
 export default function Signup() {
     // UI States: 1 = Form, 2 = ID Scan, 3 = Terms & Submission
     const [uiView, setUiView] = useState(1);
+    const [isValidating, setIsValidating] = useState(false);
     const [previews, setPreviews] = useState({ id: null });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -143,8 +145,30 @@ export default function Signup() {
         return true;
     };
 
-    const goToIdScan = () => {
-        if (validateForm()) setUiView(2);
+    const goToIdScan = async () => {
+        if (validateForm()) {
+            setIsValidating(true);
+            try {
+                await axios.post(route('signup.validate_step'), data, {
+                    headers: { Accept: 'application/json' }
+                });
+                setIsValidating(false);
+                setUiView(2);
+            } catch (error) {
+                setIsValidating(false);
+                if (error.response && error.response.status === 422) {
+                    const backendErrors = error.response.data.errors;
+                    const formattedErrors = {};
+                    for (const key in backendErrors) {
+                        formattedErrors[key] = backendErrors[key][0];
+                    }
+                    setLocalErrors((prev) => ({ ...prev, ...formattedErrors }));
+                    triggerToast('Taken na ang detalye na ito. Paki-check ang mga pulang kahon.');
+                } else {
+                    triggerToast('May nangyaring error sa server. Subukan muli.');
+                }
+            }
+        }
     };
 
     const goToTerms = () => {
@@ -267,7 +291,7 @@ export default function Signup() {
             <Head title="Mag-Signup - Barangay Doña Lucia" />
 
             {/* Global Toast */}
-            <div className="pointer-events-none fixed top-6 left-1/2 z-1 flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
+            <div className="pointer-events-none fixed top-6 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
                     className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
                 >
@@ -778,9 +802,10 @@ export default function Signup() {
                                 <button
                                     type="button"
                                     onClick={goToIdScan}
-                                    className="w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95"
+                                    disabled={isValidating}
+                                    className={`w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 ${isValidating ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    Next: I-Scan ang ID
+                                    {isValidating ? 'Checking...' : 'Next: I-Scan ang ID'}
                                 </button>
                             </div>
                         </div>

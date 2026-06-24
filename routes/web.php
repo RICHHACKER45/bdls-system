@@ -27,6 +27,7 @@ Route::middleware(['guest'])->group(function () {
         return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
+    Route::post('/signup/validate-step', [\App\Http\Controllers\AuthController::class, 'validateStepOne'])->name('signup.validate_step');
 
     // ==========================================
     // SMS FORGOT PASSWORD ROUTES (3-Step Flow)

@@ -25,6 +25,36 @@ class AuthController extends Controller
         $this->smsService = $smsService;
     }
 
+    public function validateStepOne(Request $request)
+    {
+        $request->validate([
+            'contact_number' => 'required|string|unique:users,contact_number',
+            'email' => 'nullable|email|unique:users,email',
+        ], [
+            'contact_number.unique' => 'Ang numero na ito ay ginagamit na ng ibang account.',
+            'email.unique' => 'Ang email na ito ay ginagamit na ng ibang account.',
+        ]);
+
+        // Check for duplicate Name + Date of Birth combination
+        $dob = $request->dob_year . '-' . str_pad($request->dob_month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($request->dob_day, 2, '0', STR_PAD_LEFT);
+        $duplicateResident = \App\Models\User::where('first_name', $request->first_name)
+            ->where('last_name', $request->last_name)
+            ->where('date_of_birth', $dob)
+            ->exists();
+
+        if ($duplicateResident) {
+            return response()->json([
+                'message' => 'The given data was invalid.',
+                'errors' => [
+                    'first_name' => ['Ang pangalan at kapanganakan na ito ay rehistrado na.'],
+                    'last_name' => ['Ang pangalan at kapanganakan na ito ay rehistrado na.']
+                ]
+            ], 422);
+        }
+
+        return response()->json(['message' => 'Valid']);
+    }
+
     public function register(RegisterRequest $request)
     {
         // STEP 1: Get validated data
