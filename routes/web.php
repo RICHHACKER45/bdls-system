@@ -153,6 +153,12 @@ Route::middleware(['auth'])->group(function () {
                 'checkVerificationStatus',
             ])->name('api.status');
 
+            // Live KYC ID Verification Route
+            Route::post('/verify-id', [
+                ServiceRequestController::class, 
+                'verifyId'
+            ])->name('verify_id');
+
             // BINURA: resubmit_registration route
             // Email & Notification Preferences
             Route::post('/email/send-otp', [ProfileController::class, 'sendEmailOtp'])->name('email.send');

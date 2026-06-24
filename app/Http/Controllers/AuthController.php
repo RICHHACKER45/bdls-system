@@ -48,7 +48,12 @@ class AuthController extends Controller
         $ocrErrorMessage = 'Hindi mabasa nang malinaw ang ID.';
         $currentAttempt = $request->input('ocr_attempt', 1);
 
-        if (env('OCR_DRIVER', 'live') === 'mock') {
+        if ($request->input('simulate_error') == true || $request->input('simulate_error') === 'true') {
+            $isAutoApproved = false;
+            $ocrErrorMessage = "DEV MODE: Simulated OCR Failure.";
+            $currentAttempt = 5; // Force it to 5 to skip the bounce-back and trigger lockout
+            \Illuminate\Support\Facades\Log::info("DEV MODE: Forced error simulation triggered.");
+        } elseif (env('OCR_DRIVER', 'live') === 'mock') {
             $isAutoApproved = true;
             \Illuminate\Support\Facades\Log::info("DEV MODE: Bypassed Google Vision API. Auto-approved para makatipid sa credits.");
         } else {

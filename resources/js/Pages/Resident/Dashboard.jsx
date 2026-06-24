@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import Webcam from 'react-webcam';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 // ==========================================
@@ -288,6 +289,27 @@ export default function Dashboard() {
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isLiveKycModalOpen, setIsLiveKycModalOpen] = useState(false);
     const [settingsModal, setSettingsModal] = useState(null); // 'changeContact', 'verifyContact', 'changeEmail', 'verifyEmail'
+
+    // ==========================================
+    // 📸 LIVE ID SCANNER LOGIC
+    // ==========================================
+    const webcamRef = useRef(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
+    const kycForm = useForm({ id_photo_path: null });
+
+    const captureId = useCallback(() => {
+        const imageSrc = webcamRef.current.getScreenshot();
+        setPreviewImage(imageSrc);
+        setIsScanning(false);
+
+        fetch(imageSrc)
+            .then((res) => res.blob())
+            .then((blob) => {
+                const file = new File([blob], 'live_id_capture.jpg', { type: 'image/jpeg' });
+                kycForm.setData('id_photo_path', file);
+            });
+    }, [webcamRef, kycForm]);
 
     // Timers for OTP Resend
     const [contactTimer, setContactTimer] = useState(0);
@@ -1601,12 +1623,96 @@ export default function Dashboard() {
                         <h3 className="mb-4 text-xl font-black uppercase text-slate-900">
                             Live Camera Scanner
                         </h3>
-                        <p className="mb-6 text-sm text-slate-500">
-                            Ilalagay natin dito ang React Webcam sa susunod na phase!
-                        </p>
+                        
+                        {!isScanning && !previewImage && (
+                            <div className="mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsScanning(true)}
+                                    className="w-full rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 py-12 text-center font-bold text-slate-500 transition-all hover:bg-slate-100 active:scale-95"
+                                >
+                                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-200 text-slate-500">
+                                        <svg
+                                            className="h-10 w-10"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                                            ></path>
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    Buksan ang Live Scanner
+                                </button>
+                            </div>
+                        )}
+
+                        {isScanning && (
+                            <div className="mb-6 relative overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
+                                <Webcam
+                                    audio={false}
+                                    ref={webcamRef}
+                                    screenshotFormat="image/jpeg"
+                                    videoConstraints={{ facingMode: 'environment' }}
+                                    className="w-full object-cover opacity-80"
+                                />
+                                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                    <div className="h-3/5 w-4/5 rounded-xl border-2 border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
+                                </div>
+                                <button
+                                    onClick={captureId}
+                                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-6 py-3 font-black uppercase text-slate-900 shadow-xl transition-all hover:bg-slate-200 active:scale-95"
+                                >
+                                    📸 Capture
+                                </button>
+                            </div>
+                        )}
+
+                        {previewImage && (
+                            <div className="mb-6">
+                                <div className="relative overflow-hidden rounded-2xl border-2 border-slate-800 shadow-xl">
+                                    <img src={previewImage} alt="Captured ID" className="w-full object-cover" />
+                                </div>
+                                <div className="mt-4 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPreviewImage(null);
+                                            setIsScanning(true);
+                                        }}
+                                        className="flex-1 rounded-xl bg-slate-200 py-3 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                                    >
+                                        Ulitin ang Pag-scan
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={kycForm.processing}
+                                        onClick={() => kycForm.post(route('resident.verify_id'))}
+                                        className="flex-1 rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {kycForm.processing ? 'Sino-submit...' : 'I-submit ang ID'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <button
-                            onClick={() => setIsLiveKycModalOpen(false)}
-                            className="rounded-xl bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                            onClick={() => {
+                                setIsLiveKycModalOpen(false);
+                                setIsScanning(false);
+                                setPreviewImage(null);
+                            }}
+                            className="w-full rounded-xl bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
                         >
                             Isara muna
                         </button>

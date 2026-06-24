@@ -40,6 +40,7 @@ export default function Signup() {
         id_photo_path: null,
         terms: false,
         ocr_attempt: 1, // 🛡️ BAGONG TRACKER PARA SA 5 ATTEMPTS
+        simulate_error: false,
     });
 
     const loadingMessages = [
@@ -814,6 +815,23 @@ export default function Signup() {
                                         className="mb-4 w-full rounded-xl bg-purple-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 active:scale-95"
                                     >
                                         🛠️ DEV MODE: Bypass Camera & Scanner
+                                    </button>
+                                )}
+
+                                {/* DEV MODE FORCED ERROR */}
+                                {!isScanning && !previewImage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const errorFile = new File(["dummy"], "error.jpg", { type: "image/jpeg" });
+                                            setData(data => ({ ...data, id_photo_path: errorFile, simulate_error: true, ocr_attempt: 5 }));
+                                            setPreviewImage("https://via.placeholder.com/400x250.png?text=FORCED+ERROR");
+                                            setIsScanning(false);
+                                            triggerToast("Dev Mode: Simulated Error Active. Proceed to Terms.");
+                                        }}
+                                        className="mb-4 w-full rounded-xl bg-red-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
+                                    >
+                                        🚨 DEV MODE: Force Failed Scan (Test Lockout)
                                     </button>
                                 )}
 
