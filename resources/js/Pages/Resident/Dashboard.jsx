@@ -531,10 +531,10 @@ export default function Dashboard() {
                                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                                         ></path>
                                     </svg>
-                                    Verification Temporarily Locked
+                                    Pansamantalang Naka-lock ang Verification
                                 </div>
                                 <p className="mb-4 text-sm text-red-700">
-                                    You have used all 5 attempts. You must wait until {new Date(auth.user.ocr_locked_until).toLocaleString()}.
+                                    Nagamit mo na ang lahat ng 5 subok. Kailangan mong maghintay hanggang {new Date(auth.user.ocr_locked_until).toLocaleString()}.
                                 </p>
                             </div>
                         ) : (
@@ -553,10 +553,10 @@ export default function Dashboard() {
                                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                                         ></path>
                                     </svg>
-                                    Unverified Account
+                                    Hindi pa Verified ang Account
                                 </div>
                                 <p className="mb-4 text-sm text-amber-700">
-                                    Your account needs verification. You have {5 - (auth?.user?.ocr_attempts || 0)} attempts remaining.
+                                    Kailangan mong i-verify ang iyong account. Mayroon ka na lamang {5 - (auth?.user?.ocr_attempts || 0)} na subok na natitira.
                                 </p>
                                 <button
                                     type="button"
@@ -1602,13 +1602,13 @@ export default function Dashboard() {
                             Live Camera Scanner
                         </h3>
                         <p className="mb-6 text-sm text-slate-500">
-                            (Scanner functionality will be implemented here)
+                            Ilalagay natin dito ang React Webcam sa susunod na phase!
                         </p>
                         <button
                             onClick={() => setIsLiveKycModalOpen(false)}
                             className="rounded-xl bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
                         >
-                            Close
+                            Isara muna
                         </button>
                     </div>
                 </div>
