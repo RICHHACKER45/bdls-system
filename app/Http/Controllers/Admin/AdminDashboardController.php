@@ -48,10 +48,7 @@ class AdminDashboardController extends Controller
             $query->latest();
         }
 
-        // 4. THE LARAVEL WAY: DB-Level Filtering (Iwas Memory Exhaustion)
-        $pendingAccounts = (clone $query)->pending()->paginate(10, ['*'], 'pending_page');
-        $approvedAccounts = (clone $query)->approved()->paginate(10, ['*'], 'approved_page');
-        $rejectedAccounts = (clone $query)->rejected()->paginate(10, ['*'], 'rejected_page');
+
 
         // 5. QUEUE LOGIC: Separate Active Queue from Received History
         $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
@@ -73,9 +70,7 @@ class AdminDashboardController extends Controller
 
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
-            'pendingAccounts' => $pendingAccounts,
-            'approvedAccounts' => $approvedAccounts,
-            'rejectedAccounts' => $rejectedAccounts,
+
             'activeQueue' => $activeQueue,
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
@@ -85,53 +80,7 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function approveAccount(User $user, SmsService $smsService)
-    {
-        $user->update([
-            'is_verified' => true,
-            'rejection_count' => 0,
-            'rejection_reason' => null,
-            'rejected_at' => null,
-            'locked_until' => null,
-        ]);
 
-        $message = 'Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
-        $smsService->sendSms($user->id, $user->contact_number, $message);
-
-        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_APPROVAL',
-            'description' => "Inaprubahan ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
-        ]);
-
-        // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
-        event(new ResidentRequestUpdated($user->id, 'Account Approved'));
-        event(new AdminDashboardUpdated);
-
-        return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
-    }
-
-    /**
-     * TASK 1: Admin Delete Functionality (Secured with Audit Trail)
-     */
-    public function destroyAccount(User $user)
-    {
-        // 1. THE LARAVEL WAY: I-record muna sa CCTV bago burahin ang ebidensya
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_DELETION',
-            'description' => "Permanenteng binura ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
-        ]);
-
-        // 2. I-execute ang deletion (Magka-cascade ito sa service_requests)
-        $user->delete();
-
-        // 3. Ibalik sa UI
-        return back()
-            ->with('active_tab', 'pending')
-            ->with('success_message', 'Resident account deleted permanently.');
-    }
 
     public function updateRequestStatus(
         Request $request,

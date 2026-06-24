@@ -83,18 +83,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
 
-            // THE LARAVEL WAY: Route Model Binding para sa Approve at Reject
-            Route::post('/account/{user}/approve', [
-                AdminDashboardController::class,
-                'approveAccount',
-            ])->name('approve_account');
 
-            // BINURA: reject_account at suspend_account routes
-
-            Route::delete('/account/{user}', [
-                AdminDashboardController::class,
-                'destroyAccount',
-            ])->name('delete_account');
 
             // QUEUE MANAGEMENT ROUTE
             Route::post('/request/{serviceRequest}/update-status', [

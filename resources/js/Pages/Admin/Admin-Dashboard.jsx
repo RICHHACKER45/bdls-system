@@ -33,9 +33,6 @@ export default function AdminDashboard() {
                 // SILENT REFRESH: Kukuha ng bagong data ang Inertia nang walang screen refresh o loading UI!
                 router.reload({
                     only: [
-                        'pendingAccounts',
-                        'approvedAccounts',
-
                         'activeQueue',
                         'receivedQueue',
                         'auditLogs',
@@ -53,9 +50,6 @@ export default function AdminDashboard() {
         };
     }, []);
     const {
-        pendingAccounts = { data: [], links: [] },
-        approvedAccounts = { data: [], links: [] },
-
         activeQueue = { data: [], links: [] },
         receivedQueue = { data: [], links: [] },
         documents = [],
@@ -66,13 +60,9 @@ export default function AdminDashboard() {
         errors = {},
     } = usePage().props;
 
-    const [activeTab, setActiveTab] = useState('pending');
-    const [pendingSubTab, setPendingSubTab] = useState('sub-pending');
+    const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
     const [auditSubTab, setAuditSubTab] = useState('sub-audit-trail');
-
-    const [imageModal, setImageModal] = useState({ isOpen: false, src: '', title: '' });
-    const [deleteModal, setDeleteModal] = useState({ isOpen: false, userId: null });
 
     const [statusModal, setStatusModal] = useState({
         isOpen: false,
@@ -110,14 +100,7 @@ export default function AdminDashboard() {
 
 
 
-    const deleteForm = useForm({});
-    const submitDelete = (e) => {
-        e.preventDefault();
-        deleteForm.delete(route('admin.delete_account', deleteModal.userId), {
-            preserveScroll: true,
-            onSuccess: () => setDeleteModal({ isOpen: false, userId: null }),
-        });
-    };
+
 
 
 
@@ -269,294 +252,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* --- TAB 1: PENDING REGISTRATIONS --- */}
-            {activeTab === 'pending' && (
-                <div className="animate-in fade-in duration-500">
-                    <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <form
-                            onSubmit={handleSearchSort}
-                            className="flex w-full min-w-0 flex-wrap gap-2"
-                        >
-                            <input
-                                type="text"
-                                name="search"
-                                defaultValue={searchParam}
-                                placeholder="Maghanap ng pangalan o number..."
-                                className="min-w-[200px] flex-1 rounded-lg border border-slate-300 px-4 py-2 outline-none focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                            />
-                            <select
-                                name="sort"
-                                defaultValue={sortParam}
-                                onChange={(e) =>
-                                    e.target.form.dispatchEvent(
-                                        new Event('submit', { cancelable: true })
-                                    )
-                                }
-                                className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 focus:outline-none"
-                            >
-                                <option value="latest">Pinakabago</option>
-                                <option value="oldest">Pinakaluma</option>
-                            </select>
-                            <button
-                                type="submit"
-                                className="shrink-0 rounded-lg bg-slate-900 px-6 py-2 font-bold text-white transition-all hover:bg-slate-800 active:scale-95"
-                            >
-                                Search
-                            </button>
-                        </form>
-                    </div>
-
-                    <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-                        <button
-                            onClick={() => setPendingSubTab('sub-pending')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-pending' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                        >
-                            Under Review ({pendingAccounts.data?.length || 0})
-                        </button>
-                        <button
-                            onClick={() => setPendingSubTab('sub-approved')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-approved' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                        >
-                            Approved ({approvedAccounts.data?.length || 0})
-                        </button>
-
-                    </div>
-
-                    {pendingSubTab === 'sub-pending' && (
-                        <div>
-                            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                                {pendingAccounts.data && pendingAccounts.data.length > 0 ? (
-                                    pendingAccounts.data.map((user) => (
-                                        <div
-                                            key={user.id}
-                                            className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md sm:flex-row"
-                                        >
-                                            <div className="flex shrink-0 gap-2 sm:flex-col">
-                                                <div className="group relative">
-                                                    <img
-                                                        src={route('secure.file', {
-                                                            filepath: user.id_photo_path,
-                                                        })}
-                                                        className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24"
-                                                        onClick={() =>
-                                                            setImageModal({
-                                                                isOpen: true,
-                                                                src: route('secure.file', {
-                                                                    filepath: user.id_photo_path,
-                                                                }),
-                                                                title: 'Valid ID',
-                                                            })
-                                                        }
-                                                    />
-                                                    <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">
-                                                        ID
-                                                    </span>
-                                                </div>
-
-                                            </div>
-                                            <div className="flex flex-1 flex-col justify-between">
-                                                <div>
-                                                    <h3 className="mb-1 text-xl leading-tight font-black tracking-tight text-slate-900 uppercase">
-                                                        {user.last_name}, {user.first_name},{' '}
-                                                        {user.middle_name}, {user.suffix}
-                                                    </h3>
-                                                    <p className="mb-3 flex flex-wrap gap-x-2 gap-y-1 text-[11px] font-bold tracking-widest text-slate-500 uppercase">
-                                                        <span>{user.sex}</span>
-                                                        <span className="text-slate-300">|</span>
-                                                        <span>{user.age} YRS OLD</span>
-                                                        <span className="text-slate-300">|</span>
-                                                        <span>
-                                                            DOB:{' '}
-                                                            {new Date(
-                                                                user.date_of_birth
-                                                            ).toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: '2-digit',
-                                                                year: 'numeric',
-                                                            })}
-                                                        </span>
-                                                        <span className="text-slate-300">|</span>
-                                                        <span className="font-mono text-slate-900">
-                                                            {user.contact_number}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Link
-                                                        href={route(
-                                                            'admin.approve_account',
-                                                            user.id
-                                                        )}
-                                                        method="post"
-                                                        as="button"
-                                                        preserveScroll
-                                                        className="w-full rounded-lg bg-slate-900 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-                                                    >
-                                                        Approve
-                                                    </Link>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">
-                                        Walang pending registrations.
-                                    </p>
-                                )}
-                            </div>
-                            <Pagination links={pendingAccounts.links} />
-                        </div>
-                    )}
-
-                    {pendingSubTab === 'sub-approved' && (
-                        <div>
-                            <div className="space-y-3">
-                                {approvedAccounts.data && approvedAccounts.data.length > 0 ? (
-                                    approvedAccounts.data.map((user) => (
-                                        <details
-                                            key={user.id}
-                                            className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
-                                        >
-                                            <summary className="flex cursor-pointer list-none items-center justify-between p-4 transition-all hover:bg-slate-50">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                                    <span className="text-sm font-black text-slate-900 uppercase">
-                                                        {user.last_name}, {user.first_name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                                                        {user.contact_number}
-                                                    </span>
-                                                    <svg
-                                                        className="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M19 9l-7 7-7-7"
-                                                        ></path>
-                                                    </svg>
-                                                </div>
-                                            </summary>
-                                            <div className="grid grid-cols-1 gap-6 border-t border-slate-50 bg-slate-50/30 p-5 text-xs md:grid-cols-2 lg:grid-cols-3">
-                                                <div>
-                                                    <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">
-                                                        Contact Details
-                                                    </p>
-                                                    <p className="font-bold text-slate-900">
-                                                        {user.contact_number}
-                                                    </p>
-                                                    <p className="font-medium text-slate-500">
-                                                        {user.email || 'Walang email na nilagay.'}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">
-                                                        Personal Info
-                                                    </p>
-                                                    <p className="font-bold text-slate-900 uppercase">
-                                                        {user.sex} | {user.age} YRS OLD
-                                                    </p>
-                                                    <p className="font-medium text-slate-500 italic">
-                                                        DOB:{' '}
-                                                        {new Date(
-                                                            user.date_of_birth
-                                                        ).toLocaleDateString('en-US', {
-                                                            month: 'short',
-                                                            day: '2-digit',
-                                                            year: 'numeric',
-                                                        })}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="mb-1 font-black tracking-widest text-slate-400 uppercase">
-                                                        Address
-                                                    </p>
-                                                    <p className="font-bold text-slate-900 uppercase">
-                                                        {user.house_number} {user.purok_street}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center justify-between border-t border-slate-100 pt-2 lg:col-span-3">
-                                                    <p className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                                                        Terms Accepted:{' '}
-                                                        {user.terms_accepted_at
-                                                            ? new Date(
-                                                                  user.terms_accepted_at
-                                                              ).toLocaleString()
-                                                            : 'N/A'}
-                                                    </p>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex gap-2">
-                                                            <img
-                                                                src={route('secure.file', {
-                                                                    filepath: user.id_photo_path,
-                                                                })}
-                                                                className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24"
-                                                                onClick={() =>
-                                                                    setImageModal({
-                                                                        isOpen: true,
-                                                                        src: route('secure.file', {
-                                                                            filepath:
-                                                                                user.id_photo_path,
-                                                                        }),
-                                                                        title: 'Valid ID',
-                                                                    })
-                                                                }
-                                                            />
-
-                                                        </div>
-                                                        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-
-                                                            <button
-                                                                onClick={() =>
-                                                                    setDeleteModal({
-                                                                        isOpen: true,
-                                                                        userId: user.id,
-                                                                    })
-                                                                }
-                                                                className="flex items-center gap-1 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                            >
-                                                                <svg
-                                                                    className="h-3 w-3"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                    ></path>
-                                                                </svg>
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </details>
-                                    ))
-                                ) : (
-                                    <p className="py-10 text-center font-bold text-slate-500 italic">
-                                        Walang approved accounts.
-                                    </p>
-                                )}
-                            </div>
-                            <Pagination links={approvedAccounts.links} />
-                        </div>
-                    )}
-
-
-                </div>
-            )}
 
             {/* --- TAB 2: QUEUE & PROCESSING --- */}
             {activeTab === 'queue' && (
@@ -1601,38 +1296,6 @@ export default function AdminDashboard() {
             )}
 
             {/* --- MODALS --- */}
-            {/* Image Modal */}
-            {imageModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm">
-                    <div className="relative w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
-                            <h3 className="text-lg font-black tracking-tighter text-slate-900 uppercase">
-                                {imageModal.title}
-                            </h3>
-                            <button
-                                onClick={() => setImageModal({ isOpen: false, src: '', title: '' })}
-                                className="text-2xl leading-none font-bold text-slate-400 transition-all hover:text-red-600"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="flex justify-center bg-slate-200 p-4">
-                            <img
-                                src={imageModal.src}
-                                className="max-h-[65vh] rounded object-contain shadow-lg"
-                            />
-                        </div>
-                        <div className="border-t border-slate-200 bg-slate-50 p-4 text-right">
-                            <button
-                                onClick={() => setImageModal({ isOpen: false, src: '', title: '' })}
-                                className="rounded-lg bg-slate-900 px-10 py-3 text-[10px] font-black tracking-widest text-white uppercase transition-all hover:bg-slate-800 active:scale-95"
-                            >
-                                Isara
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Status Modal */}
             {statusModal.isOpen && (
@@ -1702,55 +1365,7 @@ export default function AdminDashboard() {
             )}
 
 
-            {/* Delete Account Modal */}
-            {deleteModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
-                        <div className="mb-6 flex flex-col items-center text-center">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
-                                <svg
-                                    className="h-8 w-8"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    ></path>
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                Delete Account?
-                            </h3>
-                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Warning: Ang lahat ng data pati litrato ay permanenteng mawawala.
-                                Hindi na ito maibabalik.
-                            </p>
-                        </div>
-                        <form onSubmit={submitDelete}>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    type="submit"
-                                    disabled={deleteForm.processing}
-                                    className="w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
-                                >
-                                    Delete Permanently
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDeleteModal({ isOpen: false, userId: null })}
-                                    className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+
 
             {/* PDF Viewers */}
             {pdfModalOpen && (
