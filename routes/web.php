@@ -82,11 +82,7 @@ Route::middleware(['auth'])->group(function () {
             // Wala nang mahabang logic dito.
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-            // "Skinny Endpoint" para sa AJAX Polling
-            Route::get('/api/pending-count', [
-                AdminDashboardController::class,
-                'checkPendingCount',
-            ])->name('api.pending_count');
+
             // THE LARAVEL WAY: Route Model Binding para sa Approve at Reject
             Route::post('/account/{user}/approve', [
                 AdminDashboardController::class,
@@ -105,11 +101,7 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'updateRequestStatus',
             ])->name('request.update_status');
-            // // AJAX Polling para sa Live Queue
-            // //Route::get('/api/queue-count', [
-            // //     AdminDashboardController::class,
-            // //     'checkQueueCount',
-            // // ])->name('api.queue_count');
+
             // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,

@@ -35,7 +35,7 @@ export default function AdminDashboard() {
                     only: [
                         'pendingAccounts',
                         'approvedAccounts',
-                        'rejectedAccounts',
+
                         'activeQueue',
                         'receivedQueue',
                         'auditLogs',
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     const {
         pendingAccounts = { data: [], links: [] },
         approvedAccounts = { data: [], links: [] },
-        rejectedAccounts = { data: [], links: [] },
+
         activeQueue = { data: [], links: [] },
         receivedQueue = { data: [], links: [] },
         documents = [],
@@ -73,14 +73,14 @@ export default function AdminDashboard() {
 
     const [imageModal, setImageModal] = useState({ isOpen: false, src: '', title: '' });
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, userId: null });
-    const [rejectModal, setRejectModal] = useState({ isOpen: false, userId: null, userName: '' });
+
     const [statusModal, setStatusModal] = useState({
         isOpen: false,
         requestId: null,
         nextStatus: '',
         label: '',
     });
-    const [suspendModal, setSuspendModal] = useState({ isOpen: false, userId: null, userName: '' });
+
     const [pdfModalOpen, setPdfModalOpen] = useState(false);
     const [logbookModalOpen, setLogbookModalOpen] = useState(false);
     const [logbookUrl, setLogbookUrl] = useState('');
@@ -108,17 +108,7 @@ export default function AdminDashboard() {
         });
     };
 
-    const rejectForm = useForm({ rejection_reason: '' });
-    const submitReject = (e) => {
-        e.preventDefault();
-        rejectForm.post(route('admin.reject_account', rejectModal.userId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setRejectModal({ isOpen: false, userId: null, userName: '' });
-                rejectForm.reset();
-            },
-        });
-    };
+
 
     const deleteForm = useForm({});
     const submitDelete = (e) => {
@@ -129,14 +119,7 @@ export default function AdminDashboard() {
         });
     };
 
-    const suspendForm = useForm({});
-    const submitSuspend = (e) => {
-        e.preventDefault();
-        suspendForm.post(route('admin.suspend_account', suspendModal.userId), {
-            preserveScroll: true,
-            onSuccess: () => setSuspendModal({ isOpen: false, userId: null, userName: '' }),
-        });
-    };
+
 
     const announcementForm = useForm({ message_body: '' });
     const [isLinkDetected, setIsLinkDetected] = useState(false);
@@ -337,12 +320,7 @@ export default function AdminDashboard() {
                         >
                             Approved ({approvedAccounts.data?.length || 0})
                         </button>
-                        <button
-                            onClick={() => setPendingSubTab('sub-rejected')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${pendingSubTab === 'sub-rejected' ? 'border border-red-300 bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700 hover:bg-red-200 hover:text-red-700'}`}
-                        >
-                            Rejected / Locked ({rejectedAccounts.data?.length || 0})
-                        </button>
+
                     </div>
 
                     {pendingSubTab === 'sub-pending' && (
@@ -375,27 +353,7 @@ export default function AdminDashboard() {
                                                         ID
                                                     </span>
                                                 </div>
-                                                <div className="group relative">
-                                                    <img
-                                                        src={route('secure.file', {
-                                                            filepath: user.selfie_photo_path,
-                                                        })}
-                                                        className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24"
-                                                        onClick={() =>
-                                                            setImageModal({
-                                                                isOpen: true,
-                                                                src: route('secure.file', {
-                                                                    filepath:
-                                                                        user.selfie_photo_path,
-                                                                }),
-                                                                title: 'Selfie',
-                                                            })
-                                                        }
-                                                    />
-                                                    <span className="absolute right-1 bottom-1 rounded bg-slate-900/60 px-1 text-[8px] font-bold text-white">
-                                                        SELFIE
-                                                    </span>
-                                                </div>
+
                                             </div>
                                             <div className="flex flex-1 flex-col justify-between">
                                                 <div>
@@ -437,18 +395,7 @@ export default function AdminDashboard() {
                                                     >
                                                         Approve
                                                     </Link>
-                                                    <button
-                                                        onClick={() =>
-                                                            setRejectModal({
-                                                                isOpen: true,
-                                                                userId: user.id,
-                                                                userName: `${user.first_name} ${user.last_name}`,
-                                                            })
-                                                        }
-                                                        className="flex-1 rounded-lg border border-red-200 bg-red-50 py-2.5 text-[10px] font-black tracking-widest text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95"
-                                                    >
-                                                        Reject
-                                                    </button>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -563,37 +510,10 @@ export default function AdminDashboard() {
                                                                     })
                                                                 }
                                                             />
-                                                            <img
-                                                                src={route('secure.file', {
-                                                                    filepath:
-                                                                        user.selfie_photo_path,
-                                                                })}
-                                                                className="h-20 w-20 cursor-pointer rounded-lg border border-slate-200 object-cover transition-all group-hover:opacity-75 sm:h-24 sm:w-24"
-                                                                onClick={() =>
-                                                                    setImageModal({
-                                                                        isOpen: true,
-                                                                        src: route('secure.file', {
-                                                                            filepath:
-                                                                                user.selfie_photo_path,
-                                                                        }),
-                                                                        title: 'Selfie',
-                                                                    })
-                                                                }
-                                                            />
+
                                                         </div>
                                                         <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                                                            <button
-                                                                onClick={() =>
-                                                                    setSuspendModal({
-                                                                        isOpen: true,
-                                                                        userId: user.id,
-                                                                        userName: `${user.first_name} ${user.last_name}`,
-                                                                    })
-                                                                }
-                                                                className="rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-amber-600 uppercase shadow-sm transition-all hover:bg-amber-100 active:scale-95"
-                                                            >
-                                                                Suspend
-                                                            </button>
+
                                                             <button
                                                                 onClick={() =>
                                                                     setDeleteModal({
@@ -634,61 +554,7 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {pendingSubTab === 'sub-rejected' && (
-                        <div>
-                            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                                {rejectedAccounts.data && rejectedAccounts.data.length > 0 ? (
-                                    rejectedAccounts.data.map((user) => (
-                                        <div
-                                            key={user.id}
-                                            className="flex flex-col justify-between rounded-xl border border-l-4 border-slate-200 border-l-red-500 bg-white p-5 shadow-sm"
-                                        >
-                                            <div>
-                                                <div className="mb-4 flex items-start justify-between">
-                                                    <div>
-                                                        <h3 className="text-lg leading-tight font-black tracking-tight text-slate-900 uppercase">
-                                                            {user.last_name}, {user.first_name}
-                                                        </h3>
-                                                        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-                                                            {user.contact_number} | Attempts:{' '}
-                                                            {user.rejection_count}/5
-                                                        </p>
-                                                    </div>
-                                                    <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">
-                                                        Rejected
-                                                    </span>
-                                                </div>
-                                                <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-3">
-                                                    <p className="mb-1 text-[9px] font-black tracking-widest text-red-400 uppercase italic">
-                                                        Rason ng Rejection
-                                                    </p>
-                                                    <p className="text-xs leading-snug font-bold text-red-700">
-                                                        {user.rejection_reason}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() =>
-                                                    setDeleteModal({
-                                                        isOpen: true,
-                                                        userId: user.id,
-                                                    })
-                                                }
-                                                className="w-full rounded-lg bg-red-600 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
-                                            >
-                                                Delete Account
-                                            </button>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="col-span-full py-10 text-center font-bold text-slate-500 italic">
-                                        Walang rejected accounts.
-                                    </p>
-                                )}
-                            </div>
-                            <Pagination links={rejectedAccounts.links} />
-                        </div>
-                    )}
+
                 </div>
             )}
 
@@ -1835,145 +1701,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Reject Account Modal */}
-            {rejectModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
-                        <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
-                            <h3 className="flex items-center gap-2 text-lg font-black tracking-tight uppercase">
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="3"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    ></path>
-                                </svg>
-                                Reject Registration
-                            </h3>
-                            <button
-                                onClick={() =>
-                                    setRejectModal({ isOpen: false, userId: null, userName: '' })
-                                }
-                                className="text-2xl font-bold text-red-300 transition-all hover:text-red-700"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <form onSubmit={submitReject}>
-                            <div className="p-6">
-                                <p className="mb-4 text-sm font-medium text-slate-600">
-                                    Ita-type mo ang rason kung bakit rejected si{' '}
-                                    <strong className="text-slate-900">
-                                        {rejectModal.userName}
-                                    </strong>
-                                    . Ipapadala ito via SMS.
-                                </p>
-                                <label className="mb-2 block text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
-                                    Rason ng Rejection
-                                </label>
-                                <input
-                                    type="text"
-                                    value={rejectForm.data.rejection_reason}
-                                    onChange={(e) =>
-                                        rejectForm.setData('rejection_reason', e.target.value)
-                                    }
-                                    maxLength="60"
-                                    required
-                                    placeholder="Hal: Malabo ang ID, paki-upload ng maayos."
-                                    className="w-full rounded-xl border-2 border-slate-100 p-3 font-bold text-slate-900 placeholder-slate-300 transition-all outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500"
-                                />
-                                <p className="mt-2 text-right text-[9px] font-black text-slate-400 italic">
-                                    Limit: 60 characters
-                                </p>
-                            </div>
-                            <div className="flex gap-3 border-t border-slate-100 bg-slate-50 p-4">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setRejectModal({
-                                            isOpen: false,
-                                            userId: null,
-                                            userName: '',
-                                        })
-                                    }
-                                    className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-100"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={rejectForm.processing}
-                                    className="flex-1 rounded-xl bg-red-600 py-3 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
-                                >
-                                    Reject
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Suspend Account Modal */}
-            {suspendModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
-                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-2xl transition-all">
-                        <div className="mb-6 flex flex-col items-center text-center">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                                <svg
-                                    className="h-8 w-8"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    ></path>
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                Suspend Account?
-                            </h3>
-                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Sigurado ka bang gusto mong patawan ng 7-araw na penalty si{' '}
-                                <strong className="text-slate-900">{suspendModal.userName}</strong>?
-                            </p>
-                        </div>
-                        <form onSubmit={submitSuspend}>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    type="submit"
-                                    disabled={suspendForm.processing}
-                                    className="w-full rounded-xl bg-amber-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-50"
-                                >
-                                    Ipataw ang Penalty
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setSuspendModal({
-                                            isOpen: false,
-                                            userId: null,
-                                            userName: '',
-                                        })
-                                    }
-                                    className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase transition-all hover:text-slate-600"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             {/* Delete Account Modal */}
             {deleteModal.isOpen && (
