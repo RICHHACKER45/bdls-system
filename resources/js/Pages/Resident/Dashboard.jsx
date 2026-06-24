@@ -3,103 +3,6 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 // ==========================================
-// MODAL: RESUBMIT REQUIREMENTS
-// ==========================================
-const ResubmitModal = ({ isOpen, onClose }) => {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        id_photo_path: null,
-        selfie_photo_path: null,
-    });
-
-    const submit = (e) => {
-        e.preventDefault();
-        post(route('resident.resubmit_registration'), {
-            preserveScroll: true,
-            // THE ULTIMATE FIX: Pipilitin nito si Inertia na ipadala ang form bilang multipart/form-data
-            forceFormData: true,
-            onSuccess: () => {
-                reset();
-                onClose();
-            },
-        });
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[1] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
-            <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl transition-all">
-                <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 text-red-700">
-                    <h3 className="text-lg font-black tracking-tight uppercase">
-                        Resubmit Requirements
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="text-2xl font-bold text-red-300 transition-all hover:text-red-700"
-                    >
-                        &times;
-                    </button>
-                </div>
-                <form onSubmit={submit} className="p-6">
-                    <div className="mb-6 space-y-4">
-                        <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                Upload Valid ID
-                            </label>
-                            <input
-                                type="file"
-                                // FIX: e.target.files para mismong File blob ang ma-extract
-                                onChange={(e) => setData('id_photo_path', e.target.files[0])}
-                                required
-                                accept="image/*"
-                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800"
-                            />
-                            {errors.id_photo_path && (
-                                <p className="mt-1 text-xs text-red-500">{errors.id_photo_path}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                Upload Selfie with ID
-                            </label>
-                            <input
-                                type="file"
-                                // FIX: e.target.files para mismong File blob ang ma-extract
-                                onChange={(e) => setData('selfie_photo_path', e.target.files[0])}
-                                required
-                                accept="image/*"
-                                className="w-full cursor-pointer text-xs text-slate-500 transition-all file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-xs file:font-black file:text-white hover:file:bg-slate-800"
-                            />
-                            {errors.selfie_photo_path && (
-                                <p className="mt-1 text-xs text-red-500">
-                                    {errors.selfie_photo_path}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
-                        >
-                            {processing ? 'Submitting...' : 'Submit for Re-review'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="w-full py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-// ==========================================
 // MODAL: CREATE SERVICE REQUEST
 // ==========================================
 const RequestModal = ({ isOpen, onClose, documents, auth }) => {
@@ -383,7 +286,7 @@ export default function Dashboard() {
 
     // Modals State
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-    const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
+    const [isLiveKycModalOpen, setIsLiveKycModalOpen] = useState(false);
     const [settingsModal, setSettingsModal] = useState(null); // 'changeContact', 'verifyContact', 'changeEmail', 'verifyEmail'
 
     // Timers for OTP Resend
@@ -612,7 +515,7 @@ export default function Dashboard() {
                     <h1 className="mb-6 text-2xl font-bold text-slate-900">Resident Dashboard</h1>
 
                     {!auth?.user?.is_verified ? (
-                        auth?.user?.rejection_count > 0 ? (
+                        new Date(auth?.user?.ocr_locked_until) > new Date() ? (
                             <div className="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-6 shadow-sm">
                                 <div className="mb-2 flex items-center gap-3 text-lg font-bold text-red-800">
                                     <svg
@@ -628,23 +531,11 @@ export default function Dashboard() {
                                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                                         ></path>
                                     </svg>
-                                    Registration Rejected
+                                    Verification Temporarily Locked
                                 </div>
                                 <p className="mb-4 text-sm text-red-700">
-                                    Mali ang iyong registration. Rason:{' '}
-                                    <span className="font-bold underline">
-                                        {auth?.user?.rejection_reason}
-                                    </span>
-                                    . Mayroon ka na lang {5 - auth?.user?.rejection_count} subok
-                                    para mag-request.
+                                    You have used all 5 attempts. You must wait until {new Date(auth.user.ocr_locked_until).toLocaleString()}.
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsResubmitModalOpen(true)}
-                                    className="rounded-lg bg-red-600 px-5 py-2.5 text-xs font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95"
-                                >
-                                    Re-upload Requirements
-                                </button>
                             </div>
                         ) : (
                             <div className="mb-6 rounded-r-xl border-l-4 border-amber-500 bg-amber-50 p-6 shadow-sm">
@@ -662,13 +553,18 @@ export default function Dashboard() {
                                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                                         ></path>
                                     </svg>
-                                    Under Review ang iyong Account
+                                    Unverified Account
                                 </div>
-                                <p className="text-sm text-amber-700">
-                                    Kasalukuyang sinusuri ng Barangay Administrator ang iyong Valid
-                                    ID at Selfie. Hindi ka pa maaaring mag-request ng dokumento
-                                    hangga't hindi ito naaaprubahan.
+                                <p className="mb-4 text-sm text-amber-700">
+                                    Your account needs verification. You have {5 - (auth?.user?.ocr_attempts || 0)} attempts remaining.
                                 </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLiveKycModalOpen(true)}
+                                    className="rounded-lg bg-red-600 px-5 py-2.5 text-xs font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-700 active:scale-95"
+                                >
+                                    📸 I-Scan Ulit ang ID
+                                </button>
                             </div>
                         )
                     ) : (
@@ -1699,10 +1595,24 @@ export default function Dashboard() {
                 documents={documents}
                 auth={auth}
             />
-            <ResubmitModal
-                isOpen={isResubmitModalOpen}
-                onClose={() => setIsResubmitModalOpen(false)}
-            />
+            {isLiveKycModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
+                        <h3 className="mb-4 text-xl font-black uppercase text-slate-900">
+                            Live Camera Scanner
+                        </h3>
+                        <p className="mb-6 text-sm text-slate-500">
+                            (Scanner functionality will be implemented here)
+                        </p>
+                        <button
+                            onClick={() => setIsLiveKycModalOpen(false)}
+                            className="rounded-xl bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </ResidentLayout>
     );
 }
