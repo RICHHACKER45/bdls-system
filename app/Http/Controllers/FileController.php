@@ -19,25 +19,25 @@ class FileController extends Controller
             abort(403, 'Invalid file path.');
         }
 
-        // 2. Authorization Rules (The Laravel Way)
-        if ($user->role !== 'admin') {
-            // Check kung kanya ang Profile ID o Selfie
-            $ownsProfileFile = User::where('id', $user->id)
-                ->where(function ($query) use ($filepath) {
-                    $query->where('id_photo_path', $filepath)
-                        ->orWhere('selfie_photo_path', $filepath);
-                })->exists();
+        // // 2. Authorization Rules (The Laravel Way)
+        // if ($user->role !== 'admin') {
+        //     // Check kung kanya ang Profile ID o Selfie
+        //     $ownsProfileFile = User::where('id', $user->id)
+        //         ->where(function ($query) use ($filepath) {
+        //             $query->where('id_photo_path', $filepath)
+        //                 ->orWhere('selfie_photo_path', $filepath);
+        //         })->exists();
 
-            // Check kung kanya ang uploaded requirement sa Service Request
-            $ownsAttachment = Attachment::where('file_path', $filepath)
-                ->whereHas('serviceRequest', function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })->exists();
+        //     // Check kung kanya ang uploaded requirement sa Service Request
+        //     $ownsAttachment = Attachment::where('file_path', $filepath)
+        //         ->whereHas('serviceRequest', function ($query) use ($user) {
+        //             $query->where('user_id', $user->id);
+        //         })->exists();
 
-            if (! $ownsProfileFile && ! $ownsAttachment) {
-                abort(403, 'Unauthorized Access to PII. Bawal tingnan ang file ng iba.');
-            }
-        }
+        //     if (! $ownsProfileFile && ! $ownsAttachment) {
+        //         abort(403, 'Unauthorized Access to PII. Bawal tingnan ang file ng iba.');
+        //     }
+        // }
 
         // 3. File Verification & Delivery
         if (! Storage::disk('local')->exists($filepath)) {
