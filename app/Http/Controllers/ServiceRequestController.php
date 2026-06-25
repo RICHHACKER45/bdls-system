@@ -61,16 +61,7 @@ class ServiceRequestController extends Controller
         ]);
     }
 
-    /**
-     * TASK 3: Check Verification Status for Polling
-     */
-    public function checkVerificationStatus()
-    {
-        return response()->json([
-            'is_verified' => Auth::user()->is_verified,
-            // BINURA: 'rejection_count' dahil tinanggal na ito sa DB
-        ]);
-    }
+
 
     // BINURA: public function resubmitRegistration(...) nang buo
 

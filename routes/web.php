@@ -126,11 +126,7 @@ Route::middleware(['auth'])->group(function () {
             // Dashboard
             Route::get('/dashboard', [ServiceRequestController::class, 'index'])->name('dashboard');
 
-            // TASK 3: Verification Status Polling Endpoint
-            Route::get('/api/status', [
-                ServiceRequestController::class,
-                'checkVerificationStatus',
-            ])->name('api.status');
+
 
             // Live KYC ID Verification Route
             Route::post('/verify-id', [
