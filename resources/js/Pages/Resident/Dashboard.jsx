@@ -538,31 +538,32 @@ export default function Dashboard() {
         );
     };
 
-    const triggerEmailApp = () => {
+    const triggerUnifiedEmail = () => {
         if (!concernMessage.trim()) return;
         const subject = encodeURIComponent("BDLS System Concern");
         const body = encodeURIComponent(concernMessage);
         
-        // Mobile / Default Mail App Route
-        window.location.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+        // Detect if the user is on a mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // Mobile: Force default mail app using invisible anchor
+            const mailtoLink = document.createElement('a');
+            mailtoLink.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+            document.body.appendChild(mailtoLink);
+            mailtoLink.click();
+            document.body.removeChild(mailtoLink);
+        } else {
+            // Desktop: Force Web Gmail in a new tab
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
+            window.open(gmailUrl, '_blank');
+        }
         
+        // Slight delay to prevent browser cancellation
         setTimeout(() => {
             setIsConcernModalOpen(false);
             setConcernMessage('');
-        }, 1000);
-    };
-
-    const triggerGmailWeb = () => {
-        if (!concernMessage.trim()) return;
-        const subject = encodeURIComponent("BDLS System Concern");
-        const body = encodeURIComponent(concernMessage);
-        
-        // Desktop / Web Browser Gmail Route
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
-        window.open(gmailUrl, '_blank');
-        
-        setIsConcernModalOpen(false);
-        setConcernMessage('');
+        }, 800);
     };
 
     const sidebarNav = [
@@ -1977,22 +1978,14 @@ export default function Dashboard() {
                                 </p>
                             )}
 
-                            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-3">
+                            <div className="mt-2">
                                 <button
                                     type="button"
-                                    onClick={triggerEmailApp}
+                                    onClick={triggerUnifiedEmail}
                                     disabled={!concernMessage.trim()}
-                                    className="flex-1 rounded-xl bg-slate-900 py-3.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                                    className="w-full rounded-xl bg-blue-600 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
                                 >
-                                    📱 Send via Mail App
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={triggerGmailWeb}
-                                    disabled={!concernMessage.trim()}
-                                    className="flex-1 rounded-xl bg-red-600 py-3.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
-                                >
-                                    💻 Send via Web Gmail
+                                    Proceed to Email
                                 </button>
                             </div>
                             
