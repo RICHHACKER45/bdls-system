@@ -556,7 +556,9 @@ export default function Dashboard() {
                                     Pansamantalang Naka-lock ang Verification
                                 </div>
                                 <p className="mb-4 text-sm text-red-700">
-                                    Nagamit mo na ang lahat ng 5 subok. Kailangan mong maghintay hanggang {new Date(auth.user.ocr_locked_until).toLocaleString()}.
+                                    Nagamit mo na ang lahat ng 5 subok. Kailangan mong maghintay
+                                    hanggang {new Date(auth.user.ocr_locked_until).toLocaleString()}
+                                    .
                                 </p>
                             </div>
                         ) : (
@@ -578,7 +580,8 @@ export default function Dashboard() {
                                     Hindi pa Verified ang Account
                                 </div>
                                 <p className="mb-4 text-sm text-amber-700">
-                                    Kailangan mong i-verify ang iyong account. Mayroon ka na lamang {5 - (auth?.user?.ocr_attempts || 0)} na subok na natitira.
+                                    Kailangan mong i-verify ang iyong account. Mayroon ka na lamang{' '}
+                                    {5 - (auth?.user?.ocr_attempts || 0)} na subok na natitira.
                                 </p>
                                 <button
                                     type="button"
@@ -1620,10 +1623,10 @@ export default function Dashboard() {
             {isLiveKycModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
-                        <h3 className="mb-4 text-xl font-black uppercase text-slate-900">
+                        <h3 className="mb-4 text-xl font-black text-slate-900 uppercase">
                             Live Camera Scanner
                         </h3>
-                        
+
                         {!isScanning && !previewImage && (
                             <div className="mb-6">
                                 <button
@@ -1658,7 +1661,7 @@ export default function Dashboard() {
                         )}
 
                         {isScanning && (
-                            <div className="mb-6 relative overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
+                            <div className="relative mb-6 overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
                                 <Webcam
                                     audio={false}
                                     ref={webcamRef}
@@ -1671,7 +1674,7 @@ export default function Dashboard() {
                                 </div>
                                 <button
                                     onClick={captureId}
-                                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-6 py-3 font-black uppercase text-slate-900 shadow-xl transition-all hover:bg-slate-200 active:scale-95"
+                                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-6 py-3 font-black text-slate-900 uppercase shadow-xl transition-all hover:bg-slate-200 active:scale-95"
                                 >
                                     📸 Capture
                                 </button>
@@ -1681,7 +1684,11 @@ export default function Dashboard() {
                         {previewImage && (
                             <div className="mb-6">
                                 <div className="relative overflow-hidden rounded-2xl border-2 border-slate-800 shadow-xl">
-                                    <img src={previewImage} alt="Captured ID" className="w-full object-cover" />
+                                    <img
+                                        src={previewImage}
+                                        alt="Captured ID"
+                                        className="w-full object-cover"
+                                    />
                                 </div>
                                 <div className="mt-4 flex gap-2">
                                     <button

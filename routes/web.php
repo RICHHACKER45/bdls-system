@@ -27,7 +27,7 @@ Route::middleware(['guest'])->group(function () {
         return Inertia\Inertia::render('Auth/Signup');
     })->name('signup');
     Route::post('/signup', [AuthController::class, 'register'])->name('signup.post');
-    Route::post('/signup/validate-step', [\App\Http\Controllers\AuthController::class, 'validateStepOne'])->name('signup.validate_step');
+    Route::post('/signup/validate-step', [AuthController::class, 'validateStepOne'])->name('signup.validate_step');
 
     // ==========================================
     // SMS FORGOT PASSWORD ROUTES (3-Step Flow)
@@ -82,34 +82,12 @@ Route::middleware(['auth'])->group(function () {
             // Wala nang mahabang logic dito.
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-            // "Skinny Endpoint" para sa AJAX Polling
-            Route::get('/api/pending-count', [
-                AdminDashboardController::class,
-                'checkPendingCount',
-            ])->name('api.pending_count');
-            // THE LARAVEL WAY: Route Model Binding para sa Approve at Reject
-            Route::post('/account/{user}/approve', [
-                AdminDashboardController::class,
-                'approveAccount',
-            ])->name('approve_account');
-
-            // BINURA: reject_account at suspend_account routes
-
-            Route::delete('/account/{user}', [
-                AdminDashboardController::class,
-                'destroyAccount',
-            ])->name('delete_account');
-
             // QUEUE MANAGEMENT ROUTE
             Route::post('/request/{serviceRequest}/update-status', [
                 AdminDashboardController::class,
                 'updateRequestStatus',
             ])->name('request.update_status');
-            // // AJAX Polling para sa Live Queue
-            // //Route::get('/api/queue-count', [
-            // //     AdminDashboardController::class,
-            // //     'checkQueueCount',
-            // // ])->name('api.queue_count');
+
             // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
@@ -148,16 +126,12 @@ Route::middleware(['auth'])->group(function () {
             // Dashboard
             Route::get('/dashboard', [ServiceRequestController::class, 'index'])->name('dashboard');
 
-            // TASK 3: Verification Status Polling Endpoint
-            Route::get('/api/status', [
-                ServiceRequestController::class,
-                'checkVerificationStatus',
-            ])->name('api.status');
+
 
             // Live KYC ID Verification Route
             Route::post('/verify-id', [
-                ServiceRequestController::class, 
-                'verifyId'
+                ServiceRequestController::class,
+                'verifyId',
             ])->name('verify_id');
 
             // BINURA: resubmit_registration route

@@ -150,7 +150,7 @@ export default function Signup() {
             setIsValidating(true);
             try {
                 await axios.post(route('signup.validate_step'), data, {
-                    headers: { Accept: 'application/json' }
+                    headers: { Accept: 'application/json' },
                 });
                 setIsValidating(false);
                 setUiView(2);
@@ -803,7 +803,7 @@ export default function Signup() {
                                     type="button"
                                     onClick={goToIdScan}
                                     disabled={isValidating}
-                                    className={`w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 ${isValidating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`w-full rounded-xl bg-slate-900 px-8 py-4 font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 ${isValidating ? 'cursor-not-allowed opacity-50' : ''}`}
                                 >
                                     {isValidating ? 'Checking...' : 'Next: I-Scan ang ID'}
                                 </button>
@@ -831,11 +831,17 @@ export default function Signup() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const dummyFile = new File(["dummy content"], "mock_id.jpg", { type: "image/jpeg" });
+                                            const dummyFile = new File(
+                                                ['dummy content'],
+                                                'mock_id.jpg',
+                                                { type: 'image/jpeg' }
+                                            );
                                             setData('id_photo_path', dummyFile);
-                                            setPreviewImage("https://via.placeholder.com/400x250.png?text=MOCK+ID+BYPASS");
+                                            setPreviewImage(
+                                                'https://via.placeholder.com/400x250.png?text=MOCK+ID+BYPASS'
+                                            );
                                             setIsScanning(false);
-                                            triggerToast("Dev Mode: Simulated ID Capture!");
+                                            triggerToast('Dev Mode: Simulated ID Capture!');
                                         }}
                                         className="mb-4 w-full rounded-xl bg-purple-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 active:scale-95"
                                     >
@@ -848,11 +854,22 @@ export default function Signup() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const errorFile = new File(["dummy"], "error.jpg", { type: "image/jpeg" });
-                                            setData(data => ({ ...data, id_photo_path: errorFile, simulate_error: true, ocr_attempt: 5 }));
-                                            setPreviewImage("https://via.placeholder.com/400x250.png?text=FORCED+ERROR");
+                                            const errorFile = new File(['dummy'], 'error.jpg', {
+                                                type: 'image/jpeg',
+                                            });
+                                            setData((data) => ({
+                                                ...data,
+                                                id_photo_path: errorFile,
+                                                simulate_error: true,
+                                                ocr_attempt: 5,
+                                            }));
+                                            setPreviewImage(
+                                                'https://via.placeholder.com/400x250.png?text=FORCED+ERROR'
+                                            );
                                             setIsScanning(false);
-                                            triggerToast("Dev Mode: Simulated Error Active. Proceed to Terms.");
+                                            triggerToast(
+                                                'Dev Mode: Simulated Error Active. Proceed to Terms.'
+                                            );
                                         }}
                                         className="mb-4 w-full rounded-xl bg-red-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
                                     >

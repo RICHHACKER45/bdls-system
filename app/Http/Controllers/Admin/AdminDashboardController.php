@@ -48,11 +48,6 @@ class AdminDashboardController extends Controller
             $query->latest();
         }
 
-        // 4. THE LARAVEL WAY: DB-Level Filtering (Iwas Memory Exhaustion)
-        $pendingAccounts = (clone $query)->pending()->paginate(10, ['*'], 'pending_page');
-        $approvedAccounts = (clone $query)->approved()->paginate(10, ['*'], 'approved_page');
-        $rejectedAccounts = (clone $query)->rejected()->paginate(10, ['*'], 'rejected_page');
-
         // 5. QUEUE LOGIC: Separate Active Queue from Received History
         $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
 
@@ -73,9 +68,7 @@ class AdminDashboardController extends Controller
 
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
-            'pendingAccounts' => $pendingAccounts,
-            'approvedAccounts' => $approvedAccounts,
-            'rejectedAccounts' => $rejectedAccounts,
+
             'activeQueue' => $activeQueue,
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
@@ -83,54 +76,6 @@ class AdminDashboardController extends Controller
             'notificationLogs' => $notificationLogs,
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
-    }
-
-    public function approveAccount(User $user, SmsService $smsService)
-    {
-        $user->update([
-            'is_verified' => true,
-            'rejection_count' => 0,
-            'rejection_reason' => null,
-            'rejected_at' => null,
-            'locked_until' => null,
-        ]);
-
-        $message = 'Ang iyong account ay approved na. Maaari ka nang mag-request ng dokumento.';
-        $smsService->sendSms($user->id, $user->contact_number, $message);
-
-        // SYSTEM AUDIT LOG RECORDER (Process 6.0)
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_APPROVAL',
-            'description' => "Inaprubahan ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
-        ]);
-
-        // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
-        event(new ResidentRequestUpdated($user->id, 'Account Approved'));
-        event(new AdminDashboardUpdated);
-
-        return back()->with('active_tab', 'pending')->with('success_message', 'Account Approved');
-    }
-
-    /**
-     * TASK 1: Admin Delete Functionality (Secured with Audit Trail)
-     */
-    public function destroyAccount(User $user)
-    {
-        // 1. THE LARAVEL WAY: I-record muna sa CCTV bago burahin ang ebidensya
-        AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'ACCOUNT_DELETION',
-            'description' => "Permanenteng binura ang account ni {$user->first_name} {$user->last_name} ({$user->contact_number}).",
-        ]);
-
-        // 2. I-execute ang deletion (Magka-cascade ito sa service_requests)
-        $user->delete();
-
-        // 3. Ibalik sa UI
-        return back()
-            ->with('active_tab', 'pending')
-            ->with('success_message', 'Resident account deleted permanently.');
     }
 
     public function updateRequestStatus(
@@ -494,81 +439,3 @@ class AdminDashboardController extends Controller
         return $pdf->stream($filename);
     }
 }
-
-// region deprecated codes
-// deprecated codes
-// // MODULE: Account Suspension (1-Week Penalty for No-Show)
-// public function suspendAccount(User $user, SmsService $smsService)
-// {
-//     // 1. I-lock ng 7 araw (T&C Rule 6)
-//     $user->locked_until = now()->addDays(7);
-//     $user->save();
-
-//     // 2. I-text ang Residente
-//     $message = 'BDLS: Ang iyong account ay sinuspinde ng 7 araw dahil sa paglabag sa Terms & Conditions (Hindi pagkuha ng dokumento).';
-//     $smsService->sendSms($user->id, $user->contact_number, $message);
-
-//     // 3. I-record sa CCTV
-//     AuditLog::create([
-//         'admin_id' => Auth::id(),
-//         'action' => 'ACCOUNT_SUSPENSION',
-//         'description' => "Pinatawan ng 7-araw na suspension si {$user->first_name} {$user->last_name}.",
-//     ]);
-
-//     return back()->with('active_tab', 'pending')->with('success_message', 'Resident suspended for 7 days.');
-// }
-
-// public function checkQueueCount()
-// {
-//     return response()->json([
-//         'count' => ServiceRequest::whereIn('status', [
-//             'pending',
-//             'for_interview',
-//             'processing',
-//             'released',
-//         ])->count(),
-//     ]);
-// }
-
-// public function rejectAccount(Request $request, User $user, SmsService $smsService)
-// {
-//     $request->validate(['rejection_reason' => 'required|string|max:60']);
-
-//     $user->rejection_count += 1;
-//     $user->rejection_reason = $request->rejection_reason;
-//     $user->rejected_at = now();
-
-//     if ($user->rejection_count >= 5) {
-//         $user->locked_until = now()->addHours(24);
-//         $message = 'Naka-lock ang iyong account ng 24 oras dahil sa 5 failed attempts.';
-//     } else {
-//         $message =
-//             "Registration rejected. Rason: {$request->rejection_reason}. May ".
-//             (5 - $user->rejection_count).
-//             ' attempts ka pa.';
-//     }
-
-//     $user->save();
-//     $smsService->sendSms($user->id, $user->contact_number, $message);
-
-//     // SYSTEM AUDIT LOG RECORDER (Process 6.0)
-//     AuditLog::create([
-//         'admin_id' => Auth::id(),
-//         'action' => 'ACCOUNT_REJECTION',
-//         'description' => "Ni-reject ang account ni {$user->first_name} {$user->last_name}. Rason: {$request->rejection_reason}.",
-//     ]);
-
-//     // WEBSOCKET FIX: Triggers Reverb push event to sync front-end state across clients.
-//     event(new ResidentRequestUpdated($user->id, 'Account Rejected'));
-//     event(new AdminDashboardUpdated);
-
-//     return back()->with('active_tab', 'pending')->with('success_message', 'Account Rejected');
-// }
-
-// // public function checkPendingCount()
-// // {
-//     // TASK 1: Use pending scope for accurate count
-// //     return response()->json(['count' => User::pending()->count()]);
-// // }
-
-// endregion
