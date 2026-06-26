@@ -120,20 +120,28 @@ export default function Welcome() {
                         dokumento, at impormasyon ng barangay.
                     </p>
 
-                    <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                        <Link
-                            href="/signup"
-                            className="rounded-xl bg-red-600 px-8 py-4 font-black tracking-widest text-white uppercase shadow-xl transition-all hover:-translate-y-1 hover:bg-red-700 hover:shadow-red-600/40 active:scale-95"
-                        >
-                            Gumawa ng Account
-                        </Link>
-                        <a
-                            href="#services"
-                            onClick={scrollToServices}
-                            className="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-black tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
-                        >
-                            Tingnan ang Serbisyo
-                        </a>
+                    <div className="mt-10 flex flex-col items-center gap-4">
+                        <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
+                            <Link
+                                href="/signup"
+                                className="rounded-xl bg-red-600 px-8 py-4 font-black tracking-widest text-white uppercase shadow-xl transition-all hover:-translate-y-1 hover:bg-red-700 hover:shadow-red-600/40 active:scale-95"
+                            >
+                                Gumawa ng Account
+                            </Link>
+                            <a
+                                href="#services"
+                                onClick={scrollToServices}
+                                className="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-black tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
+                            >
+                                Tingnan ang Serbisyo
+                            </a>
+                        </div>
+                        <p className="mt-2 text-sm font-medium text-slate-300">
+                            May account na?{' '}
+                            <Link href="/login" className="font-bold text-white transition-colors hover:text-red-400 underline decoration-white/30 hover:decoration-red-400 underline-offset-4">
+                                Mag-login dito
+                            </Link>
+                        </p>
                     </div>
                 </div>
 
