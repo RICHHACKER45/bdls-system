@@ -6,7 +6,7 @@ import ResidentLayout from '@/Layouts/ResidentLayout';
 // ==========================================
 // MODAL: CREATE SERVICE REQUEST
 // ==========================================
-const RequestModal = ({ isOpen, onClose, documents, auth }) => {
+const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, currentBacklogMinutes }) => {
     const [requirements, setRequirements] = useState('');
     const [fee, setFee] = useState(0);
 
@@ -196,6 +196,34 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             </p>
                         </div>
 
+                            {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
+                            {data.document_type_id && (
+                                <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-inner">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-blue-900">Estimated Waiting Time</p>
+                                            <p className="mt-1 text-[11px] font-medium text-blue-700">
+                                                Mayroong <span className="font-black text-blue-900">{activeQueueCount}</span> na nakapila ngayon. 
+                                                Tinatayang aabutin ng <span className="font-black text-blue-900">
+                                                    {(() => {
+                                                        const docTime = documents.find(d => d.id === parseInt(data.document_type_id))?.processing_time_minutes || 0;
+                                                        const totalMins = currentBacklogMinutes + docTime;
+                                                        const hrs = Math.floor(totalMins / 60);
+                                                        const mins = totalMins % 60;
+                                                        return hrs > 0 ? `${hrs} hr at ${mins} mins` : `${mins} mins`;
+                                                    })()}
+                                                </span> bago mo makuha ang dokumentong ito.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                         <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-4">
                             <button
                                 type="button"
@@ -232,6 +260,8 @@ export default function Dashboard() {
         announcements = [],
         auth,
         errors = {},
+        activeQueueCount = 0,
+        currentBacklogMinutes = 0,
     } = usePage().props;
 
     // Main Tabs State
@@ -1572,6 +1602,8 @@ export default function Dashboard() {
                 onClose={() => setIsRequestModalOpen(false)}
                 documents={documents}
                 auth={auth}
+                activeQueueCount={activeQueueCount}
+                currentBacklogMinutes={currentBacklogMinutes}
             />
             {isLiveKycModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">

@@ -50,6 +50,13 @@ class ServiceRequestController extends Controller
         // THE FIX: Kunin ang pinakabagong 3 announcements
         $announcements = Announcement::latest()->take(3)->get();
 
+        // Kunin ang bilang ng tao sa pila at total na oras
+        $activeQueueCount = ServiceRequest::whereIn('status', ['pending', 'processing'])->count();
+        $currentBacklogMinutes = (int) DB::table('service_requests')
+            ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
+            ->whereIn('service_requests.status', ['pending', 'processing'])
+            ->sum('document_types.processing_time_minutes');
+
         return Inertia::render('Resident/Dashboard', [
             'documents' => $documents,
             'myRequests' => $myRequests->values(),
@@ -58,6 +65,8 @@ class ServiceRequestController extends Controller
             'historyRequests' => $historyRequests->values(),
             'announcements' => $announcements,
             'auth' => ['user' => $user],
+            'activeQueueCount' => $activeQueueCount,
+            'currentBacklogMinutes' => $currentBacklogMinutes,
         ]);
     }
 
@@ -110,7 +119,22 @@ class ServiceRequestController extends Controller
             }
 
             // 5.TRIGGER SMS SERVICE (Workflow Step 8)
-            $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
+            // 5. CALCULATE ESTIMATED WAITING TIME PARA SA SMS
+            $peopleInQueue = ServiceRequest::whereIn('status', ['pending', 'processing'])
+                ->where('id', '<', $serviceRequest->id)
+                ->count();
+
+            $queueBacklogMinutes = DB::table('service_requests')
+                ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
+                ->whereIn('service_requests.status', ['pending', 'processing'])
+                ->where('service_requests.id', '<=', $serviceRequest->id)
+                ->sum('document_types.processing_time_minutes');
+
+            $hours = floor($queueBacklogMinutes / 60);
+            $minutes = $queueBacklogMinutes % 60;
+            $timeString = $hours > 0 ? "{$hours} hr at {$minutes} mins" : "{$minutes} mins";
+
+            $message = "BDLS: Ang iyong request ({$queueNumber}) ay naipasa na. May {$peopleInQueue} nakapila sa unahan mo. Est. Waiting Time: {$timeString}.";
 
             $this->smsService->sendSms(
                 $user->id,
