@@ -130,11 +130,19 @@ class ServiceRequestController extends Controller
                 ->where('service_requests.id', '<=', $serviceRequest->id)
                 ->sum('document_types.processing_time_minutes');
 
-            $hours = floor($queueBacklogMinutes / 60);
-            $minutes = $queueBacklogMinutes % 60;
-            $timeString = $hours > 0 ? "{$hours} hr at {$minutes} mins" : "{$minutes} mins";
+            $maxMins = $queueBacklogMinutes;
+            $minMins = max(15, floor($maxMins / 2));
 
-            $message = "BDLS: Ang iyong request ({$queueNumber}) ay naipasa na. May {$peopleInQueue} nakapila sa unahan mo. Est. Waiting Time: {$timeString}.";
+            $formatTime = function ($m) {
+                $h = floor($m / 60);
+                $r = $m % 60;
+                if ($h > 0) return $r > 0 ? "{$h} hr at {$r} mins" : "{$h} hr";
+                return "{$m} mins";
+            };
+
+            $timeString = $formatTime($minMins) . " - " . $formatTime($maxMins);
+
+            $message = "BDLS: Ang iyong request ({$queueNumber}) ay naipasa na. Estimated Waiting Time: {$timeString}.";
 
             $this->smsService->sendSms(
                 $user->id,

@@ -208,14 +208,20 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
                                         <div>
                                             <p className="text-sm font-bold text-blue-900">Estimated Waiting Time</p>
                                             <p className="mt-1 text-[11px] font-medium text-blue-700">
-                                                Mayroong <span className="font-black text-blue-900">{activeQueueCount}</span> na nakapila ngayon. 
                                                 Tinatayang aabutin ng <span className="font-black text-blue-900">
                                                     {(() => {
                                                         const docTime = documents.find(d => d.id === parseInt(data.document_type_id))?.processing_time_minutes || 0;
-                                                        const totalMins = currentBacklogMinutes + docTime;
-                                                        const hrs = Math.floor(totalMins / 60);
-                                                        const mins = totalMins % 60;
-                                                        return hrs > 0 ? `${hrs} hr at ${mins} mins` : `${mins} mins`;
+                                                        const maxMins = currentBacklogMinutes + docTime;
+                                                        const minMins = Math.max(15, Math.floor(maxMins / 2));
+
+                                                        const formatTime = (m) => {
+                                                            const h = Math.floor(m / 60);
+                                                            const r = m % 60;
+                                                            if (h > 0) return r > 0 ? `${h} hr at ${r} mins` : `${h} hr`;
+                                                            return `${m} mins`;
+                                                        };
+
+                                                        return `${formatTime(minMins)} - ${formatTime(maxMins)}`;
                                                     })()}
                                                 </span> bago mo makuha ang dokumentong ito.
                                             </p>
