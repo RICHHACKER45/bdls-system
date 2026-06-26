@@ -170,6 +170,28 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             ></textarea>
                         </div>
 
+                        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-inner">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-900">Processing Fee</p>
+                                        <p className="text-[11px] font-medium text-emerald-600">Standard Barangay Document Rate</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black tracking-tight text-emerald-700">₱0.00</span>
+                                    <p className="text-[9px] font-black tracking-widest uppercase text-emerald-600">Libre</p>
+                                </div>
+                            </div>
+                            <p className="mt-3 border-t border-emerald-200/60 pt-2 text-[10px] font-bold text-emerald-700 italic">
+                                * Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.
+                            </p>
+                        </div>
 
                         <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-4">
                             <button
