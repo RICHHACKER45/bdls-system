@@ -55,5 +55,24 @@ class UserSeeder extends Seeder
             'wants_email_notification' => 1,
             'terms_accepted_at' => now(),
         ]);
+        // 3. OFFICIAL TEST ACCOUNT: RESIDENT (PRE-VERIFIED)
+        User::create([
+            'first_name' => 'Jose',
+            'middle_name' => 'Angeles',
+            'last_name' => 'Olinares',
+            'suffix' => 'III',
+            'sex' => 'Male',
+            'date_of_birth' => '2003-12-08',
+            'address' => '44 Capalungan St. Brgy Dona Lucia Q.N.E',
+            'contact_number' => '09458275591',
+            'email' => 'joseolinaresedu@gmail.com',
+            'password' => Hash::make('Lookatme_45'),
+            'role' => 'resident',
+            'contact_verified_at' => now(),
+            'email_verified_at' => now(),
+            'is_verified' => 1,
+            'wants_email_notification' => 1,
+            'terms_accepted_at' => now(),
+        ]);
     }
 }
