@@ -23,6 +23,15 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
         }
     }, [flash]);
 
+    // Dynamic Time-based Greeting
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Magandang umaga';
+        if (hour === 12) return 'Magandang tanghali';
+        if (hour < 18) return 'Magandang hapon';
+        return 'Magandang gabi';
+    };
+
     // Navigation Data
     const sidebarNav = [
         {
@@ -186,7 +195,7 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
                     </div>
                     <div className="ml-auto flex items-center gap-3">
                         <span className="max-w-[180px] truncate text-sm font-semibold text-slate-700 sm:max-w-xs">
-                            Kamusta, {auth?.user?.first_name}!
+                            {getGreeting()}, {auth?.user?.first_name}!
                         </span>
                         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-900 text-white shadow-sm">
                             <span className="text-xs font-black uppercase">
