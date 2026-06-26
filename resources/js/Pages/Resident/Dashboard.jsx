@@ -385,6 +385,8 @@ export default function Dashboard() {
     // Modals State
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isLiveKycModalOpen, setIsLiveKycModalOpen] = useState(false);
+    const [isConcernModalOpen, setIsConcernModalOpen] = useState(false);
+    const [concernMessage, setConcernMessage] = useState('');
     const [settingsModal, setSettingsModal] = useState(null); // 'changeContact', 'verifyContact', 'changeEmail', 'verifyEmail'
 
     // ==========================================
@@ -534,6 +536,15 @@ export default function Dashboard() {
             { wants_email_notification: e.target.checked ? 1 : 0 },
             { preserveScroll: true }
         );
+    };
+
+    const handleSendConcern = (e) => {
+        e.preventDefault();
+        const subject = encodeURIComponent("BDLS System Concern");
+        const body = encodeURIComponent(concernMessage);
+        window.location.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+        setIsConcernModalOpen(false);
+        setConcernMessage('');
     };
 
     const sidebarNav = [
@@ -1518,22 +1529,36 @@ export default function Dashboard() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                     </svg>
                                 </div>
-                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">May isyu sa system?</h2>
-                                <p className="mt-2 text-sm font-medium text-blue-700">Kung wala sa FAQs ang iyong katanungan, o kung may nakita kang bug sa system, i-diretso ang iyong mensahe sa aming opisina.</p>
+                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">May concerns?</h2>
+                                <p className="mt-2 text-sm font-medium text-blue-700">Mag-email dito o i-text ang mga number na ito para sa inyong mga katanungan.</p>
 
                                 <div className="mt-8 flex flex-col gap-3">
-                                    <a
-                                        href="mailto:barangaysec@bdlsgov.ph?subject=BDLS%20System%20Concern"
-                                        className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                                    <button
+                                        onClick={() => setIsConcernModalOpen(true)}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
                                     >
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                         Mag-Email sa Admin
-                                    </a>
-                                    <a
-                                        href="sms:09000000002"
-                                        className="flex items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-4 py-3.5 text-sm font-bold tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
-                                    >
-                                        Mag-Text sa Admin
-                                    </a>
+                                    </button>
+
+                                    {/* STATIC NUMBERS LIST */}
+                                    <div className="mt-3 rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
+                                        <p className="mb-4 text-center text-xs font-black tracking-widest text-slate-500 uppercase">Contact Numbers</p>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                                <span className="font-bold text-blue-900">Globe / TM</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0917 123 4567</span>
+                                            </div>
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                                <span className="font-bold text-blue-900">Smart / TNT</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0918 123 4567</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-bold text-blue-900">DITO</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0991 123 4567</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1898,6 +1923,55 @@ export default function Dashboard() {
                         >
                             Isara muna
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ===============
+            CUSTOM MODAL: EMAIL CONCERN
+            ========================= */}
+            {isConcernModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">Magpadala ng Email</h3>
+                            <p className="mt-2 px-2 text-sm font-medium text-slate-500">
+                                I-type ang iyong mensahe sa ibaba. Awtomatiko itong ipapasa sa iyong email app pagka-click ng send.
+                            </p>
+                        </div>
+                        <form onSubmit={handleSendConcern} className="flex flex-col gap-4">
+                            <textarea
+                                value={concernMessage}
+                                onChange={(e) => setConcernMessage(e.target.value)}
+                                required
+                                rows="5"
+                                placeholder="I-type ang iyong katanungan o concern dito..."
+                                className="w-full resize-none rounded-xl border border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-800 transition-all outline-none focus:ring-2 focus:ring-blue-600"
+                            ></textarea>
+                            <div className="mt-2 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsConcernModalOpen(false);
+                                        setConcernMessage('');
+                                    }}
+                                    className="flex-1 rounded-xl bg-slate-200 py-3.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 rounded-xl bg-blue-600 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                                >
+                                    Proceed to Email
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
