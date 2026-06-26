@@ -14,6 +14,8 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
         document_type_id: '',
         purpose: '',
         additional_details: '',
+        payment_method: 'Cash',
+        payment_receipt_path: null,
     });
 
     const handleDocumentChange = (id) => {
@@ -195,6 +197,54 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
                                 {fee === 0 ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.' : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
                             </p>
                         </div>
+
+                            {/* HYBRID PAYMENT SYSTEM UI */}
+                            {fee > 0 && (
+                                <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <label className="mb-2 block text-sm font-bold text-slate-800">
+                                        Paraan ng Pagbabayad <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={data.payment_method}
+                                        onChange={(e) => setData('payment_method', e.target.value)}
+                                        className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
+                                    >
+                                        <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
+                                        <option value="GCash">GCash (Online Payment)</option>
+                                    </select>
+
+                                    {data.payment_method === 'GCash' && (
+                                        <div className="mt-4 animate-in fade-in rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                            <p className="mb-3 text-center text-xs font-bold text-blue-900">
+                                                I-scan ang QR Code o i-send ang bayad sa: <br />
+                                                <span className="text-lg font-black tracking-widest text-slate-900">0912 345 6789</span> <br />
+                                                <span className="text-[10px] uppercase text-blue-700">Juan Dela Cruz - Brgy. Treasurer</span>
+                                            </p>
+                                            
+                                            {/* Placeholder for QR Code */}
+                                            <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-white text-blue-400 shadow-sm">
+                                                <span className="text-xs font-bold">[ GCASH QR ]</span>
+                                            </div>
+
+                                            <label className="mb-2 block text-xs font-bold text-slate-800">
+                                                I-upload ang Screenshot ng Resibo <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="image/png, image/jpeg, image/jpg"
+                                                onChange={(e) => setData('payment_receipt_path', e.target.files)}
+                                                required={data.payment_method === 'GCash'}
+                                                className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                            />
+                                            {errors.payment_receipt_path && (
+                                                <p className="mt-1 text-xs font-bold text-red-500">
+                                                    {errors.payment_receipt_path}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
                             {data.document_type_id && (
