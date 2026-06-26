@@ -80,8 +80,9 @@ class ServiceRequestController extends Controller
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-            // BINURA: 'preferred_pickup_time'
             'additional_details' => 'nullable|string',
+            'payment_method' => 'required|string|in:Cash,GCash',
+            'payment_receipt_path' => 'required_if:payment_method,GCash|nullable|image|mimes:jpeg,png,jpg|max:5120',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
 
@@ -94,6 +95,12 @@ class ServiceRequestController extends Controller
 
         // THE LARAVEL WAY: I-wrap ang Service Request sa Transaction
         DB::transaction(function () use ($validated, $request, $queueNumber, $user) {
+            // 2.5 I-save ang Resibo kung GCash ang pinili
+            $receiptPath = null;
+            if ($validated['payment_method'] === 'GCash' && $request->hasFile('payment_receipt_path')) {
+                $receiptPath = $request->file('payment_receipt_path')->store('payment_receipts', 'local');
+            }
+
             // 3. I-save ang Request
             $serviceRequest = ServiceRequest::create([
                 'user_id' => $user->id,
@@ -102,7 +109,8 @@ class ServiceRequestController extends Controller
                 'queue_number' => $queueNumber,
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
-                // BINURA: 'preferred_pickup_time'
+                'payment_method' => $validated['payment_method'],
+                'payment_receipt_path' => $receiptPath,
                 'status' => 'pending',
             ]);
 
@@ -120,7 +128,7 @@ class ServiceRequestController extends Controller
 
             // 5.TRIGGER SMS SERVICE (Workflow Step 8)
             // 5. CALCULATE ESTIMATED WAITING TIME PARA SA SMS
-            $peopleInQueue = ServiceRequest::whereIn('status', ['pending', 'processing'])
+            $peopleInQueue = ServiceRequest::query()->whereIn('status', ['pending', 'processing'])
                 ->where('id', '<', $serviceRequest->id)
                 ->count();
 
