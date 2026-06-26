@@ -42,6 +42,7 @@ class DocumentTypeSeeder extends Seeder
             DB::table('document_types')->insert([
                 'name' => $doc['name'],
                 'requirements_description' => $doc['reqs'],
+                'processing_fee' => 0.00,
                 'is_active' => 1, // Laging active by default
                 'created_at' => now(),
                 'updated_at' => now(),

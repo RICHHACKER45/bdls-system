@@ -10,6 +10,7 @@ class DocumentType extends Model
     protected $fillable = [
         'name',
         'requirements_description',
+        'processing_fee',
         'is_active',
     ];
 }

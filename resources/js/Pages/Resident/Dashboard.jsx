@@ -8,6 +8,7 @@ import ResidentLayout from '@/Layouts/ResidentLayout';
 // ==========================================
 const RequestModal = ({ isOpen, onClose, documents, auth }) => {
     const [requirements, setRequirements] = useState('');
+    const [fee, setFee] = useState(0);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         document_type_id: '',
@@ -21,8 +22,10 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 
         if (doc) {
             setRequirements(doc.requirements_description);
+            setFee(parseFloat(doc.processing_fee || 0));
         } else {
             setRequirements('');
+            setFee(0);
         }
         clearErrors('document_type_id');
     };
@@ -184,12 +187,12 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-2xl font-black tracking-tight text-emerald-700">₱0.00</span>
-                                    <p className="text-[9px] font-black tracking-widest uppercase text-emerald-600">Libre</p>
+                                    <span className="text-2xl font-black tracking-tight text-emerald-700">₱{fee.toFixed(2)}</span>
+                                    <p className="text-[9px] font-black tracking-widest uppercase text-emerald-600">{fee === 0 ? 'Libre' : 'May Bayad'}</p>
                                 </div>
                             </div>
                             <p className="mt-3 border-t border-emerald-200/60 pt-2 text-[10px] font-bold text-emerald-700 italic">
-                                * Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.
+                                {fee === 0 ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.' : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
                             </p>
                         </div>
 
