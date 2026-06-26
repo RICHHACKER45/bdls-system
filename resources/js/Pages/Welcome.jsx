@@ -42,6 +42,11 @@ export default function Welcome() {
         }
     };
 
+    const scrollToServices = (e) => {
+        e.preventDefault();
+        document.getElementById('services').scrollIntoView({ behavior: 'smooth' });
+    };
+
     return (
         <div className="bg-slate-50 font-sans text-slate-900 antialiased">
             <Head title="Welcome - Barangay Doña Lucia" />
@@ -124,6 +129,7 @@ export default function Welcome() {
                         </Link>
                         <a
                             href="#services"
+                            onClick={scrollToServices}
                             className="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-black tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
                         >
                             Tingnan ang Serbisyo
