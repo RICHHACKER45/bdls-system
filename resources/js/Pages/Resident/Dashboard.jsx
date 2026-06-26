@@ -633,6 +633,40 @@ export default function Dashboard() {
         },
     ];
 
+    // ==========================================
+    // 🚦 PASSWORD STRENGTH CALCULATOR 🚦
+    // ==========================================
+    const getPasswordStrength = (pass) => {
+        if (!pass) return 0;
+        let score = 0;
+        if (pass.length >= 8) score += 1;
+        if (/[A-Z]/.test(pass)) score += 1;
+        if (/[a-z]/.test(pass)) score += 1;
+        if (/\d/.test(pass)) score += 1;
+        return score;
+    };
+
+    const strengthScore = getPasswordStrength(passwordForm.data.password);
+    let strengthLabel = '';
+    let strengthColor = 'bg-slate-200';
+    let strengthTextColor = 'text-slate-500';
+
+    if (passwordForm.data.password && passwordForm.data.password.length > 0) {
+        if (strengthScore <= 2) {
+            strengthLabel = 'WEAK';
+            strengthColor = 'bg-red-500';
+            strengthTextColor = 'text-red-500';
+        } else if (strengthScore === 3) {
+            strengthLabel = 'MEDIUM';
+            strengthColor = 'bg-amber-500';
+            strengthTextColor = 'text-amber-500';
+        } else if (strengthScore >= 4) {
+            strengthLabel = 'STRONG';
+            strengthColor = 'bg-green-500';
+            strengthTextColor = 'text-green-500';
+        }
+    }
+
     return (
         <ResidentLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Head title="Dashboard - BDLS" />
@@ -1502,6 +1536,67 @@ export default function Dashboard() {
                                                 {passwordForm.errors.password}
                                             </p>
                                         )}
+
+                                        {/* 🚦 PASSWORD STRENGTH METER 🚦 */}
+                                        {passwordForm.data.password && passwordForm.data.password.length > 0 && (
+                                            <div className="mt-3">
+                                                <div className="mb-1 flex justify-between">
+                                                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                        Strength:
+                                                    </span>
+                                                    <span
+                                                        className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}
+                                                    >
+                                                        {strengthLabel}
+                                                    </span>
+                                                </div>
+                                                <div className="flex h-1.5 w-full gap-1">
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${passwordForm.data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 🟢 LIVE VISUAL PASSWORD TRACKER 🟢 */}
+                                        <div className="mt-2 flex flex-col gap-1.5 text-[11px] font-bold">
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${(passwordForm.data.password || '').length >= 8 ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {(passwordForm.data.password || '').length >= 8 ? '✅' : '○'} Walong (8)
+                                                characters o higit pa
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[A-Z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                malaking letra (A-Z)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[a-z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                maliit na letra (a-z)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/\d/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/\d/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang numero
+                                                (0-9)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[\W_]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[\W_]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                symbol (hal. @, !, #)
+                                            </span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-bold text-slate-700">
