@@ -1494,6 +1494,18 @@ export default function Dashboard() {
                                         <p className="font-bold text-slate-800">📌 Paano kung nagkamali ako sa form na ipinasa ko?</p>
                                         <p className="mt-2 text-sm text-slate-600">Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.</p>
                                     </div>
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Gaano katagal ang proseso ng mga dokumento?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.</p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.</p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
