@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('requirements_description'); // Mga kinakailangang ID/Papel
             $table->decimal('processing_fee', 8, 2)->default(0.00);
             $table->tinyInteger('is_active')->default(1); // 1 = Active, 0 = Inactive
+            $table->integer('processing_time_minutes')->default(30);
             $table->timestamps(); // created_at at updated_at
         });
     }

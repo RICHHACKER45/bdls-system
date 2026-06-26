@@ -11,6 +11,7 @@ class DocumentType extends Model
         'name',
         'requirements_description',
         'processing_fee',
+        'processing_time_minutes',
         'is_active',
     ];
 }
