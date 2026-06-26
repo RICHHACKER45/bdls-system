@@ -1471,6 +1471,64 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {/* --- TAB 4: HELP & SUPPORT --- */}
+            {activeTab === 'support' && (
+                <div className="animate-in fade-in duration-500">
+                    <h1 className="mb-6 text-2xl font-bold text-slate-900">Tulong at Suporta</h1>
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        {/* FAQs Section */}
+                        <div className="space-y-4 lg:col-span-2">
+                            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                                <h2 className="mb-6 text-lg font-black tracking-tight text-slate-900 uppercase">Frequently Asked Questions (FAQs)</h2>
+                                <div className="space-y-4">
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Paano ko malalaman kung ready na ang dokumento ko?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.</p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Mayroon bang babayaran sa pagkuha ng papel?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.</p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
+                                        <p className="font-bold text-slate-800">📌 Paano kung nagkamali ako sa form na ipinasa ko?</p>
+                                        <p className="mt-2 text-sm text-slate-600">Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Direct Contact Section */}
+                        <div className="space-y-4">
+                            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
+                                    <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">May isyu sa system?</h2>
+                                <p className="mt-2 text-sm font-medium text-blue-700">Kung wala sa FAQs ang iyong katanungan, o kung may nakita kang bug sa system, i-diretso ang iyong mensahe sa aming opisina.</p>
+
+                                <div className="mt-8 flex flex-col gap-3">
+                                    <a
+                                        href="mailto:barangaysec@bdlsgov.ph?subject=BDLS%20System%20Concern"
+                                        className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                                    >
+                                        Mag-Email sa Admin
+                                    </a>
+                                    <a
+                                        href="sms:09000000002"
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-4 py-3.5 text-sm font-bold tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                    >
+                                        Mag-Text sa Admin
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- SETTINGS MODALS --- */}
             {/* 1. Change Contact */}
             {settingsModal === 'changeContact' && (
