@@ -20,6 +20,28 @@ export default function Welcome() {
         return () => clearInterval(interval);
     }, [slides.length]);
 
+    const triggerSmartEmail = (e) => {
+        e.preventDefault();
+        const subject = encodeURIComponent("BDLS System Inquiry");
+        const body = encodeURIComponent(""); // Empty body for general inquiry
+        
+        // Detect if the user is on a mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // Mobile: Force default mail app using invisible anchor
+            const mailtoLink = document.createElement('a');
+            mailtoLink.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+            document.body.appendChild(mailtoLink);
+            mailtoLink.click();
+            document.body.removeChild(mailtoLink);
+        } else {
+            // Desktop: Force Web Gmail in a new tab
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
+            window.open(gmailUrl, '_blank');
+        }
+    };
+
     return (
         <div className="bg-slate-50 font-sans text-slate-900 antialiased">
             <Head title="Welcome - Barangay Doña Lucia" />
@@ -300,6 +322,74 @@ export default function Welcome() {
                     </div>
                 </div>
             </section>
+
+            {/* --- GRAND FOOTER: CONTACT & SUPPORT --- */}
+            <footer className="bg-slate-950 py-12 text-slate-300 sm:py-16">
+                <div className="mx-auto max-w-7xl px-6 md:px-12">
+                    <div className="grid grid-cols-1 gap-12 md:grid-cols-3 lg:gap-16">
+                        {/* Column 1: Brand & Address */}
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white p-1">
+                                    <img src="/images/bdls-logo-large.png" alt="BDLS Logo" className="h-full w-full object-contain" />
+                                </div>
+                                <span className="text-xl font-black tracking-widest text-white">BDLS</span>
+                            </div>
+                            <p className="text-sm font-medium leading-relaxed">
+                                Isang digital na inisyatibo para sa mas mabilis at mas organisadong serbisyo publiko sa pamayanan ng Barangay Doña Lucia.
+                            </p>
+                            <div>
+                                <h4 className="mb-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">Lokasyon</h4>
+                                <p className="text-sm font-bold text-white">Barangay Hall, Doña Lucia</p>
+                                <p className="text-sm">Quezon, Nueva Ecija, Philippines</p>
+                            </div>
+                        </div>
+
+                        {/* Column 2: Contact Info */}
+                        <div className="flex flex-col gap-6">
+                            <h4 className="text-sm font-black tracking-widest text-white uppercase">Makipag-ugnayan</h4>
+                            <div className="space-y-4 text-sm font-medium">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    <div>
+                                        <p className="font-bold text-white">Opisyal na Email</p>
+                                        <a href="mailto:barangaysec@bdlsgov.ph?subject=BDLS%20System%20Inquiry" className="transition-all hover:text-red-400">barangaysec@bdlsgov.ph</a>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                    <div>
+                                        <p className="font-bold text-white">Contact Numbers</p>
+                                        <p>Globe / TM: <a href="sms:09171234567" className="font-mono text-white transition-all hover:text-red-400">0917 123 4567</a></p>
+                                        <p>Smart / TNT: <a href="sms:09181234567" className="font-mono text-white transition-all hover:text-red-400">0918 123 4567</a></p>
+                                        <p>DITO: <a href="sms:09911234567" className="font-mono text-white transition-all hover:text-red-400">0991 123 4567</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Column 3: Quick Action */}
+                        <div className="flex flex-col gap-6">
+                            <h4 className="text-sm font-black tracking-widest text-white uppercase">May Isyu o Katanungan?</h4>
+                            <p className="text-sm font-medium">I-click ang button sa ibaba upang direktang magpadala ng email sa aming opisina.</p>
+                            <button 
+                                onClick={triggerSmartEmail}
+                                className="inline-flex w-fit items-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                            >
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                Mag-Email Dito
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-12 border-t border-slate-800 pt-8 text-center sm:mt-16">
+                        <p className="text-xs font-medium text-slate-500">
+                            &copy; {new Date().getFullYear()} Barangay Doña Lucia Services (BDLS). All rights reserved. <br className="sm:hidden" />
+                            A Capstone Project by NEUST CICT Students.
+                        </p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
