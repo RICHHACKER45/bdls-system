@@ -1050,7 +1050,7 @@ export default function Dashboard() {
                                             Unverified
                                         </span>
                                         <button
-                                            onClick={() => setSettingsModal('verifyContact')}
+                                            onClick={(e) => { setSettingsModal('verifyContact'); resendContactOtp(e); }}
                                             className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                         >
                                             Verify OTP
@@ -1125,7 +1125,7 @@ export default function Dashboard() {
                                                 Unverified
                                             </span>
                                             <button
-                                                onClick={() => setSettingsModal('verifyEmail')}
+                                                onClick={(e) => { setSettingsModal('verifyEmail'); resendEmailOtp(e); }}
                                                 className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                             >
                                                 Verify OTP
