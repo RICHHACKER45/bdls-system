@@ -3,7 +3,7 @@
 cd /d "%~dp0"
 
 :: Run your NPM command
-call npm run start
+call bun run start
 
 :: Keep terminal open to see results
 pause
