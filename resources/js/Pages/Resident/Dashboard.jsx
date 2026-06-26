@@ -1552,7 +1552,7 @@ export default function Dashboard() {
                                                 onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                                                 className="flex w-full items-center justify-between p-5 text-left focus:outline-none"
                                             >
-                                                <span className="font-bold text-slate-800">{faq.q}</span>
+                                                <span className="text-[15px] font-bold text-slate-800 md:text-base">{faq.q}</span>
                                                 <span className={`ml-4 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`}>
                                                     <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1562,11 +1562,11 @@ export default function Dashboard() {
                                             <div
                                                 className={`transition-all duration-300 ease-in-out ${
                                                     openFaqIndex === index
-                                                        ? 'max-h-40 opacity-100 px-5 pb-5'
+                                                        ? 'max-h-96 opacity-100 px-5 pb-5'
                                                         : 'max-h-0 opacity-0 px-5 pb-0'
                                                 }`}
                                             >
-                                                <p className="text-sm leading-relaxed text-slate-600">{faq.a}</p>
+                                                <p className="text-base leading-relaxed text-slate-700">{faq.a}</p>
                                             </div>
                                         </div>
                                     ))}
