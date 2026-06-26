@@ -6,7 +6,14 @@ import ResidentLayout from '@/Layouts/ResidentLayout';
 // ==========================================
 // MODAL: CREATE SERVICE REQUEST
 // ==========================================
-const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, currentBacklogMinutes }) => {
+const RequestModal = ({
+    isOpen,
+    onClose,
+    documents,
+    auth,
+    activeQueueCount,
+    currentBacklogMinutes,
+}) => {
     const [requirements, setRequirements] = useState('');
     const [fee, setFee] = useState(0);
 
@@ -102,7 +109,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
                             </div>
                         )}
 
-
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
                                 Uri ng Dokumento <span className="text-red-500">*</span>
@@ -162,7 +168,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
                             />
                         </div>
 
-
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
                                 Karagdagang Detalye (Optional)
@@ -179,106 +184,159 @@ const RequestModal = ({ isOpen, onClose, documents, auth, activeQueueCount, curr
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <svg
+                                            className="h-6 w-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            ></path>
                                         </svg>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-emerald-900">Processing Fee</p>
-                                        <p className="text-[11px] font-medium text-emerald-600">Standard Barangay Document Rate</p>
+                                        <p className="text-sm font-bold text-emerald-900">
+                                            Processing Fee
+                                        </p>
+                                        <p className="text-[11px] font-medium text-emerald-600">
+                                            Standard Barangay Document Rate
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-2xl font-black tracking-tight text-emerald-700">₱{fee.toFixed(2)}</span>
-                                    <p className="text-[9px] font-black tracking-widest uppercase text-emerald-600">{fee === 0 ? 'Libre' : 'May Bayad'}</p>
+                                    <span className="text-2xl font-black tracking-tight text-emerald-700">
+                                        ₱{fee.toFixed(2)}
+                                    </span>
+                                    <p className="text-[9px] font-black tracking-widest text-emerald-600 uppercase">
+                                        {fee === 0 ? 'Libre' : 'May Bayad'}
+                                    </p>
                                 </div>
                             </div>
                             <p className="mt-3 border-t border-emerald-200/60 pt-2 text-[10px] font-bold text-emerald-700 italic">
-                                {fee === 0 ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.' : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
+                                {fee === 0
+                                    ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.'
+                                    : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
                             </p>
                         </div>
 
-                            {/* HYBRID PAYMENT SYSTEM UI */}
-                            {fee > 0 && (
-                                <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <label className="mb-2 block text-sm font-bold text-slate-800">
-                                        Paraan ng Pagbabayad <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.payment_method}
-                                        onChange={(e) => setData('payment_method', e.target.value)}
-                                        className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
-                                    >
-                                        <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
-                                        <option value="GCash">GCash (Online Payment)</option>
-                                    </select>
+                        {/* HYBRID PAYMENT SYSTEM UI */}
+                        {fee > 0 && (
+                            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <label className="mb-2 block text-sm font-bold text-slate-800">
+                                    Paraan ng Pagbabayad <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.payment_method}
+                                    onChange={(e) => setData('payment_method', e.target.value)}
+                                    className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
+                                >
+                                    <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
+                                    <option value="GCash">GCash (Online Payment)</option>
+                                </select>
 
-                                    {data.payment_method === 'GCash' && (
-                                        <div className="mt-4 animate-in fade-in rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                            <p className="mb-3 text-center text-xs font-bold text-blue-900">
-                                                I-scan ang QR Code o i-send ang bayad sa: <br />
-                                                <span className="text-lg font-black tracking-widest text-slate-900">0912 345 6789</span> <br />
-                                                <span className="text-[10px] uppercase text-blue-700">Juan Dela Cruz - Brgy. Treasurer</span>
+                                {data.payment_method === 'GCash' && (
+                                    <div className="animate-in fade-in mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                        <p className="mb-3 text-center text-xs font-bold text-blue-900">
+                                            I-scan ang QR Code o i-send ang bayad sa: <br />
+                                            <span className="text-lg font-black tracking-widest text-slate-900">
+                                                0912 345 6789
+                                            </span>{' '}
+                                            <br />
+                                            <span className="text-[10px] text-blue-700 uppercase">
+                                                Juan Dela Cruz - Brgy. Treasurer
+                                            </span>
+                                        </p>
+
+                                        {/* Placeholder for QR Code */}
+                                        <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-white text-blue-400 shadow-sm">
+                                            <span className="text-xs font-bold">[ GCASH QR ]</span>
+                                        </div>
+
+                                        <label className="mb-2 block text-xs font-bold text-slate-800">
+                                            I-upload ang Screenshot ng Resibo{' '}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/jpg"
+                                            onChange={(e) =>
+                                                setData('payment_receipt_path', e.target.files)
+                                            }
+                                            required={data.payment_method === 'GCash'}
+                                            className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {errors.payment_receipt_path && (
+                                            <p className="mt-1 text-xs font-bold text-red-500">
+                                                {errors.payment_receipt_path}
                                             </p>
-                                            
-                                            {/* Placeholder for QR Code */}
-                                            <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-white text-blue-400 shadow-sm">
-                                                <span className="text-xs font-bold">[ GCASH QR ]</span>
-                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
-                                            <label className="mb-2 block text-xs font-bold text-slate-800">
-                                                I-upload ang Screenshot ng Resibo <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="file"
-                                                accept="image/png, image/jpeg, image/jpg"
-                                                onChange={(e) => setData('payment_receipt_path', e.target.files)}
-                                                required={data.payment_method === 'GCash'}
-                                                className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
-                                            />
-                                            {errors.payment_receipt_path && (
-                                                <p className="mt-1 text-xs font-bold text-red-500">
-                                                    {errors.payment_receipt_path}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                        {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
+                        {data.document_type_id && (
+                            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-inner">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                        <svg
+                                            className="h-6 w-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-blue-900">
+                                            Estimated Waiting Time
+                                        </p>
+                                        <p className="mt-1 text-[11px] font-medium text-blue-700">
+                                            Tinatayang aabutin ng{' '}
+                                            <span className="font-black text-blue-900">
+                                                {(() => {
+                                                    const docTime =
+                                                        documents.find(
+                                                            (d) =>
+                                                                d.id ===
+                                                                parseInt(data.document_type_id)
+                                                        )?.processing_time_minutes || 0;
+                                                    const maxMins = currentBacklogMinutes + docTime;
+                                                    const minMins = Math.max(
+                                                        15,
+                                                        Math.floor(maxMins / 2)
+                                                    );
 
-                            {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
-                            {data.document_type_id && (
-                                <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-inner">
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-blue-900">Estimated Waiting Time</p>
-                                            <p className="mt-1 text-[11px] font-medium text-blue-700">
-                                                Tinatayang aabutin ng <span className="font-black text-blue-900">
-                                                    {(() => {
-                                                        const docTime = documents.find(d => d.id === parseInt(data.document_type_id))?.processing_time_minutes || 0;
-                                                        const maxMins = currentBacklogMinutes + docTime;
-                                                        const minMins = Math.max(15, Math.floor(maxMins / 2));
+                                                    const formatTime = (m) => {
+                                                        const h = Math.floor(m / 60);
+                                                        const r = m % 60;
+                                                        if (h > 0)
+                                                            return r > 0
+                                                                ? `${h} hr at ${r} mins`
+                                                                : `${h} hr`;
+                                                        return `${m} mins`;
+                                                    };
 
-                                                        const formatTime = (m) => {
-                                                            const h = Math.floor(m / 60);
-                                                            const r = m % 60;
-                                                            if (h > 0) return r > 0 ? `${h} hr at ${r} mins` : `${h} hr`;
-                                                            return `${m} mins`;
-                                                        };
-
-                                                        return `${formatTime(minMins)} - ${formatTime(maxMins)}`;
-                                                    })()}
-                                                </span> bago mo makuha ang dokumentong ito.
-                                            </p>
-                                        </div>
+                                                    return `${formatTime(minMins)} - ${formatTime(maxMins)}`;
+                                                })()}
+                                            </span>{' '}
+                                            bago mo makuha ang dokumentong ito.
+                                        </p>
                                     </div>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-4">
                             <button
@@ -1161,7 +1219,10 @@ export default function Dashboard() {
                                             Unverified
                                         </span>
                                         <button
-                                            onClick={(e) => { setSettingsModal('verifyContact'); resendContactOtp(e); }}
+                                            onClick={(e) => {
+                                                setSettingsModal('verifyContact');
+                                                resendContactOtp(e);
+                                            }}
                                             className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                         >
                                             Verify OTP
@@ -1236,7 +1297,10 @@ export default function Dashboard() {
                                                 Unverified
                                             </span>
                                             <button
-                                                onClick={(e) => { setSettingsModal('verifyEmail'); resendEmailOtp(e); }}
+                                                onClick={(e) => {
+                                                    setSettingsModal('verifyEmail');
+                                                    resendEmailOtp(e);
+                                                }}
                                                 className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                             >
                                                 Verify OTP

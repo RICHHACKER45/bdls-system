@@ -18,7 +18,7 @@ use Inertia\Inertia;
 
 class ServiceRequestController extends Controller
 {
-    // 2. THE LARAVEL WAY: Dependency Injection
+    // Dependency Injection
     protected $smsService;
 
     public function __construct(SmsService $smsService)
@@ -69,10 +69,6 @@ class ServiceRequestController extends Controller
             'currentBacklogMinutes' => $currentBacklogMinutes,
         ]);
     }
-
-
-
-    // BINURA: public function resubmitRegistration(...) nang buo
 
     public function store(Request $request)
     {
@@ -128,7 +124,7 @@ class ServiceRequestController extends Controller
 
             // 5.TRIGGER SMS SERVICE (Workflow Step 8)
             // 5. CALCULATE ESTIMATED WAITING TIME PARA SA SMS
-            $peopleInQueue = ServiceRequest::query()->whereIn('status', ['pending', 'processing'])
+            $peopleInQueue = ServiceRequest::whereIn('status', ['pending', 'processing'])
                 ->where('id', '<', $serviceRequest->id)
                 ->count();
 
@@ -144,11 +140,14 @@ class ServiceRequestController extends Controller
             $formatTime = function ($m) {
                 $h = floor($m / 60);
                 $r = $m % 60;
-                if ($h > 0) return $r > 0 ? "{$h} hr at {$r} mins" : "{$h} hr";
+                if ($h > 0) {
+                    return $r > 0 ? "{$h} hr at {$r} mins" : "{$h} hr";
+                }
+
                 return "{$m} mins";
             };
 
-            $timeString = $formatTime($minMins) . " - " . $formatTime($maxMins);
+            $timeString = $formatTime($minMins).' - '.$formatTime($maxMins);
 
             $message = "BDLS: Ang iyong request ({$queueNumber}) ay naipasa na. Estimated Waiting Time: {$timeString}.";
 

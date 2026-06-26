@@ -126,8 +126,6 @@ Route::middleware(['auth'])->group(function () {
             // Dashboard
             Route::get('/dashboard', [ServiceRequestController::class, 'index'])->name('dashboard');
 
-
-
             // Live KYC ID Verification Route
             Route::post('/verify-id', [
                 ServiceRequestController::class,
