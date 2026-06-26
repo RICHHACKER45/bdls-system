@@ -182,10 +182,10 @@ export default function Welcome() {
                     </p>
                 </div>
 
-                {/* HORIZONTAL SCROLL CAROUSEL */}
-                <div className="hide-scrollbar mt-12 flex w-full snap-x snap-mandatory gap-6 overflow-x-auto px-6 pt-4 pb-12 md:justify-center md:px-12">
+                {/* GOVERNMENT SERVICES GRID */}
+                <div className="mx-auto mt-12 grid max-w-7xl grid-cols-1 gap-6 px-6 pt-4 pb-12 md:grid-cols-3 md:px-12">
                     {/* CARD 1: Online Queuing */}
-                    <div className="group relative flex w-[85vw] shrink-0 snap-center flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-red-300 hover:shadow-2xl sm:w-96">
+                    <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-red-300 hover:shadow-2xl">
                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 shadow-inner transition-colors group-hover:bg-red-600 group-hover:text-white">
                             <svg
                                 className="h-8 w-8"
@@ -213,7 +213,7 @@ export default function Welcome() {
                     </div>
 
                     {/* CARD 2: Live SMS Tracking */}
-                    <div className="group relative flex w-[85vw] shrink-0 snap-center flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-blue-300 hover:shadow-2xl sm:w-96">
+                    <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-blue-300 hover:shadow-2xl">
                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-inner transition-colors group-hover:bg-blue-600 group-hover:text-white">
                             <svg
                                 className="h-8 w-8"
@@ -241,7 +241,7 @@ export default function Welcome() {
                     </div>
 
                     {/* CARD 3: Automated ID Scan */}
-                    <div className="group relative flex w-[85vw] shrink-0 snap-center flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-2xl sm:w-96">
+                    <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-2xl">
                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-inner transition-colors group-hover:bg-emerald-600 group-hover:text-white">
                             <svg
                                 className="h-8 w-8"
@@ -267,11 +267,6 @@ export default function Welcome() {
                             </p>
                         </div>
                     </div>
-
-
-
-                    {/* Invisible Placeholder to allow final card to center properly on mobile */}
-                    <div className="w-4 shrink-0 sm:w-12 md:hidden"></div>
                 </div>
 
                 {/* BOTTOM WAVE SEPARATOR */}
