@@ -362,6 +362,18 @@ const RequestModal = ({
 };
 
 // ==========================================
+// FAQ DATA
+// ==========================================
+const faqs = [
+    { q: "📌 Paano ko malalaman kung ready na ang dokumento ko?", a: 'Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.' },
+    { q: "📌 Mayroon bang babayaran sa pagkuha ng papel?", a: 'Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.' },
+    { q: "📌 Paano kung nagkamali ako sa form na ipinasa ko?", a: 'Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.' },
+    { q: "📌 Gaano katagal ang proseso ng mga dokumento?", a: 'Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.' },
+    { q: "📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?", a: 'Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.' },
+    { q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?", a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.' }
+];
+
+// ==========================================
 // MAIN COMPONENT: RESIDENT DASHBOARD
 // ==========================================
 export default function Dashboard() {
@@ -381,6 +393,9 @@ export default function Dashboard() {
     // Main Tabs State
     const [activeTab, setActiveTab] = useState('dashboard');
     const [activeSubTab, setActiveSubTab] = useState('track-pending');
+
+    // FAQ State
+    const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
     // Modals State
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -1512,30 +1527,30 @@ export default function Dashboard() {
                             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
                                 <h2 className="mb-6 text-lg font-black tracking-tight text-slate-900 uppercase">Frequently Asked Questions (FAQs)</h2>
                                 <div className="space-y-4">
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Paano ko malalaman kung ready na ang dokumento ko?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Mayroon bang babayaran sa pagkuha ng papel?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Paano kung nagkamali ako sa form na ipinasa ko?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Gaano katagal ang proseso ng mga dokumento?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-                                        <p className="font-bold text-slate-800">📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?</p>
-                                        <p className="mt-2 text-sm text-slate-600">Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.</p>
-                                    </div>
+                                    {faqs.map((faq, index) => (
+                                        <div key={index} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden transition-all duration-300">
+                                            <button
+                                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                                                className="flex w-full items-center justify-between p-5 text-left focus:outline-none"
+                                            >
+                                                <span className="font-bold text-slate-800">{faq.q}</span>
+                                                <span className={`ml-4 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`}>
+                                                    <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                            <div
+                                                className={`transition-all duration-300 ease-in-out ${
+                                                    openFaqIndex === index
+                                                        ? 'max-h-40 opacity-100 px-5 pb-5'
+                                                        : 'max-h-0 opacity-0 px-5 pb-0'
+                                                }`}
+                                            >
+                                                <p className="text-sm leading-relaxed text-slate-600">{faq.a}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
