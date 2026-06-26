@@ -370,7 +370,8 @@ const faqs = [
     { q: "📌 Paano kung nagkamali ako sa form na ipinasa ko?", a: 'Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.' },
     { q: "📌 Gaano katagal ang proseso ng mga dokumento?", a: 'Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.' },
     { q: "📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?", a: 'Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.' },
-    { q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?", a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.' }
+    { q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?", a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.' },
+    { q: "📌 Maaari bang ma-reject ang aking document request?", a: 'Opo. Maaaring ma-reject ang inyong request kung kulang ang iyong requirements, malabo ang in-upload na resibo/ID, may mismatch sa iyong pangalan sa record ng barangay, o kaya ay hindi balido ang ibinigay na dahilan (Purpose). Kung mangyari ito, makikita ninyo ang eksaktong dahilan ng pagkaka-reject sa "Track Requests" tab upang agad itong maitama.' }
 ];
 
 // ==========================================
@@ -949,6 +950,24 @@ export default function Dashboard() {
                                             Tingnan Lahat
                                         </button>
                                     )}
+                                </div>
+
+                                {/* QUICK HELP CARD */}
+                                <div 
+                                    onClick={() => setActiveTab('support')}
+                                    className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm transition-all hover:bg-blue-100 cursor-pointer active:scale-95"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
+                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-blue-900">Kailangan ng Tulong?</h3>
+                                            <p className="mt-1 text-[11px] font-medium text-blue-700">Pindutin lamang ito para mapunta sa Tulong/Suporta.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
