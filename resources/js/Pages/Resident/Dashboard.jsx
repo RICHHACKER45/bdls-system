@@ -538,23 +538,31 @@ export default function Dashboard() {
         );
     };
 
-    const handleSendConcern = (e) => {
-        e.preventDefault();
+    const triggerEmailApp = () => {
+        if (!concernMessage.trim()) return;
         const subject = encodeURIComponent("BDLS System Concern");
         const body = encodeURIComponent(concernMessage);
         
-        // Use a robust invisible anchor tag approach to force the mailto protocol
-        const mailtoLink = document.createElement('a');
-        mailtoLink.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
-        document.body.appendChild(mailtoLink);
-        mailtoLink.click();
-        document.body.removeChild(mailtoLink);
-
-        // Add a slight delay before closing the modal so the browser doesn't cancel the action
+        // Mobile / Default Mail App Route
+        window.location.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+        
         setTimeout(() => {
             setIsConcernModalOpen(false);
             setConcernMessage('');
-        }, 500);
+        }, 1000);
+    };
+
+    const triggerGmailWeb = () => {
+        if (!concernMessage.trim()) return;
+        const subject = encodeURIComponent("BDLS System Concern");
+        const body = encodeURIComponent(concernMessage);
+        
+        // Desktop / Web Browser Gmail Route
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
+        window.open(gmailUrl, '_blank');
+        
+        setIsConcernModalOpen(false);
+        setConcernMessage('');
     };
 
     const sidebarNav = [
@@ -1954,34 +1962,51 @@ export default function Dashboard() {
                                 I-type ang iyong mensahe sa ibaba. Awtomatiko itong ipapasa sa iyong email app pagka-click ng send.
                             </p>
                         </div>
-                        <form onSubmit={handleSendConcern} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4">
                             <textarea
                                 value={concernMessage}
                                 onChange={(e) => setConcernMessage(e.target.value)}
-                                required
                                 rows="5"
-                                placeholder="I-type ang iyong katanungan o concern dito..."
+                                placeholder="I-type ang iyong katanungan o concern dito bago pumili sa ibaba..."
                                 className="w-full resize-none rounded-xl border border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-800 transition-all outline-none focus:ring-2 focus:ring-blue-600"
                             ></textarea>
-                            <div className="mt-2 flex gap-3">
+                            
+                            {concernMessage.trim() === '' && (
+                                <p className="text-center text-xs font-bold text-red-500">
+                                    * Paki-type muna ang iyong mensahe sa kahon.
+                                </p>
+                            )}
+
+                            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setIsConcernModalOpen(false);
-                                        setConcernMessage('');
-                                    }}
-                                    className="flex-1 rounded-xl bg-slate-200 py-3.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                                    onClick={triggerEmailApp}
+                                    disabled={!concernMessage.trim()}
+                                    className="flex-1 rounded-xl bg-slate-900 py-3.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
                                 >
-                                    Cancel
+                                    📱 Send via Mail App
                                 </button>
                                 <button
-                                    type="submit"
-                                    className="flex-1 rounded-xl bg-blue-600 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                                    type="button"
+                                    onClick={triggerGmailWeb}
+                                    disabled={!concernMessage.trim()}
+                                    className="flex-1 rounded-xl bg-red-600 py-3.5 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
                                 >
-                                    Proceed to Email
+                                    💻 Send via Web Gmail
                                 </button>
                             </div>
-                        </form>
+                            
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsConcernModalOpen(false);
+                                    setConcernMessage('');
+                                }}
+                                className="mt-1 w-full rounded-xl bg-slate-200 py-3.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
