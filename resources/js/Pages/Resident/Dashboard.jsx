@@ -542,9 +542,19 @@ export default function Dashboard() {
         e.preventDefault();
         const subject = encodeURIComponent("BDLS System Concern");
         const body = encodeURIComponent(concernMessage);
-        window.location.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
-        setIsConcernModalOpen(false);
-        setConcernMessage('');
+        
+        // Use a robust invisible anchor tag approach to force the mailto protocol
+        const mailtoLink = document.createElement('a');
+        mailtoLink.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+        document.body.appendChild(mailtoLink);
+        mailtoLink.click();
+        document.body.removeChild(mailtoLink);
+
+        // Add a slight delay before closing the modal so the browser doesn't cancel the action
+        setTimeout(() => {
+            setIsConcernModalOpen(false);
+            setConcernMessage('');
+        }, 500);
     };
 
     const sidebarNav = [
@@ -1538,7 +1548,7 @@ export default function Dashboard() {
                                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
                                     >
                                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                        Mag-Email sa Admin
+                                        Mag-Email Dito
                                     </button>
 
                                     {/* STATIC NUMBERS LIST */}
