@@ -50,7 +50,6 @@ export default function AdminDashboard() {
         receivedQueue = { data: [], links: [] },
         documents = [],
         auditLogs = { data: [], links: [] },
-        notificationLogs = { data: [], links: [] },
         analyticsSummary = {},
         filters = {},
         auth,
@@ -60,7 +59,6 @@ export default function AdminDashboard() {
 
     const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
-    const [auditSubTab, setAuditSubTab] = useState('sub-audit-trail');
 
     const [statusModal, setStatusModal] = useState({
         isOpen: false,
@@ -172,6 +170,17 @@ export default function AdminDashboard() {
     const [reportMonth, setReportMonth] = useState('all');
     const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
 
+    // --- SEARCH STATE FOR LOGS ---
+    const [auditSearch, setAuditSearch] = useState(filters?.audit_search || '');
+
+    const handleAuditSearch = (e) => {
+        e.preventDefault();
+        router.get(route('admin.dashboard'), { audit_search: auditSearch }, { 
+            preserveState: true, 
+            preserveScroll: true,
+            only: ['auditLogs', 'filters'] 
+        });
+    };
     // ==========================================
     // BUG FIX 5: Asynchronous Iframe Rendering Check!
     // ==========================================
@@ -885,34 +894,24 @@ export default function AdminDashboard() {
             {/* --- TAB 5: AUDIT LOGS --- */}
             {activeTab === 'audit' && (
                 <div className="animate-in fade-in duration-500">
-                    <div className="mt-6 mb-6 flex gap-2 overflow-x-auto pb-2">
-                        <button
-                            onClick={() => setAuditSubTab('sub-audit-trail')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${auditSubTab === 'sub-audit-trail' ? 'border border-slate-900 bg-slate-900 text-white' : 'border border-transparent bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                        >
-                            System Audit Trail
-                        </button>
-                        <button
-                            onClick={() => setAuditSubTab('sub-notif-history')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${auditSubTab === 'sub-notif-history' ? 'border border-slate-900 bg-slate-900 text-white' : 'border border-transparent bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                        >
-                            Notification History
-                        </button>
-                        <button
-                            onClick={() => setAuditSubTab('sub-generate-pdf')}
-                            className={`rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap transition-all ${auditSubTab === 'sub-generate-pdf' ? 'border border-slate-900 bg-slate-900 text-white' : 'border border-transparent bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                        >
-                            Generate Analytics
-                        </button>
-                    </div>
-
-                    {auditSubTab === 'sub-audit-trail' && (
-                        <div>
+                    <div>
                             <div className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                <div className="border-b border-slate-200 bg-slate-50 p-6">
+                                <div className="flex flex-col items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center">
                                     <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                         System Audit Logs
                                     </h2>
+                                    <form onSubmit={handleAuditSearch} className="flex w-full sm:w-auto items-center gap-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="I-search ang logs..." 
+                                            value={auditSearch}
+                                            onChange={(e) => setAuditSearch(e.target.value)}
+                                            className="w-full sm:w-64 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500"
+                                        />
+                                        <button type="submit" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-slate-800">
+                                            Hanapin
+                                        </button>
+                                    </form>
                                 </div>
                                 <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
                                     <table className="relative w-full border-collapse text-left">
@@ -966,266 +965,165 @@ export default function AdminDashboard() {
                             </div>
                             <Pagination links={auditLogs.links} />
                         </div>
-                    )}
+                    </div>
+            )}
 
-                    {auditSubTab === 'sub-notif-history' && (
-                        <div>
-                            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                <div className="border-b border-slate-200 bg-slate-50 p-6">
-                                    <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                        Notification History
-                                    </h2>
-                                </div>
-                                <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
-                                    <table className="relative w-full border-collapse text-left">
-                                        <thead className="sticky top-0 z-10">
-                                            <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                                <th className="p-4 font-black">Petsa & Oras</th>
-                                                <th className="p-4 font-black">Residente</th>
-                                                <th className="p-4 font-black">Channel</th>
-                                                <th className="w-2/5 p-4 font-black">Mensahe</th>
-                                                <th className="p-4 text-right font-black">
-                                                    Status
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {notificationLogs.data &&
-                                            notificationLogs.data.length > 0 ? (
-                                                notificationLogs.data.map((notif) => (
-                                                    <tr
-                                                        key={notif.id}
-                                                        className="transition-colors hover:bg-slate-50"
-                                                    >
-                                                        <td className="p-4 text-xs font-bold text-slate-600">
-                                                            {new Date(
-                                                                notif.created_at
-                                                            ).toLocaleString()}
-                                                        </td>
-                                                        <td className="p-4">
-                                                            <p className="text-xs font-bold text-slate-900 uppercase">
-                                                                {notif.user?.first_name || 'N/A'}{' '}
-                                                                {notif.user?.last_name || ''}
-                                                            </p>
-                                                            <p className="font-mono text-[9px] text-slate-500">
-                                                                {notif.recipient_contact}
-                                                            </p>
-                                                        </td>
-                                                        <td className="p-4">
-                                                            <span
-                                                                className={`rounded border px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${notif.channel?.toLowerCase() === 'sms' ? 'border-blue-200 bg-blue-100 text-blue-700' : 'border-purple-200 bg-purple-100 text-purple-700'}`}
-                                                            >
-                                                                {notif.channel?.toUpperCase()}
-                                                            </span>
-                                                        </td>
-                                                        <td
-                                                            className="line-clamp-2 p-4 text-[11px] font-medium text-slate-600"
-                                                            title={notif.message_content}
-                                                        >
-                                                            {notif.message_content}
-                                                        </td>
-                                                        <td className="p-4 text-right">
-                                                            <span
-                                                                className={`rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase ${notif.status?.toLowerCase().includes('sent') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                                                                title={notif.provider_response}
-                                                            >
-                                                                {notif.status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td
-                                                        colSpan="5"
-                                                        className="p-12 text-center font-bold text-slate-400 italic"
-                                                    >
-                                                        Walang record ng notifications.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <Pagination links={notificationLogs.links} />
-                        </div>
-                    )}
-
-                    {auditSubTab === 'sub-generate-pdf' && (
-                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div className="flex flex-col items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center">
-                                <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                    Live System Analytics
-                                </h2>
-                                {/* FALLBACK: PDF Generation Form */}
-                                <form
-                                    method="POST"
-                                    action={route('admin.reports.generate')}
-                                    target="pdfViewerFrame"
-                                    onSubmit={submitGeneratePdf}
-                                    className="flex items-center gap-2"
+            {/* --- TAB 5.5: LIVE ANALYTICS --- */}
+            {activeTab === 'analytics' && (
+                <div className="animate-in fade-in duration-500">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="flex flex-col items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center">
+                            <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Live System Analytics
+                            </h2>
+                            {/* FALLBACK: PDF Generation Form */}
+                            <form
+                                method="POST"
+                                action={route('admin.reports.generate')}
+                                target="pdfViewerFrame"
+                                onSubmit={submitGeneratePdf}
+                                className="flex items-center gap-2"
+                            >
+                                <input type="hidden" name="_token" value={usePage().props.csrf_token} />
+                                <input type="hidden" name="report_month" value={reportMonth} />
+                                <input type="hidden" name="report_year" value={reportYear} />
+                                <button
+                                    type="submit"
+                                    className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
                                 >
-                                    <input type="hidden" name="_token" value={usePage().props.csrf_token} />
-                                    <input type="hidden" name="report_month" value={reportMonth} />
-                                    <input type="hidden" name="report_year" value={reportYear} />
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    I-Print as PDF
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="p-6">
+                            {/* LIVE FILTERS */}
+                            <div className="mb-8 flex flex-col items-end gap-4 rounded-xl border border-slate-100 bg-slate-50 p-5 sm:flex-row">
+                                <div className="w-full sm:w-1/3">
+                                    <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">Piliin ang Buwan</label>
+                                    <select value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600">
+                                        <option value="all">Buong Taon (All Months)</option>
+                                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => (
+                                            <option key={i} value={(i + 1).toString().padStart(2, '0')}>{m}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="w-full sm:w-1/3">
+                                    <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">Piliin ang Taon</label>
+                                    <select value={reportYear} onChange={(e) => setReportYear(e.target.value)} className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600">
+                                        {Array.from({ length: new Date().getFullYear() - 2023 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="w-full sm:w-1/3">
                                     <button
-                                        type="submit"
-                                        className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                        onClick={() => {
+                                            router.get(route('admin.dashboard'), { analytics_month: reportMonth, analytics_year: reportYear, search: searchParam, sort: sortParam }, { preserveState: true, preserveScroll: true, only: ['analyticsSummary', 'filters'] });
+                                        }}
+                                        className="w-full rounded-lg bg-red-600 px-6 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
                                     >
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        I-Print as PDF
+                                        I-Filter ang Data
                                     </button>
-                                </form>
+                                </div>
                             </div>
 
-                            <div className="p-6">
-                                {/* LIVE FILTERS */}
-                                <div className="mb-8 flex flex-col items-end gap-4 rounded-xl border border-slate-100 bg-slate-50 p-5 sm:flex-row">
-                                    <div className="w-full sm:w-1/3">
-                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                                            Piliin ang Buwan
-                                        </label>
-                                        <select
-                                            value={reportMonth}
-                                            onChange={(e) => setReportMonth(e.target.value)}
-                                            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600"
-                                        >
-                                            <option value="all">Buong Taon (All Months)</option>
-                                            {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => (
-                                                <option key={i} value={(i + 1).toString().padStart(2, '0')}>{m}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="w-full sm:w-1/3">
-                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                                            Piliin ang Taon
-                                        </label>
-                                        <select
-                                            value={reportYear}
-                                            onChange={(e) => setReportYear(e.target.value)}
-                                            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600"
-                                        >
-                                            {Array.from({ length: new Date().getFullYear() - 2023 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                                                <option key={y} value={y}>{y}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="w-full sm:w-1/3">
-                                        <button
-                                            onClick={() => {
-                                                router.get(route('admin.dashboard'), { 
-                                                    analytics_month: reportMonth, 
-                                                    analytics_year: reportYear, 
-                                                    search: searchParam, 
-                                                    sort: sortParam 
-                                                }, { 
-                                                    preserveState: true, 
-                                                    preserveScroll: true, 
-                                                    only: ['analyticsSummary', 'filters'] 
-                                                });
-                                            }}
-                                            className="w-full rounded-lg bg-red-600 px-6 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
-                                        >
-                                            I-Filter ang Data
-                                        </button>
+                            {/* DASHBOARD STATS CARDS */}
+                            <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                                <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Total Requests</p>
+                                    <p className="mt-2 text-4xl font-black text-slate-900">{analyticsSummary?.total || 0}</p>
+                                </div>
+                                <div className="rounded-xl border border-green-100 bg-green-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <p className="text-[10px] font-black tracking-widest text-green-600 uppercase">Released</p>
+                                    <p className="mt-2 text-4xl font-black text-green-700">{analyticsSummary?.released || 0}</p>
+                                </div>
+                                <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <p className="text-[10px] font-black tracking-widest text-blue-600 uppercase">Processing</p>
+                                    <p className="mt-2 text-4xl font-black text-blue-700">{analyticsSummary?.processing || 0}</p>
+                                </div>
+                                <div className="rounded-xl border border-red-100 bg-red-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <p className="text-[10px] font-black tracking-widest text-red-600 uppercase">Rejected / Canceled</p>
+                                    <p className="mt-2 text-4xl font-black text-red-700">{analyticsSummary?.rejected || 0}</p>
+                                </div>
+                            </div>
+
+                            {/* RECHARTS GRAPHS */}
+                            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                                {/* Bar Chart: Online vs Walkin */}
+                                <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                                    <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Service Channel Usage</h3>
+                                    <div className="h-64 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={[
+                                                { name: 'Online', count: analyticsSummary?.online || 0 },
+                                                { name: 'Walk-in', count: analyticsSummary?.walkin || 0 }
+                                            ]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                                                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
+                                                <Bar dataKey="count" radius={[1]} maxBarSize={60}>
+                                                    {
+                                                        [
+                                                            { name: 'Online', count: analyticsSummary?.online || 0 },
+                                                            { name: 'Walk-in', count: analyticsSummary?.walkin || 0 }
+                                                        ].map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#0f172a'} />
+                                                        ))
+                                                    }
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
                                     </div>
                                 </div>
 
-                                {/* DASHBOARD STATS CARDS */}
-                                <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                                    <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
-                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Total Requests</p>
-                                        <p className="mt-2 text-4xl font-black text-slate-900">{analyticsSummary?.total || 0}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-green-100 bg-green-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
-                                        <p className="text-[10px] font-black tracking-widest text-green-600 uppercase">Released</p>
-                                        <p className="mt-2 text-4xl font-black text-green-700">{analyticsSummary?.released || 0}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
-                                        <p className="text-[10px] font-black tracking-widest text-blue-600 uppercase">Processing</p>
-                                        <p className="mt-2 text-4xl font-black text-blue-700">{analyticsSummary?.processing || 0}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-red-100 bg-red-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
-                                        <p className="text-[10px] font-black tracking-widest text-red-600 uppercase">Rejected / Canceled</p>
-                                        <p className="mt-2 text-4xl font-black text-red-700">{analyticsSummary?.rejected || 0}</p>
-                                    </div>
-                                </div>
-
-                                {/* RECHARTS GRAPHS */}
-                                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                                    {/* Bar Chart: Online vs Walkin */}
-                                    <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                                        <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Service Channel Usage</h3>
-                                        <div className="h-64 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={[
-                                                    { name: 'Online', count: analyticsSummary?.online || 0 },
-                                                    { name: 'Walk-in', count: analyticsSummary?.walkin || 0 }
-                                                ]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                                                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
-                                                    <Bar dataKey="count" radius={[1]} maxBarSize={60}>
-                                                        {
-                                                            [2].map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#0f172a'} />
-                                                            ))
-                                                        }
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-
-                                    {/* Pie Chart: Status Distribution */}
-                                    <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                                        <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Document Status Distribution</h3>
-                                        <div className="h-64 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={[
+                                {/* Pie Chart: Status Distribution */}
+                                <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                                    <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Document Status Distribution</h3>
+                                    <div className="h-64 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={[
+                                                        { name: 'Pending', value: analyticsSummary?.pending || 0, color: '#f59e0b' },
+                                                        { name: 'Processing', value: analyticsSummary?.processing || 0, color: '#3b82f6' },
+                                                        { name: 'Released', value: analyticsSummary?.released || 0, color: '#22c55e' },
+                                                        { name: 'Rejected', value: analyticsSummary?.rejected || 0, color: '#ef4444' },
+                                                    ].filter(d => d.value > 0)}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={65}
+                                                    outerRadius={90}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                    stroke="none"
+                                                >
+                                                    {
+                                                        [
                                                             { name: 'Pending', value: analyticsSummary?.pending || 0, color: '#f59e0b' },
                                                             { name: 'Processing', value: analyticsSummary?.processing || 0, color: '#3b82f6' },
                                                             { name: 'Released', value: analyticsSummary?.released || 0, color: '#22c55e' },
                                                             { name: 'Rejected', value: analyticsSummary?.rejected || 0, color: '#ef4444' },
-                                                        ].filter(d => d.value > 0)}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={65}
-                                                        outerRadius={90}
-                                                        paddingAngle={5}
-                                                        dataKey="value"
-                                                        stroke="none"
-                                                    >
-                                                        {
-                                                            [
-                                                                { name: 'Pending', value: analyticsSummary?.pending || 0, color: '#f59e0b' },
-                                                                { name: 'Processing', value: analyticsSummary?.processing || 0, color: '#3b82f6' },
-                                                                { name: 'Released', value: analyticsSummary?.released || 0, color: '#22c55e' },
-                                                                { name: 'Rejected', value: analyticsSummary?.rejected || 0, color: '#ef4444' },
-                                                            ].filter(d => d.value > 0).map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                                            ))
-                                                        }
-                                                    </Pie>
-                                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
-                                                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                        </div>
+                                                        ].filter(d => d.value > 0).map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))
+                                                    }
+                                                </Pie>
+                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
+                                                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
-
             {/* --- TAB 6: SETTINGS (PHASE 5 COMPLETED) --- */}
             {activeTab === 'settings' && (
                 <div className="animate-in fade-in duration-500">
