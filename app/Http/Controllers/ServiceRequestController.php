@@ -6,6 +6,7 @@ use App\Events\AdminDashboardUpdated;
 use App\Models\Announcement;
 use App\Models\Attachment;
 use App\Models\DocumentType;
+use App\Models\NotificationLog;
 use App\Models\ServiceRequest;
 use App\Services\SmsService;
 use Google\Auth\Credentials\ServiceAccountCredentials;
@@ -57,6 +58,11 @@ class ServiceRequestController extends Controller
             ->whereIn('service_requests.status', ['pending', 'processing'])
             ->sum('document_types.processing_time_minutes');
 
+        // Kunin ang personal Notification History ng naka-login na residente
+        $notificationLogs = NotificationLog::where('user_id', $user->id)
+            ->latest()
+            ->paginate(10, ['*'], 'notifs_page');
+
         return Inertia::render('Resident/Dashboard', [
             'documents' => $documents,
             'myRequests' => $myRequests->values(),
@@ -67,6 +73,7 @@ class ServiceRequestController extends Controller
             'auth' => ['user' => $user],
             'activeQueueCount' => $activeQueueCount,
             'currentBacklogMinutes' => $currentBacklogMinutes,
+            'notificationLogs' => $notificationLogs,
         ]);
     }
 
