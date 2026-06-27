@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash; // 1. TINAWAG NATIN ANG BAGONG SERVICE
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -202,7 +203,12 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+                ->symbols(),
+            ],
         ], [
             'password.min' => 'Ang password ay dapat hindi bababa sa 8 characters.',
             'password.confirmed' => 'Hindi tugma ang Confirm Password.',

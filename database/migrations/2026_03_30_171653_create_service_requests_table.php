@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('queue_number', 50)->nullable();
             $table->string('purpose', 255);
             $table->text('additional_details')->nullable();
+            $table->string('payment_method', 50)->default('Cash'); // Cash or GCash
+            $table->string('payment_receipt_path', 255)->nullable();
 
             // BINURA: $table->dateTime('preferred_pickup_time'); (Hindi na kailangan dahil real-time na ang text)
 

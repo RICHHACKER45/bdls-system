@@ -6,16 +6,23 @@ import ResidentLayout from '@/Layouts/ResidentLayout';
 // ==========================================
 // MODAL: CREATE SERVICE REQUEST
 // ==========================================
-const RequestModal = ({ isOpen, onClose, documents, auth }) => {
+const RequestModal = ({
+    isOpen,
+    onClose,
+    documents,
+    auth,
+    activeQueueCount,
+    currentBacklogMinutes,
+}) => {
     const [requirements, setRequirements] = useState('');
-    const [needsUpload, setNeedsUpload] = useState(false);
+    const [fee, setFee] = useState(0);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         document_type_id: '',
         purpose: '',
-        preferred_pickup_time: '',
         additional_details: '',
-        attachments: [],
+        payment_method: 'Cash',
+        payment_receipt_path: null,
     });
 
     const handleDocumentChange = (id) => {
@@ -24,10 +31,10 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 
         if (doc) {
             setRequirements(doc.requirements_description);
-            setNeedsUpload(doc.requirements_description.toLowerCase() !== 'valid id');
+            setFee(parseFloat(doc.processing_fee || 0));
         } else {
             setRequirements('');
-            setNeedsUpload(false);
+            setFee(0);
         }
         clearErrors('document_type_id');
     };
@@ -102,40 +109,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             </div>
                         )}
 
-                        <div className="rounded-xl border border-slate-200 bg-slate-100 p-5 shadow-inner">
-                            <h3 className="mb-3 border-b border-slate-200 pb-2 text-sm font-bold text-slate-800">
-                                Impormasyon ng Nagre-request
-                            </h3>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Buong Pangalan
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.first_name} {auth?.user?.middle_name}{' '}
-                                        {auth?.user?.last_name} {auth?.user?.suffix}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Edad
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.age} taong gulang
-                                    </p>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Tirahan
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.house_number} {auth?.user?.purok_street},
-                                        Barangay Doña Lucia
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
                                 Uri ng Dokumento <span className="text-red-500">*</span>
@@ -170,7 +143,7 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                                             ></path>
                                         </svg>
                                         <p className="text-sm font-bold text-blue-800">
-                                            Mga Kinakailangang Dalhin / I-upload:
+                                            Mga Kinakailangang Dalhin sa Barangay:
                                         </p>
                                     </div>
                                     <p className="ml-7 text-sm font-medium">{requirements}</p>
@@ -197,22 +170,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
-                                Kailan mo gustong kunin? <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="datetime-local"
-                                value={data.preferred_pickup_time}
-                                onChange={(e) => {
-                                    setData('preferred_pickup_time', e.target.value);
-                                    clearErrors('preferred_pickup_time');
-                                }}
-                                required
-                                className={`w-full rounded-xl border px-4 py-3 ${errors.preferred_pickup_time ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} bg-slate-50 transition-all outline-none focus:ring-2 focus:ring-slate-900`}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="mb-2 block text-sm font-bold text-slate-800">
                                 Karagdagang Detalye (Optional)
                             </label>
                             <textarea
@@ -223,23 +180,161 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             ></textarea>
                         </div>
 
-                        {needsUpload && (
-                            <div
-                                className={`border-2 border-dashed bg-white p-5 ${errors.attachments ? 'border-red-500 bg-red-50' : 'border-slate-300'} rounded-xl`}
-                            >
+                        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-inner">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                        <svg
+                                            className="h-6 w-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-900">
+                                            Processing Fee
+                                        </p>
+                                        <p className="text-[11px] font-medium text-emerald-600">
+                                            Standard Barangay Document Rate
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black tracking-tight text-emerald-700">
+                                        ₱{fee.toFixed(2)}
+                                    </span>
+                                    <p className="text-[9px] font-black tracking-widest text-emerald-600 uppercase">
+                                        {fee === 0 ? 'Libre' : 'May Bayad'}
+                                    </p>
+                                </div>
+                            </div>
+                            <p className="mt-3 border-t border-emerald-200/60 pt-2 text-[10px] font-bold text-emerald-700 italic">
+                                {fee === 0
+                                    ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.'
+                                    : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
+                            </p>
+                        </div>
+
+                        {/* HYBRID PAYMENT SYSTEM UI */}
+                        {fee > 0 && (
+                            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                                 <label className="mb-2 block text-sm font-bold text-slate-800">
-                                    I-upload ang Karagdagang Dokumento{' '}
-                                    <span className="text-red-500">*</span>
+                                    Paraan ng Pagbabayad <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="file"
-                                    onChange={(e) =>
-                                        setData('attachments', Array.from(e.target.files))
-                                    }
-                                    multiple
-                                    accept="image/jpeg, image/png, image/jpg, application/pdf"
-                                    className="w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-slate-800"
-                                />
+                                <select
+                                    value={data.payment_method}
+                                    onChange={(e) => setData('payment_method', e.target.value)}
+                                    className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
+                                >
+                                    <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
+                                    <option value="GCash">GCash (Online Payment)</option>
+                                </select>
+
+                                {data.payment_method === 'GCash' && (
+                                    <div className="animate-in fade-in mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                        <p className="mb-3 text-center text-xs font-bold text-blue-900">
+                                            I-scan ang QR Code o i-send ang bayad sa: <br />
+                                            <span className="text-lg font-black tracking-widest text-slate-900">
+                                                0912 345 6789
+                                            </span>{' '}
+                                            <br />
+                                            <span className="text-[10px] text-blue-700 uppercase">
+                                                Juan Dela Cruz - Brgy. Treasurer
+                                            </span>
+                                        </p>
+
+                                        {/* Placeholder for QR Code */}
+                                        <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-white text-blue-400 shadow-sm">
+                                            <span className="text-xs font-bold">[ GCASH QR ]</span>
+                                        </div>
+
+                                        <label className="mb-2 block text-xs font-bold text-slate-800">
+                                            I-upload ang Screenshot ng Resibo{' '}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/jpg"
+                                            onChange={(e) =>
+                                                setData('payment_receipt_path', e.target.files)
+                                            }
+                                            required={data.payment_method === 'GCash'}
+                                            className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {errors.payment_receipt_path && (
+                                            <p className="mt-1 text-xs font-bold text-red-500">
+                                                {errors.payment_receipt_path}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
+                        {data.document_type_id && (
+                            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-inner">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                        <svg
+                                            className="h-6 w-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-blue-900">
+                                            Estimated Waiting Time
+                                        </p>
+                                        <p className="mt-1 text-[11px] font-medium text-blue-700">
+                                            Tinatayang aabutin ng{' '}
+                                            <span className="font-black text-blue-900">
+                                                {(() => {
+                                                    const docTime =
+                                                        documents.find(
+                                                            (d) =>
+                                                                d.id ===
+                                                                parseInt(data.document_type_id)
+                                                        )?.processing_time_minutes || 0;
+                                                    const maxMins = currentBacklogMinutes + docTime;
+                                                    const minMins = Math.max(
+                                                        15,
+                                                        Math.floor(maxMins / 2)
+                                                    );
+
+                                                    const formatTime = (m) => {
+                                                        const h = Math.floor(m / 60);
+                                                        const r = m % 60;
+                                                        if (h > 0)
+                                                            return r > 0
+                                                                ? `${h} hr at ${r} mins`
+                                                                : `${h} hr`;
+                                                        return `${m} mins`;
+                                                    };
+
+                                                    return `${formatTime(minMins)} - ${formatTime(maxMins)}`;
+                                                })()}
+                                            </span>{' '}
+                                            bago mo makuha ang dokumentong ito.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -267,6 +362,19 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 };
 
 // ==========================================
+// FAQ DATA
+// ==========================================
+const faqs = [
+    { q: "📌 Paano ko malalaman kung ready na ang dokumento ko?", a: 'Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.' },
+    { q: "📌 Mayroon bang babayaran sa pagkuha ng papel?", a: 'Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.' },
+    { q: "📌 Paano kung nagkamali ako sa form na ipinasa ko?", a: 'Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.' },
+    { q: "📌 Gaano katagal ang proseso ng mga dokumento?", a: 'Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.' },
+    { q: "📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?", a: 'Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.' },
+    { q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?", a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.' },
+    { q: "📌 Maaari bang ma-reject ang aking document request?", a: 'Opo. Maaaring ma-reject ang inyong request kung kulang ang iyong requirements, malabo ang in-upload na resibo/ID, may mismatch sa iyong pangalan sa record ng barangay, o kaya ay hindi balido ang ibinigay na dahilan (Purpose). Kung mangyari ito, makikita ninyo ang eksaktong dahilan ng pagkaka-reject sa "Track Requests" tab upang agad itong maitama.' }
+];
+
+// ==========================================
 // MAIN COMPONENT: RESIDENT DASHBOARD
 // ==========================================
 export default function Dashboard() {
@@ -279,15 +387,22 @@ export default function Dashboard() {
         announcements = [],
         auth,
         errors = {},
+        activeQueueCount = 0,
+        currentBacklogMinutes = 0,
     } = usePage().props;
 
     // Main Tabs State
     const [activeTab, setActiveTab] = useState('dashboard');
     const [activeSubTab, setActiveSubTab] = useState('track-pending');
 
+    // FAQ State
+    const [openFaqIndex, setOpenFaqIndex] = useState(null);
+
     // Modals State
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isLiveKycModalOpen, setIsLiveKycModalOpen] = useState(false);
+    const [isConcernModalOpen, setIsConcernModalOpen] = useState(false);
+    const [concernMessage, setConcernMessage] = useState('');
     const [settingsModal, setSettingsModal] = useState(null); // 'changeContact', 'verifyContact', 'changeEmail', 'verifyEmail'
 
     // ==========================================
@@ -439,6 +554,34 @@ export default function Dashboard() {
         );
     };
 
+    const triggerUnifiedEmail = () => {
+        if (!concernMessage.trim()) return;
+        const subject = encodeURIComponent("BDLS System Concern");
+        const body = encodeURIComponent(concernMessage);
+        
+        // Detect if the user is on a mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // Mobile: Force default mail app using invisible anchor
+            const mailtoLink = document.createElement('a');
+            mailtoLink.href = `mailto:barangaysec@bdlsgov.ph?subject=${subject}&body=${body}`;
+            document.body.appendChild(mailtoLink);
+            mailtoLink.click();
+            document.body.removeChild(mailtoLink);
+        } else {
+            // Desktop: Force Web Gmail in a new tab
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
+            window.open(gmailUrl, '_blank');
+        }
+        
+        // Slight delay to prevent browser cancellation
+        setTimeout(() => {
+            setIsConcernModalOpen(false);
+            setConcernMessage('');
+        }, 800);
+    };
+
     const sidebarNav = [
         {
             id: 'dashboard',
@@ -489,6 +632,40 @@ export default function Dashboard() {
             ),
         },
     ];
+
+    // ==========================================
+    // 🚦 PASSWORD STRENGTH CALCULATOR 🚦
+    // ==========================================
+    const getPasswordStrength = (pass) => {
+        if (!pass) return 0;
+        let score = 0;
+        if (pass.length >= 8) score += 1;
+        if (/[A-Z]/.test(pass)) score += 1;
+        if (/[a-z]/.test(pass)) score += 1;
+        if (/\d/.test(pass)) score += 1;
+        return score;
+    };
+
+    const strengthScore = getPasswordStrength(passwordForm.data.password);
+    let strengthLabel = '';
+    let strengthColor = 'bg-slate-200';
+    let strengthTextColor = 'text-slate-500';
+
+    if (passwordForm.data.password && passwordForm.data.password.length > 0) {
+        if (strengthScore <= 2) {
+            strengthLabel = 'WEAK';
+            strengthColor = 'bg-red-500';
+            strengthTextColor = 'text-red-500';
+        } else if (strengthScore === 3) {
+            strengthLabel = 'MEDIUM';
+            strengthColor = 'bg-amber-500';
+            strengthTextColor = 'text-amber-500';
+        } else if (strengthScore >= 4) {
+            strengthLabel = 'STRONG';
+            strengthColor = 'bg-green-500';
+            strengthTextColor = 'text-green-500';
+        }
+    }
 
     return (
         <ResidentLayout activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -808,6 +985,24 @@ export default function Dashboard() {
                                         </button>
                                     )}
                                 </div>
+
+                                {/* QUICK HELP CARD */}
+                                <div 
+                                    onClick={() => setActiveTab('support')}
+                                    className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm transition-all hover:bg-blue-100 cursor-pointer active:scale-95"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
+                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-blue-900">Kailangan ng Tulong?</h3>
+                                            <p className="mt-1 text-[11px] font-medium text-blue-700">Pindutin lamang ito para mapunta sa Tulong/Suporta.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1122,7 +1317,10 @@ export default function Dashboard() {
                                             Unverified
                                         </span>
                                         <button
-                                            onClick={() => setSettingsModal('verifyContact')}
+                                            onClick={(e) => {
+                                                setSettingsModal('verifyContact');
+                                                resendContactOtp(e);
+                                            }}
                                             className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                         >
                                             Verify OTP
@@ -1197,7 +1395,10 @@ export default function Dashboard() {
                                                 Unverified
                                             </span>
                                             <button
-                                                onClick={() => setSettingsModal('verifyEmail')}
+                                                onClick={(e) => {
+                                                    setSettingsModal('verifyEmail');
+                                                    resendEmailOtp(e);
+                                                }}
                                                 className="w-full animate-pulse rounded-lg bg-red-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 sm:w-auto"
                                             >
                                                 Verify OTP
@@ -1335,6 +1536,67 @@ export default function Dashboard() {
                                                 {passwordForm.errors.password}
                                             </p>
                                         )}
+
+                                        {/* 🚦 PASSWORD STRENGTH METER 🚦 */}
+                                        {passwordForm.data.password && passwordForm.data.password.length > 0 && (
+                                            <div className="mt-3">
+                                                <div className="mb-1 flex justify-between">
+                                                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                        Strength:
+                                                    </span>
+                                                    <span
+                                                        className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}
+                                                    >
+                                                        {strengthLabel}
+                                                    </span>
+                                                </div>
+                                                <div className="flex h-1.5 w-full gap-1">
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${passwordForm.data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 🟢 LIVE VISUAL PASSWORD TRACKER 🟢 */}
+                                        <div className="mt-2 flex flex-col gap-1.5 text-[11px] font-bold">
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${(passwordForm.data.password || '').length >= 8 ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {(passwordForm.data.password || '').length >= 8 ? '✅' : '○'} Walong (8)
+                                                characters o higit pa
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[A-Z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                malaking letra (A-Z)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[a-z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                maliit na letra (a-z)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/\d/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/\d/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang numero
+                                                (0-9)
+                                            </span>
+                                            <span
+                                                className={`flex items-center gap-2 transition-colors ${/[\W_]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
+                                            >
+                                                {/[\W_]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                symbol (hal. @, !, #)
+                                            </span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-bold text-slate-700">
@@ -1363,6 +1625,90 @@ export default function Dashboard() {
                                     {passwordForm.processing ? 'Saving...' : 'I-save ang Password'}
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- TAB 4: HELP & SUPPORT --- */}
+            {activeTab === 'support' && (
+                <div className="animate-in fade-in duration-500">
+                    <h1 className="mb-6 text-2xl font-bold text-slate-900">Tulong at Suporta</h1>
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        {/* FAQs Section */}
+                        <div className="space-y-4 lg:col-span-2">
+                            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+                                <h2 className="mb-6 text-lg font-black tracking-tight text-slate-900 uppercase">Frequently Asked Questions (FAQs)</h2>
+                                <div className="space-y-4">
+                                    {faqs.map((faq, index) => (
+                                        <div key={index} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden transition-all duration-300">
+                                            <button
+                                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                                                className="flex w-full items-center justify-between p-5 text-left focus:outline-none"
+                                            >
+                                                <span className="text-[15px] font-bold text-slate-800 md:text-base">{faq.q}</span>
+                                                <span className={`ml-4 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`}>
+                                                    <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                            <div
+                                                className={`transition-all duration-300 ease-in-out ${
+                                                    openFaqIndex === index
+                                                        ? 'max-h-96 opacity-100 px-5 pb-5'
+                                                        : 'max-h-0 opacity-0 px-5 pb-0'
+                                                }`}
+                                            >
+                                                <p className="text-base leading-relaxed text-slate-700">{faq.a}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Direct Contact Section */}
+                        <div className="space-y-4">
+                            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
+                                    <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">May concerns?</h2>
+                                <p className="mt-2 text-sm font-medium text-blue-700">Mag-email dito o i-text ang mga number na ito para sa inyong mga katanungan.</p>
+
+                                <div className="mt-8 flex flex-col gap-3">
+                                    <button
+                                        onClick={() => setIsConcernModalOpen(true)}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                                    >
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        Mag-Email Dito
+                                    </button>
+
+                                    {/* STATIC NUMBERS LIST */}
+                                    <div className="mt-3 rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
+                                        <p className="mb-4 text-center text-xs font-black tracking-widest text-slate-500 uppercase">Contact Numbers</p>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                                <span className="font-bold text-blue-900">Globe / TM</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0917 123 4567</span>
+                                            </div>
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                                <span className="font-bold text-blue-900">Smart / TNT</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0918 123 4567</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-bold text-blue-900">DITO</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0991 123 4567</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1619,6 +1965,8 @@ export default function Dashboard() {
                 onClose={() => setIsRequestModalOpen(false)}
                 documents={documents}
                 auth={auth}
+                activeQueueCount={activeQueueCount}
+                currentBacklogMinutes={currentBacklogMinutes}
             />
             {isLiveKycModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
@@ -1723,6 +2071,64 @@ export default function Dashboard() {
                         >
                             Isara muna
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ===============
+            CUSTOM MODAL: EMAIL CONCERN
+            ========================= */}
+            {isConcernModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">Magpadala ng Email</h3>
+                            <p className="mt-2 px-2 text-sm font-medium text-slate-500">
+                                I-type ang iyong mensahe sa ibaba. Awtomatiko itong ipapasa sa iyong email app pagka-click ng send.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <textarea
+                                value={concernMessage}
+                                onChange={(e) => setConcernMessage(e.target.value)}
+                                rows="5"
+                                placeholder="I-type ang iyong katanungan o concern dito bago pumili sa ibaba..."
+                                className="w-full resize-none rounded-xl border border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-800 transition-all outline-none focus:ring-2 focus:ring-blue-600"
+                            ></textarea>
+                            
+                            {concernMessage.trim() === '' && (
+                                <p className="text-center text-xs font-bold text-red-500">
+                                    * Paki-type muna ang iyong mensahe sa kahon.
+                                </p>
+                            )}
+
+                            <div className="mt-2">
+                                <button
+                                    type="button"
+                                    onClick={triggerUnifiedEmail}
+                                    disabled={!concernMessage.trim()}
+                                    className="w-full rounded-xl bg-blue-600 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                                >
+                                    Proceed to Email
+                                </button>
+                            </div>
+                            
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsConcernModalOpen(false);
+                                    setConcernMessage('');
+                                }}
+                                className="mt-1 w-full rounded-xl bg-slate-200 py-3.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

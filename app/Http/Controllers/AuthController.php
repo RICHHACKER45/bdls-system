@@ -297,15 +297,9 @@ class AuthController extends Controller
                 'otp_code' => null, // Burahin ang ginamit na code para sa security
             ]);
 
-            // ==========================================
-            // 2. SMS: ACCOUNT UNDER REVIEW (Workflow Step 5)
-            // ==========================================
-            if ($user->role === 'resident') {
-                $message =
-                    'Number verified! Ang account mo ay sinusuri pa ng Admin. Maghintay ng text confirmation bago mag-request ng dokumento.';
-
-                $this->smsService->sendSms($user->id, $user->contact_number, $message, null);
-            }
+            // NOTE: The SMS "ACCOUNT UNDER REVIEW" (Workflow Step 5) was removed 
+            // since we switched to the automated ID scanner (Zero-Retention Policy).
+            // Nakakatipid din tayo ng SMS credits sa pagtanggal nito.
         });
 
         // THE LARAVEL WAY: I-login at i-regenerate ang session SA LABAS ng transaction
@@ -318,7 +312,7 @@ class AuthController extends Controller
         event(new AdminDashboardUpdated);
 
         // ==========================================
-        // ROLE-BASED ROUTING
+        // ROLE-BASED ROUTING (pakicheck)
         // ==========================================
         if ($user->role === 'admin') {
             return redirect('/admin/dashboard')->with(
@@ -493,7 +487,7 @@ class AuthController extends Controller
             'otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        $message = "BDLS: Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
+        $message = "Ang iyong Password Reset OTP ay {$otpCode}. Huwag itong ibigay sa iba.";
         $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
         $request->session()->put('reset_contact', $user->contact_number);
@@ -554,7 +548,7 @@ class AuthController extends Controller
             'otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        $message = "BDLS: Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
+        $message = "Ang iyong BAGONG Password Reset OTP ay {$newOtp}. Huwag itong ibigay sa iba.";
         $this->smsService->sendSms($user->id, $user->contact_number, $message, null, false, true);
 
         RateLimiter::hit($cooldownKey, 60);

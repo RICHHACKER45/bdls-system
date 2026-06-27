@@ -18,7 +18,8 @@ class ServiceRequest extends Model
         'queue_number',
         'purpose',
         'additional_details',
-
+        'payment_method',
+        'payment_receipt_path',
         // BINURA: 'preferred_pickup_time',
 
         'status',

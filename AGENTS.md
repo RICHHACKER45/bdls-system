@@ -243,10 +243,9 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 - IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
 
-
 ## Repository Scanning Rules
+
 - You MUST strictly ignore files and directories listed in the `.ignore` (or `.gitignore`) file.
 - NEVER index, read, or summarize paths like `/vendor/`, `/node_modules/`, `/storage/`, or `.env`.
-
 
 </laravel-boost-guidelines>

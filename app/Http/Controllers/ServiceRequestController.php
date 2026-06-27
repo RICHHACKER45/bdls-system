@@ -18,7 +18,7 @@ use Inertia\Inertia;
 
 class ServiceRequestController extends Controller
 {
-    // 2. THE LARAVEL WAY: Dependency Injection
+    // Dependency Injection
     protected $smsService;
 
     public function __construct(SmsService $smsService)
@@ -50,6 +50,13 @@ class ServiceRequestController extends Controller
         // THE FIX: Kunin ang pinakabagong 3 announcements
         $announcements = Announcement::latest()->take(3)->get();
 
+        // Kunin ang bilang ng tao sa pila at total na oras
+        $activeQueueCount = ServiceRequest::whereIn('status', ['pending', 'processing'])->count();
+        $currentBacklogMinutes = (int) DB::table('service_requests')
+            ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
+            ->whereIn('service_requests.status', ['pending', 'processing'])
+            ->sum('document_types.processing_time_minutes');
+
         return Inertia::render('Resident/Dashboard', [
             'documents' => $documents,
             'myRequests' => $myRequests->values(),
@@ -58,12 +65,10 @@ class ServiceRequestController extends Controller
             'historyRequests' => $historyRequests->values(),
             'announcements' => $announcements,
             'auth' => ['user' => $user],
+            'activeQueueCount' => $activeQueueCount,
+            'currentBacklogMinutes' => $currentBacklogMinutes,
         ]);
     }
-
-
-
-    // BINURA: public function resubmitRegistration(...) nang buo
 
     public function store(Request $request)
     {
@@ -71,8 +76,9 @@ class ServiceRequestController extends Controller
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-            // BINURA: 'preferred_pickup_time'
             'additional_details' => 'nullable|string',
+            'payment_method' => 'required|string|in:Cash,GCash',
+            'payment_receipt_path' => 'required_if:payment_method,GCash|nullable|image|mimes:jpeg,png,jpg|max:5120',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
 
@@ -85,6 +91,12 @@ class ServiceRequestController extends Controller
 
         // THE LARAVEL WAY: I-wrap ang Service Request sa Transaction
         DB::transaction(function () use ($validated, $request, $queueNumber, $user) {
+            // 2.5 I-save ang Resibo kung GCash ang pinili
+            $receiptPath = null;
+            if ($validated['payment_method'] === 'GCash' && $request->hasFile('payment_receipt_path')) {
+                $receiptPath = $request->file('payment_receipt_path')->store('payment_receipts', 'local');
+            }
+
             // 3. I-save ang Request
             $serviceRequest = ServiceRequest::create([
                 'user_id' => $user->id,
@@ -93,7 +105,8 @@ class ServiceRequestController extends Controller
                 'queue_number' => $queueNumber,
                 'purpose' => $validated['purpose'],
                 'additional_details' => $validated['additional_details'],
-                // BINURA: 'preferred_pickup_time'
+                'payment_method' => $validated['payment_method'],
+                'payment_receipt_path' => $receiptPath,
                 'status' => 'pending',
             ]);
 
@@ -110,7 +123,33 @@ class ServiceRequestController extends Controller
             }
 
             // 5.TRIGGER SMS SERVICE (Workflow Step 8)
-            $message = "Ang iyong request ay naipasa na. Queue No: {$queueNumber}. Maghintay ng text update para sa releasing o panayam.";
+            // 5. CALCULATE ESTIMATED WAITING TIME PARA SA SMS
+            $peopleInQueue = ServiceRequest::whereIn('status', ['pending', 'processing'])
+                ->where('id', '<', $serviceRequest->id)
+                ->count();
+
+            $queueBacklogMinutes = DB::table('service_requests')
+                ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
+                ->whereIn('service_requests.status', ['pending', 'processing'])
+                ->where('service_requests.id', '<=', $serviceRequest->id)
+                ->sum('document_types.processing_time_minutes');
+
+            $maxMins = $queueBacklogMinutes;
+            $minMins = max(15, floor($maxMins / 2));
+
+            $formatTime = function ($m) {
+                $h = floor($m / 60);
+                $r = $m % 60;
+                if ($h > 0) {
+                    return $r > 0 ? "{$h} hr at {$r} mins" : "{$h} hr";
+                }
+
+                return "{$m} mins";
+            };
+
+            $timeString = $formatTime($minMins).' - '.$formatTime($maxMins);
+
+            $message = "BDLS: Ang iyong request ({$queueNumber}) ay naipasa na. Estimated Waiting Time: {$timeString}.";
 
             $this->smsService->sendSms(
                 $user->id,

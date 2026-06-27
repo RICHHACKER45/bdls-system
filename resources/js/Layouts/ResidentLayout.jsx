@@ -23,6 +23,15 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
         }
     }, [flash]);
 
+    // Dynamic Time-based Greeting
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Magandang umaga';
+        if (hour === 12) return 'Magandang tanghali';
+        if (hour < 18) return 'Magandang hapon';
+        return 'Magandang gabi';
+    };
+
     // Navigation Data
     const sidebarNav = [
         {
@@ -70,6 +79,15 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
                         strokeWidth="2"
                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     ></path>
+                </svg>
+            ),
+        },
+        {
+            id: 'support',
+            label: 'Tulong / Suporta',
+            icon: (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             ),
         },
@@ -169,13 +187,15 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
                             {activeTab === 'dashboard'
                                 ? 'Dashboard'
                                 : activeTab === 'tracking'
-                                  ? 'Track Requests'
-                                  : 'Account Settings'}
+                                ? 'Track Requests'
+                                : activeTab === 'support'
+                                ? 'Tulong at Suporta'
+                                : 'Account Settings'}
                         </h1>
                     </div>
                     <div className="ml-auto flex items-center gap-3">
                         <span className="max-w-[180px] truncate text-sm font-semibold text-slate-700 sm:max-w-xs">
-                            Kamusta, {auth?.user?.first_name}!
+                            {getGreeting()}, {auth?.user?.first_name}!
                         </span>
                         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-900 text-white shadow-sm">
                             <span className="text-xs font-black uppercase">
