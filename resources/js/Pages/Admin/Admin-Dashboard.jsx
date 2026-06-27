@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 
@@ -50,6 +51,8 @@ export default function AdminDashboard() {
         documents = [],
         auditLogs = { data: [], links: [] },
         notificationLogs = { data: [], links: [] },
+        analyticsSummary = {},
+        filters = {},
         auth,
         flash = {},
         errors = {},
@@ -1051,111 +1054,172 @@ export default function AdminDashboard() {
 
                     {auditSubTab === 'sub-generate-pdf' && (
                         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div className="border-b border-slate-200 bg-slate-50 p-6">
+                            <div className="flex flex-col items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center">
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                    Generate System Analytics
+                                    Live System Analytics
                                 </h2>
-                            </div>
-                            <div className="mx-auto my-8 max-w-2xl p-8">
-                                {/* BUG FIX 3: SPA Form Pointing to Iframe with proper React timing */}
+                                {/* FALLBACK: PDF Generation Form */}
                                 <form
                                     method="POST"
                                     action={route('admin.reports.generate')}
                                     target="pdfViewerFrame"
                                     onSubmit={submitGeneratePdf}
-                                    className="flex flex-col gap-6"
+                                    className="flex items-center gap-2"
                                 >
-                                    <input
-                                        type="hidden"
-                                        name="_token"
-                                        value={usePage().props.csrf_token}
-                                    />
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                Piliin ang Buwan{' '}
-                                                <span className="text-red-500">*</span>
-                                            </label>
-                                            <select
-                                                name="report_month"
-                                                value={reportMonth}
-                                                onChange={(e) => setReportMonth(e.target.value)}
-                                                required
-                                                className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900"
-                                            >
-                                                <option value="all">Buong Taon (All Months)</option>
-                                                {[
-                                                    'January',
-                                                    'February',
-                                                    'March',
-                                                    'April',
-                                                    'May',
-                                                    'June',
-                                                    'July',
-                                                    'August',
-                                                    'September',
-                                                    'October',
-                                                    'November',
-                                                    'December',
-                                                ].map((m, i) => (
-                                                    <option
-                                                        key={i}
-                                                        value={(i + 1).toString().padStart(2, '0')}
-                                                    >
-                                                        {m}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                            <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                Piliin ang Taon{' '}
-                                                <span className="text-red-500">*</span>
-                                            </label>
-                                            <select
-                                                name="report_year"
-                                                value={reportYear}
-                                                onChange={(e) => setReportYear(e.target.value)}
-                                                required
-                                                className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-900"
-                                            >
-                                                {Array.from(
-                                                    { length: new Date().getFullYear() - 2023 },
-                                                    (_, i) => new Date().getFullYear() - i
-                                                ).map((y) => (
-                                                    <option key={y} value={y}>
-                                                        {y}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
+                                    <input type="hidden" name="_token" value={usePage().props.csrf_token} />
+                                    <input type="hidden" name="report_month" value={reportMonth} />
+                                    <input type="hidden" name="report_year" value={reportYear} />
                                     <button
                                         type="submit"
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95"
+                                        className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
                                     >
-                                        <svg
-                                            className="h-5 w-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            ></path>
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                            ></path>
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
-                                        Tingnan ang Analytics (In-App)
+                                        I-Print as PDF
                                     </button>
                                 </form>
+                            </div>
+
+                            <div className="p-6">
+                                {/* LIVE FILTERS */}
+                                <div className="mb-8 flex flex-col items-end gap-4 rounded-xl border border-slate-100 bg-slate-50 p-5 sm:flex-row">
+                                    <div className="w-full sm:w-1/3">
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                            Piliin ang Buwan
+                                        </label>
+                                        <select
+                                            value={reportMonth}
+                                            onChange={(e) => setReportMonth(e.target.value)}
+                                            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600"
+                                        >
+                                            <option value="all">Buong Taon (All Months)</option>
+                                            {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => (
+                                                <option key={i} value={(i + 1).toString().padStart(2, '0')}>{m}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="w-full sm:w-1/3">
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                            Piliin ang Taon
+                                        </label>
+                                        <select
+                                            value={reportYear}
+                                            onChange={(e) => setReportYear(e.target.value)}
+                                            className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-600"
+                                        >
+                                            {Array.from({ length: new Date().getFullYear() - 2023 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                                                <option key={y} value={y}>{y}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="w-full sm:w-1/3">
+                                        <button
+                                            onClick={() => {
+                                                router.get(route('admin.dashboard'), { 
+                                                    analytics_month: reportMonth, 
+                                                    analytics_year: reportYear, 
+                                                    search: searchParam, 
+                                                    sort: sortParam 
+                                                }, { 
+                                                    preserveState: true, 
+                                                    preserveScroll: true, 
+                                                    only: ['analyticsSummary', 'filters'] 
+                                                });
+                                            }}
+                                            className="w-full rounded-lg bg-red-600 px-6 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                                        >
+                                            I-Filter ang Data
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* DASHBOARD STATS CARDS */}
+                                <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                                    <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Total Requests</p>
+                                        <p className="mt-2 text-4xl font-black text-slate-900">{analyticsSummary?.total || 0}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-green-100 bg-green-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-green-600 uppercase">Released</p>
+                                        <p className="mt-2 text-4xl font-black text-green-700">{analyticsSummary?.released || 0}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-blue-600 uppercase">Processing</p>
+                                        <p className="mt-2 text-4xl font-black text-blue-700">{analyticsSummary?.processing || 0}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-red-100 bg-red-50 p-5 shadow-sm text-center transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-red-600 uppercase">Rejected / Canceled</p>
+                                        <p className="mt-2 text-4xl font-black text-red-700">{analyticsSummary?.rejected || 0}</p>
+                                    </div>
+                                </div>
+
+                                {/* RECHARTS GRAPHS */}
+                                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                                    {/* Bar Chart: Online vs Walkin */}
+                                    <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                                        <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Service Channel Usage</h3>
+                                        <div className="h-64 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={[
+                                                    { name: 'Online', count: analyticsSummary?.online || 0 },
+                                                    { name: 'Walk-in', count: analyticsSummary?.walkin || 0 }
+                                                ]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                                                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
+                                                    <Bar dataKey="count" radius={[1]} maxBarSize={60}>
+                                                        {
+                                                            [2].map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#0f172a'} />
+                                                            ))
+                                                        }
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+
+                                    {/* Pie Chart: Status Distribution */}
+                                    <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                                        <h3 className="mb-6 text-xs font-black tracking-widest text-slate-500 uppercase text-center">Document Status Distribution</h3>
+                                        <div className="h-64 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={[
+                                                            { name: 'Pending', value: analyticsSummary?.pending || 0, color: '#f59e0b' },
+                                                            { name: 'Processing', value: analyticsSummary?.processing || 0, color: '#3b82f6' },
+                                                            { name: 'Released', value: analyticsSummary?.released || 0, color: '#22c55e' },
+                                                            { name: 'Rejected', value: analyticsSummary?.rejected || 0, color: '#ef4444' },
+                                                        ].filter(d => d.value > 0)}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={65}
+                                                        outerRadius={90}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                        stroke="none"
+                                                    >
+                                                        {
+                                                            [
+                                                                { name: 'Pending', value: analyticsSummary?.pending || 0, color: '#f59e0b' },
+                                                                { name: 'Processing', value: analyticsSummary?.processing || 0, color: '#3b82f6' },
+                                                                { name: 'Released', value: analyticsSummary?.released || 0, color: '#22c55e' },
+                                                                { name: 'Rejected', value: analyticsSummary?.rejected || 0, color: '#ef4444' },
+                                                            ].filter(d => d.value > 0).map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                            ))
+                                                        }
+                                                    </Pie>
+                                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
+                                                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

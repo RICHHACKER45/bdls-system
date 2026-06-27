@@ -66,14 +66,42 @@ class AdminDashboardController extends Controller
         $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
         $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
 
+        // ==========================================
+        // 7. LIVE ANALYTICS WITH FILTERING (Sir Philip's Request)
+        // ==========================================
+        $analyticsYear = $request->get('analytics_year', date('Y'));
+        $analyticsMonth = $request->get('analytics_month', 'all');
+
+        $analyticsQuery = ServiceRequest::query();
+        if ($analyticsMonth !== 'all') {
+            $analyticsQuery->whereYear('created_at', $analyticsYear)
+                           ->whereMonth('created_at', $analyticsMonth);
+        } else {
+            $analyticsQuery->whereYear('created_at', $analyticsYear);
+        }
+
+        $analyticsSummary = [
+            'total' => (clone $analyticsQuery)->count(),
+            'walkin' => (clone $analyticsQuery)->where('request_channel', 'Walk-in')->count(),
+            'online' => (clone $analyticsQuery)->where('request_channel', 'Online')->count(),
+            'pending' => (clone $analyticsQuery)->where('status', 'pending')->count(),
+            'processing' => (clone $analyticsQuery)->whereIn('status', ['processing', 'for_interview'])->count(),
+            'released' => (clone $analyticsQuery)->whereIn('status', ['released', 'received'])->count(),
+            'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
+        ];
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
-
             'activeQueue' => $activeQueue,
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
             'auditLogs' => $auditLogs,
             'notificationLogs' => $notificationLogs,
+            'analyticsSummary' => $analyticsSummary,
+            'filters' => [
+                'analytics_month' => $analyticsMonth,
+                'analytics_year' => $analyticsYear,
+            ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
     }
