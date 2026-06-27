@@ -8,14 +8,11 @@ import ResidentLayout from '@/Layouts/ResidentLayout';
 // ==========================================
 const RequestModal = ({ isOpen, onClose, documents, auth }) => {
     const [requirements, setRequirements] = useState('');
-    const [needsUpload, setNeedsUpload] = useState(false);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         document_type_id: '',
         purpose: '',
-        preferred_pickup_time: '',
         additional_details: '',
-        attachments: [],
     });
 
     const handleDocumentChange = (id) => {
@@ -24,10 +21,8 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
 
         if (doc) {
             setRequirements(doc.requirements_description);
-            setNeedsUpload(doc.requirements_description.toLowerCase() !== 'valid id');
         } else {
             setRequirements('');
-            setNeedsUpload(false);
         }
         clearErrors('document_type_id');
     };
@@ -102,39 +97,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             </div>
                         )}
 
-                        <div className="rounded-xl border border-slate-200 bg-slate-100 p-5 shadow-inner">
-                            <h3 className="mb-3 border-b border-slate-200 pb-2 text-sm font-bold text-slate-800">
-                                Impormasyon ng Nagre-request
-                            </h3>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Buong Pangalan
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.first_name} {auth?.user?.middle_name}{' '}
-                                        {auth?.user?.last_name} {auth?.user?.suffix}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Edad
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.age} taong gulang
-                                    </p>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-semibold text-slate-500">
-                                        Tirahan
-                                    </label>
-                                    <p className="text-sm font-bold text-slate-900">
-                                        {auth?.user?.house_number} {auth?.user?.purok_street},
-                                        Barangay Doña Lucia
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
@@ -170,7 +132,7 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                                             ></path>
                                         </svg>
                                         <p className="text-sm font-bold text-blue-800">
-                                            Mga Kinakailangang Dalhin / I-upload:
+                                            Mga Kinakailangang Dalhin sa Barangay:
                                         </p>
                                     </div>
                                     <p className="ml-7 text-sm font-medium">{requirements}</p>
@@ -195,21 +157,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             />
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-bold text-slate-800">
-                                Kailan mo gustong kunin? <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="datetime-local"
-                                value={data.preferred_pickup_time}
-                                onChange={(e) => {
-                                    setData('preferred_pickup_time', e.target.value);
-                                    clearErrors('preferred_pickup_time');
-                                }}
-                                required
-                                className={`w-full rounded-xl border px-4 py-3 ${errors.preferred_pickup_time ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} bg-slate-50 transition-all outline-none focus:ring-2 focus:ring-slate-900`}
-                            />
-                        </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-bold text-slate-800">
@@ -223,25 +170,6 @@ const RequestModal = ({ isOpen, onClose, documents, auth }) => {
                             ></textarea>
                         </div>
 
-                        {needsUpload && (
-                            <div
-                                className={`border-2 border-dashed bg-white p-5 ${errors.attachments ? 'border-red-500 bg-red-50' : 'border-slate-300'} rounded-xl`}
-                            >
-                                <label className="mb-2 block text-sm font-bold text-slate-800">
-                                    I-upload ang Karagdagang Dokumento{' '}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="file"
-                                    onChange={(e) =>
-                                        setData('attachments', Array.from(e.target.files))
-                                    }
-                                    multiple
-                                    accept="image/jpeg, image/png, image/jpg, application/pdf"
-                                    className="w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-slate-800"
-                                />
-                            </div>
-                        )}
 
                         <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-4">
                             <button
