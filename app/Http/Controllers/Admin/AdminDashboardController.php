@@ -62,9 +62,23 @@ class AdminDashboardController extends Controller
 
         $documents = DocumentType::where('is_active', 1)->get();
 
-        // 6. SYSTEM AUDIT LOGS (Process 6.0)
-        $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
-        $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
+        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
+        $auditSearch = $request->get('audit_search', '');
+        $auditQuery = AuditLog::with('admin')->latest();
+
+        if ($auditSearch) {
+            $auditQuery->where(function ($q) use ($auditSearch) {
+                $q->where('action', 'like', "%{$auditSearch}%")
+                    ->orWhere('description', 'like', "%{$auditSearch}%")
+                    ->orWhereHas('admin', function ($adminQ) use ($auditSearch) {
+                        $adminQ->where('first_name', 'like', "%{$auditSearch}%")
+                            ->orWhere('last_name', 'like', "%{$auditSearch}%");
+                    });
+            });
+        }
+        $auditLogs = $auditQuery->paginate(20, ['*'], 'audit_page')->withQueryString();
+
+
 
         // ==========================================
         // 7. LIVE ANALYTICS WITH FILTERING (Sir Philip's Request)
@@ -75,7 +89,7 @@ class AdminDashboardController extends Controller
         $analyticsQuery = ServiceRequest::query();
         if ($analyticsMonth !== 'all') {
             $analyticsQuery->whereYear('created_at', $analyticsYear)
-                           ->whereMonth('created_at', $analyticsMonth);
+                ->whereMonth('created_at', $analyticsMonth);
         } else {
             $analyticsQuery->whereYear('created_at', $analyticsYear);
         }
@@ -96,11 +110,11 @@ class AdminDashboardController extends Controller
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
             'auditLogs' => $auditLogs,
-            'notificationLogs' => $notificationLogs,
             'analyticsSummary' => $analyticsSummary,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
+                'audit_search' => $auditSearch,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
