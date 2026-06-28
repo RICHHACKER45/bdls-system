@@ -3,7 +3,7 @@
 cd /d "%~dp0"
 
 :: 2. Your command goes here (Change this line for each new .bat)
-call npm run clear-all
+call bun run clear-all
 
 :: 3. Stop the window from closing so you can see errors
 pause
