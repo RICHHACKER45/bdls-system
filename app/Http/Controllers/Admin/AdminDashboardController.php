@@ -549,4 +549,68 @@ class AdminDashboardController extends Controller
             'success_message' => "Ang dokumento ay {$statusStr}.",
         ]);
     }
+    /**
+     * MODULE: Batch Processing (Process Multiple Requests)
+     */
+    public function batchUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'request_ids' => 'required|array',
+            'request_ids.*' => 'exists:service_requests,id',
+            'status' => 'required|string',
+        ]);
+
+        $newStatus = strtolower($request->status);
+        $requests = ServiceRequest::with('user')->whereIn('id', $request->request_ids)->get();
+        $adminId = Auth::id();
+        $processedCount = 0;
+
+        foreach ($requests as $serviceRequest) {
+            $serviceRequest->status = $newStatus;
+            $message = '';
+
+            if ($newStatus === 'processing') {
+                $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
+            } elseif ($newStatus === 'for_interview') {
+                $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
+            } elseif ($newStatus === 'released') {
+                $serviceRequest->released_at = now();
+                $serviceRequest->released_by_admin_id = $adminId;
+                $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+            } elseif ($newStatus === 'rejected') {
+                $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
+            }
+
+            $serviceRequest->save();
+
+            if ($message !== '' && $newStatus !== 'received') {
+                // THE FIX: Push to Background Worker! Walang waiting/hanging sa UI.
+                \App\Jobs\ProcessRequestUpdate::dispatch($serviceRequest, $message);
+            }
+
+            // Real-time Push via WebSockets
+            event(new \App\Events\ResidentRequestUpdated($serviceRequest->user_id, $message));
+
+            // Soft Delete kung rejected
+            if ($newStatus === 'rejected') {
+                $serviceRequest->delete();
+            }
+
+            $processedCount++;
+        }
+
+        // SYSTEM AUDIT LOG RECORDER
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'BATCH_UPDATE',
+            'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
+        ]);
+
+        event(new AdminDashboardUpdated());
+
+        return back()->with([
+            'active_tab' => 'queue',
+            'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests."
+        ]);
+    }
 }

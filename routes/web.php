@@ -82,6 +82,12 @@ Route::middleware(['auth'])->group(function () {
                 'updateRequestStatus',
             ])->name('request.update_status');
 
+            // BATCH PROCESSING ROUTE
+            Route::post('/request/batch-update', [
+                AdminDashboardController::class,
+                'batchUpdateStatus',
+            ])->name('request.batch_update');
+
             // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
