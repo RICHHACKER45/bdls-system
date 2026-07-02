@@ -142,8 +142,13 @@ const RequestModal = ({
                             >
                                 <option value="">-- Pumili ng Dokumento --</option>
                                 {documents.map((doc) => (
-                                    <option key={doc.id} value={doc.id}>
-                                        {doc.name}
+                                    <option 
+                                        key={doc.id} 
+                                        value={doc.id} 
+                                        disabled={!doc.is_active}
+                                        className={!doc.is_active ? 'text-slate-400 italic bg-slate-100' : 'text-slate-900 font-bold'}
+                                    >
+                                        {doc.name} {!doc.is_active ? '(Currently Unavailable)' : ''}
                                     </option>
                                 ))}
                             </select>
