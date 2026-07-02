@@ -72,6 +72,35 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
 
+    // --- BATCH PROCESSING STATES ---
+    const [selectedRequests, setSelectedRequests] = useState([]);
+
+    const toggleSelectAll = (e) => {
+        if (e.target.checked && activeQueue.data) {
+            setSelectedRequests(activeQueue.data.map(q => q.id));
+        } else {
+            setSelectedRequests([]);
+        }
+    };
+
+    const toggleSelectOne = (id) => {
+        setSelectedRequests(prev => 
+            prev.includes(id) ? prev.filter(reqId => reqId !== id) : [...prev, id]
+        );
+    };
+
+    const submitBatchAction = (newStatus) => {
+        if (!confirm(`Sigurado ka bang gusto mong i-update ang status ng ${selectedRequests.length} request(s) papuntang ${newStatus.toUpperCase()}?`)) return;
+
+        router.post(route('admin.request.batch_update'), {
+            request_ids: selectedRequests,
+            status: newStatus
+        }, {
+            preserveScroll: true,
+            onSuccess: () => setSelectedRequests([])
+        });
+    };
+
     // --- DOCUMENT MANAGEMENT STATES ---
     const [docModal, setDocModal] = useState({ isOpen: false, mode: 'add', docId: null });
     const docForm = useForm({
@@ -334,10 +363,26 @@ export default function AdminDashboard() {
 
                     {queueSubTab === 'queue-active' && (
                         <div>
+                            {/* BATCH ACTION TOOLBAR */}
+                            {selectedRequests.length > 0 && (
+                                <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
+                                    <span className="text-sm font-black tracking-widest text-red-800 uppercase">
+                                        {selectedRequests.length} Request(s) Selected
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => submitBatchAction('processing')} className="rounded-lg bg-blue-600 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-700 active:scale-95">Process</button>
+                                        <button onClick={() => submitBatchAction('released')} className="rounded-lg bg-green-600 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release</button>
+                                        <button onClick={() => submitBatchAction('rejected')} className="rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Reject</button>
+                                    </div>
+                                </div>
+                            )}
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
                                         <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                            <th className="p-4 w-12 text-center">
+                                                <input type="checkbox" onChange={toggleSelectAll} checked={activeQueue.data?.length > 0 && selectedRequests.length === activeQueue.data?.length} className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600" />
+                                            </th>
                                             <th className="p-4 font-black">Queue #</th>
                                             <th className="p-4 font-black">Residente</th>
                                             <th className="p-4 font-black">Dokumento</th>
@@ -398,8 +443,11 @@ export default function AdminDashboard() {
                                                 return (
                                                     <tr
                                                         key={queue.id}
-                                                        className="transition-colors hover:bg-slate-50"
+                                                        className={`transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
                                                     >
+                                                        <td className="p-4 text-center">
+                                                            <input type="checkbox" checked={selectedRequests.includes(queue.id)} onChange={() => toggleSelectOne(queue.id)} className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600" />
+                                                        </td>
                                                         <td className="p-4 text-xl font-black tracking-tighter text-slate-900">
                                                             {queue.queue_number}
                                                         </td>
