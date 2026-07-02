@@ -109,6 +109,11 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'printReleaseLogbook',
             ])->name('queue.print_logbook');
+
+            // DOCUMENT MANAGEMENT ROUTES
+            Route::post('/documents', [AdminDashboardController::class, 'storeDocument'])->name('documents.store');
+            Route::post('/documents/{documentType}/update', [AdminDashboardController::class, 'updateDocument'])->name('documents.update');
+            Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
         });
 
     // ==========================================

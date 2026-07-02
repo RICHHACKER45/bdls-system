@@ -32,7 +32,8 @@ class ServiceRequestController extends Controller
      */
     public function index()
     {
-        $documents = DocumentType::where('is_active', 1)->get();
+        // THE FIX: Kunin lahat ng dokumento para maipakita sa UI kung ano ang unavailable (greyed out)
+        $documents = DocumentType::all();
         $user = Auth::user();
 
         $myRequests = ServiceRequest::with('documentType')

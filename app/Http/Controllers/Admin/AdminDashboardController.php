@@ -60,7 +60,8 @@ class AdminDashboardController extends Controller
             ->whereIn('status', ['received', 'rejected', 'canceled'])
             ->paginate(15, ['*'], 'history_page');
 
-        $documents = DocumentType::where('is_active', 1)->get();
+        // THE FIX: Kunin lahat ng dokumento para sa Management Table
+        $documents = DocumentType::all();
 
         // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
         $auditSearch = $request->get('audit_search', '');
@@ -477,5 +478,75 @@ class AdminDashboardController extends Controller
         }
 
         return $pdf->stream($filename);
+    }
+
+    /**
+     * MODULE: Document Management - Store New Document
+     */
+    public function storeDocument(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        DocumentType::create([
+            'name' => $request->name,
+            'requirements_description' => $request->requirements_description,
+            'processing_fee' => $request->processing_fee,
+            'processing_time_minutes' => $request->processing_time_minutes,
+            'is_active' => 1,
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Bagong dokumento ay matagumpay na naidagdag.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Update Existing Document
+     */
+    public function updateDocument(Request $request, DocumentType $documentType)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        $documentType->update($request->only(
+            'name', 'requirements_description', 'processing_fee', 'processing_time_minutes'
+        ));
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Impormasyon ng dokumento ay nai-update.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Toggle Active Status
+     */
+    public function toggleDocumentStatus(DocumentType $documentType)
+    {
+        $documentType->is_active = ! $documentType->is_active;
+        $documentType->save();
+
+        event(new AdminDashboardUpdated);
+
+        $statusStr = $documentType->is_active ? 'Na-activate' : 'Na-deactivate';
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => "Ang dokumento ay {$statusStr}.",
+        ]);
     }
 }
