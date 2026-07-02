@@ -78,8 +78,6 @@ class AdminDashboardController extends Controller
         }
         $auditLogs = $auditQuery->paginate(20, ['*'], 'audit_page')->withQueryString();
 
-
-
         // ==========================================
         // 7. LIVE ANALYTICS WITH FILTERING (Sir Philip's Request)
         // ==========================================
