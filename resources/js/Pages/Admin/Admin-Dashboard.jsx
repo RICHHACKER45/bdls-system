@@ -19,20 +19,23 @@ import axios from 'axios';
 const Pagination = ({ links }) => {
     if (!links || links.length <= 3) return null;
     return (
-        <div className="mt-4 flex flex-wrap gap-1">
-            {links.map((link, i) => (
-                <Link
-                    key={i}
-                    href={link.url || '#'}
-                    preserveScroll
-                    className={`rounded border px-3 py-1 text-sm transition-all ${
-                        link.active
-                            ? 'bg-slate-900 text-white'
-                            : 'bg-white text-slate-500 hover:bg-slate-100'
-                    } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
-                    dangerouslySetInnerHTML={{ __html: link.label }}
-                />
-            ))}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {links.map((link, i) => {
+                const label = link.label.replace('&laquo; Previous', 'Prev').replace('Next &raquo;', 'Next');
+                return (
+                    <Link
+                        key={i}
+                        href={link.url || '#'}
+                        preserveScroll
+                        className={`flex min-w-[32px] items-center justify-center rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+                            link.active
+                                ? 'border-slate-900 bg-slate-900 text-white shadow-md'
+                                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                        } ${!link.url ? 'pointer-events-none opacity-40' : ''}`}
+                        dangerouslySetInnerHTML={{ __html: label }}
+                    />
+                );
+            })}
         </div>
     );
 };
@@ -71,6 +74,25 @@ export default function AdminDashboard() {
 
     const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
+
+    // Queue Filters State
+    const [qStatus, setQStatus] = useState(filters?.queue_status || 'all');
+    const [qDoc, setQDoc] = useState(filters?.queue_doc || 'all');
+    const [qSort, setQSort] = useState(filters?.queue_sort || 'oldest');
+
+    useEffect(() => {
+        if (qStatus !== (filters?.queue_status || 'all') || 
+            qDoc !== (filters?.queue_doc || 'all') || 
+            qSort !== (filters?.queue_sort || 'oldest')) {
+            
+            router.get(route('admin.dashboard'), { 
+                ...filters, 
+                queue_status: qStatus, 
+                queue_doc: qDoc, 
+                queue_sort: qSort 
+            }, { preserveState: true, preserveScroll: true, only: ['activeQueue', 'filters'] });
+        }
+    }, [qStatus, qDoc, qSort]);
 
     // --- BATCH PROCESSING STATES ---
     const [selectedRequests, setSelectedRequests] = useState([]);
@@ -363,19 +385,24 @@ export default function AdminDashboard() {
 
                     {queueSubTab === 'queue-active' && (
                         <div>
-                            {/* BATCH ACTION TOOLBAR */}
-                            {selectedRequests.length > 0 && (
-                                <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
-                                    <span className="text-sm font-black tracking-widest text-red-800 uppercase">
-                                        {selectedRequests.length} Request(s) Selected
-                                    </span>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => submitBatchAction('processing')} className="rounded-lg bg-blue-600 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-700 active:scale-95">Process</button>
-                                        <button onClick={() => submitBatchAction('released')} className="rounded-lg bg-green-600 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release</button>
-                                        <button onClick={() => submitBatchAction('rejected')} className="rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Reject</button>
+                                    {/* QUEUE FILTERS */}
+                                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                        <select value={qStatus} onChange={e => setQStatus(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
+                                            <option value="all">Lahat ng Status</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="processing">Processing</option>
+                                            <option value="for_interview">For Interview</option>
+                                            <option value="released">Ready for Release</option>
+                                        </select>
+                                        <select value={qDoc} onChange={e => setQDoc(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
+                                            <option value="all">Group by Document</option>
+                                            {documents.map(doc => <option key={doc.id} value={doc.id}>{doc.name}</option>)}
+                                        </select>
+                                        <select value={qSort} onChange={e => setQSort(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
+                                            <option value="oldest">Pila: Luma (Ascending)</option>
+                                            <option value="newest">Pila: Bago (Descending)</option>
+                                        </select>
                                     </div>
-                                </div>
-                            )}
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
@@ -470,46 +497,23 @@ export default function AdminDashboard() {
                                                                 {rawStatus.replace('_', ' ')}
                                                             </span>
                                                         </td>
-                                                        <td className="flex justify-end gap-2 p-4 text-right">
+                                                    <td className="p-4 align-middle">
+                                                        <div className="flex flex-col items-end gap-2">
                                                             {btnLabel && (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setStatusModal({
-                                                                            isOpen: true,
-                                                                            requestId: queue.id,
-                                                                            nextStatus,
-                                                                            label: btnLabel,
-                                                                        })
-                                                                    }
-                                                                    className="rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-                                                                >
+                                                                <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus, label: btnLabel })} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">
                                                                     {btnLabel}
                                                                 </button>
                                                             )}
-                                                            {(rawStatus === 'pending' ||
-                                                                rawStatus === 'processing') && (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setStatusModal({
-                                                                            isOpen: true,
-                                                                            requestId: queue.id,
-                                                                            nextStatus: 'rejected',
-                                                                            label: 'Reject Request',
-                                                                        })
-                                                                    }
-                                                                    className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                                >
+                                                            {(rawStatus === 'pending' || rawStatus === 'processing') && (
+                                                                <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request' })} className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">
                                                                     Reject
                                                                 </button>
                                                             )}
-                                                            {!btnLabel &&
-                                                                rawStatus !== 'pending' &&
-                                                                rawStatus !== 'processing' && (
-                                                                    <span className="mt-2 text-xs font-bold text-slate-400 italic">
-                                                                        No Action
-                                                                    </span>
-                                                                )}
-                                                        </td>
+                                                            {!btnLabel && rawStatus !== 'pending' && rawStatus !== 'processing' && (
+                                                                <span className="w-36 text-center text-xs font-bold text-slate-400 italic">No Action</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
                                                     </tr>
                                                 );
                                             })
@@ -1861,6 +1865,20 @@ export default function AdminDashboard() {
                                 Isara
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING */}
+            {selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' && (
+                <div className="fixed bottom-8 left-1/2 z-[1] flex -translate-x-1/2 items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 sm:bottom-12">
+                    <span className="whitespace-nowrap text-xs font-black tracking-widest text-white uppercase sm:text-sm">
+                        {selectedRequests.length} Selected
+                    </span>
+                    <div className="h-6 w-px bg-slate-600"></div>
+                    <div className="flex gap-2 sm:gap-3">
+                        <button onClick={() => submitBatchAction('processing')} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">Process</button>
+                        <button onClick={() => submitBatchAction('released')} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">Release</button>
+                        <button onClick={() => submitBatchAction('rejected')} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">Reject</button>
                     </div>
                 </div>
             )}

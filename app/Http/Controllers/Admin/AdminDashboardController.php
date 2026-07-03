@@ -48,12 +48,29 @@ class AdminDashboardController extends Controller
             $query->latest();
         }
 
-        // 5. QUEUE LOGIC: Separate Active Queue from Received History
-        $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
+        // 5. QUEUE LOGIC WITH FILTERS & SORTING
+        $queueStatus = $request->get('queue_status', 'all');
+        $queueDoc = $request->get('queue_doc', 'all');
+        $queueSort = $request->get('queue_sort', 'oldest');
 
-        $activeQueue = (clone $queueBase)
-            ->whereIn('status', ['pending', 'processing', 'for_interview', 'released'])
-            ->paginate(15, ['*'], 'active_page');
+        $queueBase = ServiceRequest::with(['user', 'documentType']);
+
+        if ($queueSort === 'newest') {
+            $queueBase->latest();
+        } else {
+            $queueBase->oldest(); // Ascending queue
+        }
+
+        $activeQuery = (clone $queueBase)->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
+
+        if ($queueStatus !== 'all') {
+            $activeQuery->where('status', $queueStatus);
+        }
+        if ($queueDoc !== 'all') {
+            $activeQuery->where('document_type_id', $queueDoc);
+        }
+
+        $activeQueue = $activeQuery->paginate(15, ['*'], 'active_page')->withQueryString();
 
         // THE FIX: Isinama ang rejected at canceled sa History
         $receivedQueue = (clone $queueBase)
@@ -114,6 +131,9 @@ class AdminDashboardController extends Controller
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
                 'audit_search' => $auditSearch,
+                'queue_status' => $queueStatus,
+                'queue_doc' => $queueDoc,
+                'queue_sort' => $queueSort,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
