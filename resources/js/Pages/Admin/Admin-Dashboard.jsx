@@ -1869,19 +1869,17 @@ export default function AdminDashboard() {
                 </div>
             )}
             {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING */}
-            {selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' && (
-                <div className="fixed bottom-8 left-1/2 z-[1] flex -translate-x-1/2 items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 sm:bottom-12">
-                    <span className="whitespace-nowrap text-xs font-black tracking-widest text-white uppercase sm:text-sm">
-                        {selectedRequests.length} Selected
-                    </span>
-                    <div className="h-6 w-px bg-slate-600"></div>
-                    <div className="flex gap-2 sm:gap-3">
-                        <button onClick={() => submitBatchAction('processing')} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">Process</button>
-                        <button onClick={() => submitBatchAction('released')} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">Release</button>
-                        <button onClick={() => submitBatchAction('rejected')} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">Reject</button>
-                    </div>
+            <div className={`fixed bottom-8 left-1/2 z-[1] flex items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl transition-transform duration-300 ease-in-out sm:bottom-12 ${selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 translate-y-40'}`}>
+                <span className="whitespace-nowrap text-xs font-black tracking-widest text-white uppercase sm:text-sm">
+                    {selectedRequests.length} Selected
+                </span>
+                <div className="h-6 w-px bg-slate-600"></div>
+                <div className="flex gap-2 sm:gap-3">
+                    <button onClick={() => submitBatchAction('processing')} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">Process</button>
+                    <button onClick={() => submitBatchAction('released')} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">Release</button>
+                    <button onClick={() => submitBatchAction('rejected')} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">Reject</button>
                 </div>
-            )}
+            </div>
         </AdminLayout>
     );
 }
