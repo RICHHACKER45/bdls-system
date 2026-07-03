@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                                         ) : (
                                             <tr>
                                                 <td
-                                                    colSpan="5"
+                                                    colSpan="6"
                                                     className="p-12 text-center font-bold text-slate-400 italic"
                                                 >
                                                     Walang aktibong nakapila.
@@ -1723,7 +1723,7 @@ export default function AdminDashboard() {
 
             {/* PDF Viewers */}
             {pdfModalOpen && (
-                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
