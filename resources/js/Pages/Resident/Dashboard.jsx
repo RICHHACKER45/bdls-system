@@ -337,12 +337,11 @@ const RequestModal = ({
                                                             (d) =>
                                                                 d.id ===
                                                                 parseInt(data.document_type_id)
-                                                        )?.processing_time_minutes || 0;
-                                                    const maxMins = currentBacklogMinutes + docTime;
-                                                    const minMins = Math.max(
-                                                        15,
-                                                        Math.floor(maxMins / 2)
-                                                    );
+                                                        )?.processing_time_minutes || 30;
+                                                    
+                                                    // THE UX FIX: Use base doc time + 15 mins buffer instead of summing the whole queue
+                                                    const minMins = docTime;
+                                                    const maxMins = docTime + 15;
 
                                                     const formatTime = (m) => {
                                                         const h = Math.floor(m / 60);
