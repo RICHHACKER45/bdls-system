@@ -32,7 +32,8 @@ class ServiceRequestController extends Controller
      */
     public function index()
     {
-        $documents = DocumentType::where('is_active', 1)->get();
+        // THE FIX: Kunin lahat ng dokumento para maipakita sa UI kung ano ang unavailable (greyed out)
+        $documents = DocumentType::all();
         $user = Auth::user();
 
         $myRequests = ServiceRequest::with('documentType')
@@ -53,10 +54,8 @@ class ServiceRequestController extends Controller
 
         // Kunin ang bilang ng tao sa pila at total na oras
         $activeQueueCount = ServiceRequest::whereIn('status', ['pending', 'processing'])->count();
-        $currentBacklogMinutes = (int) DB::table('service_requests')
-            ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
-            ->whereIn('service_requests.status', ['pending', 'processing'])
-            ->sum('document_types.processing_time_minutes');
+        // THE UX FIX: Removed overkill cumulative calculation. Defaulting to 0 to rely on baseline doc time.
+        $currentBacklogMinutes = 0;
 
         // Kunin ang personal Notification History ng naka-login na residente
         $notificationLogs = NotificationLog::where('user_id', $user->id)
@@ -135,14 +134,12 @@ class ServiceRequestController extends Controller
                 ->where('id', '<', $serviceRequest->id)
                 ->count();
 
-            $queueBacklogMinutes = DB::table('service_requests')
-                ->join('document_types', 'service_requests.document_type_id', '=', 'document_types.id')
-                ->whereIn('service_requests.status', ['pending', 'processing'])
-                ->where('service_requests.id', '<=', $serviceRequest->id)
-                ->sum('document_types.processing_time_minutes');
-
-            $maxMins = $queueBacklogMinutes;
-            $minMins = max(15, floor($maxMins / 2));
+            // THE UX FIX: Only use the document's baseline time for SMS estimates
+            $doc = DocumentType::find($validated['document_type_id']);
+            $docTime = $doc ? $doc->processing_time_minutes : 30;
+            
+            $minMins = $docTime;
+            $maxMins = $docTime + 15; // 15 mins allowance
 
             $formatTime = function ($m) {
                 $h = floor($m / 60);

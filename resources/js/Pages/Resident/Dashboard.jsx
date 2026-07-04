@@ -142,8 +142,13 @@ const RequestModal = ({
                             >
                                 <option value="">-- Pumili ng Dokumento --</option>
                                 {documents.map((doc) => (
-                                    <option key={doc.id} value={doc.id}>
-                                        {doc.name}
+                                    <option 
+                                        key={doc.id} 
+                                        value={doc.id} 
+                                        disabled={!doc.is_active}
+                                        className={!doc.is_active ? 'text-slate-400 italic bg-slate-100' : 'text-slate-900 font-bold'}
+                                    >
+                                        {doc.name} {!doc.is_active ? '(Currently Unavailable)' : ''}
                                     </option>
                                 ))}
                             </select>
@@ -332,12 +337,11 @@ const RequestModal = ({
                                                             (d) =>
                                                                 d.id ===
                                                                 parseInt(data.document_type_id)
-                                                        )?.processing_time_minutes || 0;
-                                                    const maxMins = currentBacklogMinutes + docTime;
-                                                    const minMins = Math.max(
-                                                        15,
-                                                        Math.floor(maxMins / 2)
-                                                    );
+                                                        )?.processing_time_minutes || 30;
+                                                    
+                                                    // THE UX FIX: Use base doc time + 15 mins buffer instead of summing the whole queue
+                                                    const minMins = docTime;
+                                                    const maxMins = docTime + 15;
 
                                                     const formatTime = (m) => {
                                                         const h = Math.floor(m / 60);

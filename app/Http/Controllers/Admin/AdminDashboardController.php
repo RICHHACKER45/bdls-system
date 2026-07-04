@@ -48,19 +48,52 @@ class AdminDashboardController extends Controller
             $query->latest();
         }
 
-        // 5. QUEUE LOGIC: Separate Active Queue from Received History
-        $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
+        // 5. QUEUE LOGIC WITH FILTERS & SORTING
+        $queueStatus = $request->get('queue_status', 'all');
+        $queueDoc = $request->get('queue_doc', 'all');
+        $queueSort = $request->get('queue_sort', 'oldest');
+        $queueSearch = $request->get('queue_search', '');
 
-        $activeQueue = (clone $queueBase)
-            ->whereIn('status', ['pending', 'processing', 'for_interview', 'released'])
-            ->paginate(15, ['*'], 'active_page');
+        $queueBase = ServiceRequest::with(['user', 'documentType']);
+
+        // THE FIX: Universal Search across relationships
+        if (!empty($queueSearch)) {
+            $queueBase->where(function ($q) use ($queueSearch) {
+                $q->where('queue_number', 'like', "%{$queueSearch}%")
+                  ->orWhereHas('user', function ($userQ) use ($queueSearch) {
+                      $userQ->where('first_name', 'like', "%{$queueSearch}%")
+                            ->orWhere('last_name', 'like', "%{$queueSearch}%");
+                  })
+                  ->orWhereHas('documentType', function ($docQ) use ($queueSearch) {
+                      $docQ->where('name', 'like', "%{$queueSearch}%");
+                  });
+            });
+        }
+
+        if ($queueSort === 'newest') {
+            $queueBase->latest();
+        } else {
+            $queueBase->oldest(); // Ascending queue
+        }
+
+        $activeQuery = (clone $queueBase)->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
+
+        if ($queueStatus !== 'all') {
+            $activeQuery->where('status', $queueStatus);
+        }
+        if ($queueDoc !== 'all') {
+            $activeQuery->where('document_type_id', $queueDoc);
+        }
+
+        $activeQueue = $activeQuery->paginate(15, ['*'], 'active_page')->withQueryString();
 
         // THE FIX: Isinama ang rejected at canceled sa History
         $receivedQueue = (clone $queueBase)
             ->whereIn('status', ['received', 'rejected', 'canceled'])
             ->paginate(15, ['*'], 'history_page');
 
-        $documents = DocumentType::where('is_active', 1)->get();
+        // THE FIX: Kunin lahat ng dokumento para sa Management Table
+        $documents = DocumentType::all();
 
         // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
         $auditSearch = $request->get('audit_search', '');
@@ -113,6 +146,10 @@ class AdminDashboardController extends Controller
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
                 'audit_search' => $auditSearch,
+                'queue_status' => $queueStatus,
+                'queue_doc' => $queueDoc,
+                'queue_sort' => $queueSort,
+                'queue_search' => $queueSearch,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
@@ -477,5 +514,139 @@ class AdminDashboardController extends Controller
         }
 
         return $pdf->stream($filename);
+    }
+
+    /**
+     * MODULE: Document Management - Store New Document
+     */
+    public function storeDocument(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        DocumentType::create([
+            'name' => $request->name,
+            'requirements_description' => $request->requirements_description,
+            'processing_fee' => $request->processing_fee,
+            'processing_time_minutes' => $request->processing_time_minutes,
+            'is_active' => 1,
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Bagong dokumento ay matagumpay na naidagdag.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Update Existing Document
+     */
+    public function updateDocument(Request $request, DocumentType $documentType)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        $documentType->update($request->only(
+            'name', 'requirements_description', 'processing_fee', 'processing_time_minutes'
+        ));
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Impormasyon ng dokumento ay nai-update.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Toggle Active Status
+     */
+    public function toggleDocumentStatus(DocumentType $documentType)
+    {
+        $documentType->is_active = ! $documentType->is_active;
+        $documentType->save();
+
+        event(new AdminDashboardUpdated);
+
+        $statusStr = $documentType->is_active ? 'Na-activate' : 'Na-deactivate';
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => "Ang dokumento ay {$statusStr}.",
+        ]);
+    }
+    /**
+     * MODULE: Batch Processing (Process Multiple Requests)
+     */
+    public function batchUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'request_ids' => 'required|array',
+            'request_ids.*' => 'exists:service_requests,id',
+            'status' => 'required|string',
+        ]);
+
+        $newStatus = strtolower($request->status);
+        $requests = ServiceRequest::with('user')->whereIn('id', $request->request_ids)->get();
+        $adminId = Auth::id();
+        $processedCount = 0;
+
+        foreach ($requests as $serviceRequest) {
+            $serviceRequest->status = $newStatus;
+            $message = '';
+
+            if ($newStatus === 'processing') {
+                $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
+            } elseif ($newStatus === 'for_interview') {
+                $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
+            } elseif ($newStatus === 'released') {
+                $serviceRequest->released_at = now();
+                $serviceRequest->released_by_admin_id = $adminId;
+                $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+            } elseif ($newStatus === 'rejected') {
+                $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
+            }
+
+            $serviceRequest->save();
+
+            if ($message !== '' && $newStatus !== 'received') {
+                // THE FIX: Push to Background Worker! Walang waiting/hanging sa UI.
+                \App\Jobs\ProcessRequestUpdate::dispatch($serviceRequest, $message);
+            }
+
+            // Real-time Push via WebSockets
+            event(new \App\Events\ResidentRequestUpdated($serviceRequest->user_id, $message));
+
+            // Soft Delete kung rejected
+            if ($newStatus === 'rejected') {
+                $serviceRequest->delete();
+            }
+
+            $processedCount++;
+        }
+
+        // SYSTEM AUDIT LOG RECORDER
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'BATCH_UPDATE',
+            'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
+        ]);
+
+        event(new AdminDashboardUpdated());
+
+        return back()->with([
+            'active_tab' => 'queue',
+            'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests."
+        ]);
     }
 }
