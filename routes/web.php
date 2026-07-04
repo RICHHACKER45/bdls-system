@@ -82,12 +82,6 @@ Route::middleware(['auth'])->group(function () {
                 'updateRequestStatus',
             ])->name('request.update_status');
 
-            // BATCH PROCESSING ROUTE
-            Route::post('/request/batch-update', [
-                AdminDashboardController::class,
-                'batchUpdateStatus',
-            ])->name('request.batch_update');
-
             // // WALK-IN MODULE ROUTES
             Route::post('/walkin/search', [
                 AdminDashboardController::class,
@@ -115,11 +109,6 @@ Route::middleware(['auth'])->group(function () {
                 AdminDashboardController::class,
                 'printReleaseLogbook',
             ])->name('queue.print_logbook');
-
-            // DOCUMENT MANAGEMENT ROUTES
-            Route::post('/documents', [AdminDashboardController::class, 'storeDocument'])->name('documents.store');
-            Route::post('/documents/{documentType}/update', [AdminDashboardController::class, 'updateDocument'])->name('documents.update');
-            Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
         });
 
     // ==========================================

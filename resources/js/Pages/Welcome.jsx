@@ -138,17 +138,14 @@ export default function Welcome() {
                         </div>
                         <p className="mt-2 text-sm font-medium text-slate-300">
                             May account na?{' '}
-                            <Link
-                                href="/login"
-                                className="font-bold text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-red-400 hover:decoration-red-400"
-                            >
+                            <Link href="/login" className="font-bold text-white transition-colors hover:text-red-400 underline decoration-white/30 hover:decoration-red-400 underline-offset-4">
                                 Mag-login dito
                             </Link>
                         </p>
                     </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 z-30 w-full translate-y-px overflow-hidden leading-none">
+                <div className="absolute bottom-0 left-0 z-30 w-full overflow-hidden leading-none translate-y-px">
                     <svg
                         className="block h-[10vh] min-h-[60px] w-full"
                         xmlns="http://www.w3.org/2000/svg"
@@ -273,7 +270,7 @@ export default function Welcome() {
                 </div>
 
                 {/* BOTTOM WAVE SEPARATOR */}
-                <div className="absolute bottom-0 left-0 w-full translate-y-px overflow-hidden leading-none">
+                <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none translate-y-px">
                     <svg
                         className="block h-[8vh] min-h-[50px] w-full"
                         xmlns="http://www.w3.org/2000/svg"
