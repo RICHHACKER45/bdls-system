@@ -3,27 +3,6 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import Webcam from 'react-webcam';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
-const Pagination = ({ links }) => {
-    if (!links || links.length <= 3) return null;
-    return (
-        <div className="mt-4 flex flex-wrap gap-1">
-            {links.map((link, i) => (
-                <Link
-                    key={i}
-                    href={link.url || '#'}
-                    preserveScroll
-                    className={`rounded border px-3 py-1 text-sm transition-all ${
-                        link.active
-                            ? 'bg-slate-900 text-white'
-                            : 'bg-white text-slate-500 hover:bg-slate-100'
-                    } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
-                    dangerouslySetInnerHTML={{ __html: link.label }}
-                />
-            ))}
-        </div>
-    );
-};
-
 // ==========================================
 // MODAL: CREATE SERVICE REQUEST
 // ==========================================
@@ -142,13 +121,8 @@ const RequestModal = ({
                             >
                                 <option value="">-- Pumili ng Dokumento --</option>
                                 {documents.map((doc) => (
-                                    <option 
-                                        key={doc.id} 
-                                        value={doc.id} 
-                                        disabled={!doc.is_active}
-                                        className={!doc.is_active ? 'text-slate-400 italic bg-slate-100' : 'text-slate-900 font-bold'}
-                                    >
-                                        {doc.name} {!doc.is_active ? '(Currently Unavailable)' : ''}
+                                    <option key={doc.id} value={doc.id}>
+                                        {doc.name}
                                     </option>
                                 ))}
                             </select>
@@ -337,11 +311,12 @@ const RequestModal = ({
                                                             (d) =>
                                                                 d.id ===
                                                                 parseInt(data.document_type_id)
-                                                        )?.processing_time_minutes || 30;
-                                                    
-                                                    // THE UX FIX: Use base doc time + 15 mins buffer instead of summing the whole queue
-                                                    const minMins = docTime;
-                                                    const maxMins = docTime + 15;
+                                                        )?.processing_time_minutes || 0;
+                                                    const maxMins = currentBacklogMinutes + docTime;
+                                                    const minMins = Math.max(
+                                                        15,
+                                                        Math.floor(maxMins / 2)
+                                                    );
 
                                                     const formatTime = (m) => {
                                                         const h = Math.floor(m / 60);
@@ -390,40 +365,19 @@ const RequestModal = ({
 // FAQ DATA
 // ==========================================
 const faqs = [
-    {
-        q: '📌 Paano ko malalaman kung ready na ang dokumento ko?',
-        a: 'Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.',
-    },
-    {
-        q: '📌 Mayroon bang babayaran sa pagkuha ng papel?',
-        a: 'Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.',
-    },
-    {
-        q: '📌 Paano kung nagkamali ako sa form na ipinasa ko?',
-        a: 'Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.',
-    },
-    {
-        q: '📌 Gaano katagal ang proseso ng mga dokumento?',
-        a: 'Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.',
-    },
-    {
-        q: '📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?',
-        a: 'Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.',
-    },
-    {
-        q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?",
-        a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.',
-    },
-    {
-        q: '📌 Maaari bang ma-reject ang aking document request?',
-        a: 'Opo. Maaaring ma-reject ang inyong request kung kulang ang iyong requirements, malabo ang in-upload na resibo/ID, may mismatch sa iyong pangalan sa record ng barangay, o kaya ay hindi balido ang ibinigay na dahilan (Purpose). Kung mangyari ito, makikita ninyo ang eksaktong dahilan ng pagkaka-reject sa "Track Requests" tab upang agad itong maitama.',
-    },
+    { q: "📌 Paano ko malalaman kung ready na ang dokumento ko?", a: 'Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.' },
+    { q: "📌 Mayroon bang babayaran sa pagkuha ng papel?", a: 'Makikita mo ang "Processing Fee" bago ka mag-submit ng request. Sa kasalukuyan, libre (₱0.00) ang pagkuha ng lahat ng dokumento sa Barangay Doña Lucia.' },
+    { q: "📌 Paano kung nagkamali ako sa form na ipinasa ko?", a: 'Kung "Pending" pa lamang ang status, maaari mo itong i-cancel sa Track Requests tab at gumawa ng panibago. Kung "Processing" na, kailangan mong i-contact ang aming Admin.' },
+    { q: "📌 Gaano katagal ang proseso ng mga dokumento?", a: 'Depende ito sa uri ng dokumento at sa dami ng nakapila. Halimbawa, ang Barangay Clearance ay karaniwang inaabot ng 30 minuto, habang ang First Time Jobseeker Certification ay maaaring umabot ng 1 oras dahil nangangailangan ito ng panayam at Oath of Undertaking.' },
+    { q: "📌 Ano ang mga kailangang dalhin kapag kukunin na ang papel?", a: 'Karaniwan ay Valid ID lamang ang hahanapin. Ngunit para sa ilang dokumento, may karagdagang requirements (hal. RSBSA Form o Titulo ng lupa para sa BARC Certification, o Latest CTC para sa Clearance). Makikita mo ang listahan ng requirements sa mismong form bago ka mag-submit.' },
+    { q: "📌 Pwede ba akong kumuha ng Barangay Clearance para sa Business (Mayor's) Permit?", a: 'Hindi na po. Ang pag-isyu ng barangay clearance bilang kinakailangan para sa municipal business permit ay nakatalaga na sa pamahalaang munisipyo at hindi na ini-isyu ng barangay.' },
+    { q: "📌 Maaari bang ma-reject ang aking document request?", a: 'Opo. Maaaring ma-reject ang inyong request kung kulang ang iyong requirements, malabo ang in-upload na resibo/ID, may mismatch sa iyong pangalan sa record ng barangay, o kaya ay hindi balido ang ibinigay na dahilan (Purpose). Kung mangyari ito, makikita ninyo ang eksaktong dahilan ng pagkaka-reject sa "Track Requests" tab upang agad itong maitama.' }
 ];
 
 // ==========================================
 // MAIN COMPONENT: RESIDENT DASHBOARD
 // ==========================================
-export default function Dashboard(props) {
+export default function Dashboard() {
     const {
         documents,
         myRequests = [],
@@ -435,8 +389,7 @@ export default function Dashboard(props) {
         errors = {},
         activeQueueCount = 0,
         currentBacklogMinutes = 0,
-        notificationLogs = { data: [], links: [] },
-    } = props;
+    } = usePage().props;
 
     // Main Tabs State
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -603,9 +556,9 @@ export default function Dashboard(props) {
 
     const triggerUnifiedEmail = () => {
         if (!concernMessage.trim()) return;
-        const subject = encodeURIComponent('BDLS System Concern');
+        const subject = encodeURIComponent("BDLS System Concern");
         const body = encodeURIComponent(concernMessage);
-
+        
         // Detect if the user is on a mobile device
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -621,7 +574,7 @@ export default function Dashboard(props) {
             const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=barangaysec@bdlsgov.ph&su=${subject}&body=${body}`;
             window.open(gmailUrl, '_blank');
         }
-
+        
         // Slight delay to prevent browser cancellation
         setTimeout(() => {
             setIsConcernModalOpen(false);
@@ -1034,33 +987,19 @@ export default function Dashboard(props) {
                                 </div>
 
                                 {/* QUICK HELP CARD */}
-                                <div
+                                <div 
                                     onClick={() => setActiveTab('support')}
-                                    className="cursor-pointer rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                    className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm transition-all hover:bg-blue-100 cursor-pointer active:scale-95"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
-                                            <svg
-                                                className="h-6 w-6"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                ></path>
+                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-bold text-blue-900">
-                                                Kailangan ng Tulong?
-                                            </h3>
-                                            <p className="mt-1 text-[11px] font-medium text-blue-700">
-                                                Pindutin lamang ito para mapunta sa Tulong/Suporta.
-                                            </p>
+                                            <h3 className="text-sm font-bold text-blue-900">Kailangan ng Tulong?</h3>
+                                            <p className="mt-1 text-[11px] font-medium text-blue-700">Pindutin lamang ito para mapunta sa Tulong/Suporta.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1599,74 +1538,63 @@ export default function Dashboard(props) {
                                         )}
 
                                         {/* 🚦 PASSWORD STRENGTH METER 🚦 */}
-                                        {passwordForm.data.password &&
-                                            passwordForm.data.password.length > 0 && (
-                                                <div className="mt-3">
-                                                    <div className="mb-1 flex justify-between">
-                                                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                                            Strength:
-                                                        </span>
-                                                        <span
-                                                            className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}
-                                                        >
-                                                            {strengthLabel}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex h-1.5 w-full gap-1">
-                                                        <div
-                                                            className={`h-full flex-1 rounded-full transition-colors duration-500 ${passwordForm.data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}
-                                                        ></div>
-                                                        <div
-                                                            className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}
-                                                        ></div>
-                                                        <div
-                                                            className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}
-                                                        ></div>
-                                                    </div>
+                                        {passwordForm.data.password && passwordForm.data.password.length > 0 && (
+                                            <div className="mt-3">
+                                                <div className="mb-1 flex justify-between">
+                                                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                        Strength:
+                                                    </span>
+                                                    <span
+                                                        className={`text-[10px] font-black tracking-widest uppercase transition-colors duration-300 ${strengthTextColor}`}
+                                                    >
+                                                        {strengthLabel}
+                                                    </span>
                                                 </div>
-                                            )}
+                                                <div className="flex h-1.5 w-full gap-1">
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${passwordForm.data.password.length > 0 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore >= 3 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                    <div
+                                                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${strengthScore === 4 ? strengthColor : 'bg-slate-200'}`}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* 🟢 LIVE VISUAL PASSWORD TRACKER 🟢 */}
                                         <div className="mt-2 flex flex-col gap-1.5 text-[11px] font-bold">
                                             <span
                                                 className={`flex items-center gap-2 transition-colors ${(passwordForm.data.password || '').length >= 8 ? 'text-green-600' : 'text-slate-400'}`}
                                             >
-                                                {(passwordForm.data.password || '').length >= 8
-                                                    ? '✅'
-                                                    : '○'}{' '}
-                                                Walong (8) characters o higit pa
+                                                {(passwordForm.data.password || '').length >= 8 ? '✅' : '○'} Walong (8)
+                                                characters o higit pa
                                             </span>
                                             <span
                                                 className={`flex items-center gap-2 transition-colors ${/[A-Z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
                                             >
-                                                {/[A-Z]/.test(passwordForm.data.password || '')
-                                                    ? '✅'
-                                                    : '○'}{' '}
-                                                May isang malaking letra (A-Z)
+                                                {/[A-Z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                malaking letra (A-Z)
                                             </span>
                                             <span
                                                 className={`flex items-center gap-2 transition-colors ${/[a-z]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
                                             >
-                                                {/[a-z]/.test(passwordForm.data.password || '')
-                                                    ? '✅'
-                                                    : '○'}{' '}
-                                                May isang maliit na letra (a-z)
+                                                {/[a-z]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                maliit na letra (a-z)
                                             </span>
                                             <span
                                                 className={`flex items-center gap-2 transition-colors ${/\d/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
                                             >
-                                                {/\d/.test(passwordForm.data.password || '')
-                                                    ? '✅'
-                                                    : '○'}{' '}
-                                                May isang numero (0-9)
+                                                {/\d/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang numero
+                                                (0-9)
                                             </span>
                                             <span
                                                 className={`flex items-center gap-2 transition-colors ${/[\W_]/.test(passwordForm.data.password || '') ? 'text-green-600' : 'text-slate-400'}`}
                                             >
-                                                {/[\W_]/.test(passwordForm.data.password || '')
-                                                    ? '✅'
-                                                    : '○'}{' '}
-                                                May isang symbol (hal. @, !, #)
+                                                {/[\W_]/.test(passwordForm.data.password || '') ? '✅' : '○'} May isang
+                                                symbol (hal. @, !, #)
                                             </span>
                                         </div>
                                     </div>
@@ -1702,110 +1630,6 @@ export default function Dashboard(props) {
                 </div>
             )}
 
-            {/* --- TAB 3.5: NOTIFICATIONS --- */}
-            {activeTab === 'notifications' && (
-                <div className="animate-in fade-in duration-500">
-                    <h1 className="mb-6 text-2xl font-bold text-slate-900">Notification History</h1>
-                    <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
-                        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                            <div>
-                                <h2 className="text-lg font-black tracking-tight text-slate-900 uppercase">
-                                    Mga Natanggap na Mensahe
-                                </h2>
-                                <p className="text-sm text-slate-500">
-                                    Listahan ng lahat ng SMS at Email notifications na pinadala sayo
-                                    ng system.
-                                </p>
-                            </div>
-                        </div>
-
-                        {notificationLogs.data && notificationLogs.data.length > 0 ? (
-                            <div className="space-y-4">
-                                {notificationLogs.data.map((log) => (
-                                    <div
-                                        key={log.id}
-                                        className="flex items-start gap-4 rounded-xl border border-slate-100 bg-slate-50 p-5 transition-all hover:border-blue-200 hover:bg-blue-50/50"
-                                    >
-                                        <div
-                                            className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${log.channel === 'email' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}
-                                        >
-                                            {log.channel === 'email' ? (
-                                                <svg
-                                                    className="h-5 w-5"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                                    ></path>
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    className="h-5 w-5"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                    ></path>
-                                                </svg>
-                                            )}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="mb-1 flex items-center justify-between">
-                                                <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">
-                                                    {log.channel}
-                                                </span>
-                                                <span className="text-xs font-bold text-slate-400">
-                                                    {new Date(log.created_at).toLocaleString()}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm leading-relaxed font-medium text-slate-800">
-                                                {log.message_content}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                                <Pagination links={notificationLogs.links} />
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                                    <svg
-                                        className="h-8 w-8"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                                        ></path>
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-bold text-slate-900">
-                                    Wala pang Notifications
-                                </h3>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Ang lahat ng matatanggap mong mensahe mula sa barangay ay
-                                    lilitaw dito.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* --- TAB 4: HELP & SUPPORT --- */}
             {activeTab === 'support' && (
                 <div className="animate-in fade-in duration-500">
@@ -1815,54 +1639,29 @@ export default function Dashboard(props) {
                         {/* FAQs Section */}
                         <div className="space-y-4 lg:col-span-2">
                             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
-                                <h2 className="mb-6 text-lg font-black tracking-tight text-slate-900 uppercase">
-                                    Frequently Asked Questions (FAQs)
-                                </h2>
+                                <h2 className="mb-6 text-lg font-black tracking-tight text-slate-900 uppercase">Frequently Asked Questions (FAQs)</h2>
                                 <div className="space-y-4">
                                     {faqs.map((faq, index) => (
-                                        <div
-                                            key={index}
-                                            className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 transition-all duration-300"
-                                        >
+                                        <div key={index} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden transition-all duration-300">
                                             <button
-                                                onClick={() =>
-                                                    setOpenFaqIndex(
-                                                        openFaqIndex === index ? null : index
-                                                    )
-                                                }
+                                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                                                 className="flex w-full items-center justify-between p-5 text-left focus:outline-none"
                                             >
-                                                <span className="text-[15px] font-bold text-slate-800 md:text-base">
-                                                    {faq.q}
-                                                </span>
-                                                <span
-                                                    className={`ml-4 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`}
-                                                >
-                                                    <svg
-                                                        className="h-5 w-5 text-slate-500"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 9l-7 7-7-7"
-                                                        />
+                                                <span className="text-[15px] font-bold text-slate-800 md:text-base">{faq.q}</span>
+                                                <span className={`ml-4 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`}>
+                                                    <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                     </svg>
                                                 </span>
                                             </button>
                                             <div
                                                 className={`transition-all duration-300 ease-in-out ${
                                                     openFaqIndex === index
-                                                        ? 'max-h-96 px-5 pb-5 opacity-100'
-                                                        : 'max-h-0 px-5 pb-0 opacity-0'
+                                                        ? 'max-h-96 opacity-100 px-5 pb-5'
+                                                        : 'max-h-0 opacity-0 px-5 pb-0'
                                                 }`}
                                             >
-                                                <p className="text-base leading-relaxed text-slate-700">
-                                                    {faq.a}
-                                                </p>
+                                                <p className="text-base leading-relaxed text-slate-700">{faq.a}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -1874,78 +1673,37 @@ export default function Dashboard(props) {
                         <div className="space-y-4">
                             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
                                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-inner">
-                                    <svg
-                                        className="h-7 w-7"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                        ></path>
+                                    <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                     </svg>
                                 </div>
-                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">
-                                    May concerns?
-                                </h2>
-                                <p className="mt-2 text-sm font-medium text-blue-700">
-                                    Mag-email dito o i-text ang mga number na ito para sa inyong mga
-                                    katanungan.
-                                </p>
+                                <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">May concerns?</h2>
+                                <p className="mt-2 text-sm font-medium text-blue-700">Mag-email dito o i-text ang mga number na ito para sa inyong mga katanungan.</p>
 
                                 <div className="mt-8 flex flex-col gap-3">
                                     <button
                                         onClick={() => setIsConcernModalOpen(true)}
                                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95"
                                     >
-                                        <svg
-                                            className="h-5 w-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                            ></path>
-                                        </svg>
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                         Mag-Email Dito
                                     </button>
 
                                     {/* STATIC NUMBERS LIST */}
                                     <div className="mt-3 rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
-                                        <p className="mb-4 text-center text-xs font-black tracking-widest text-slate-500 uppercase">
-                                            Contact Numbers
-                                        </p>
+                                        <p className="mb-4 text-center text-xs font-black tracking-widest text-slate-500 uppercase">Contact Numbers</p>
                                         <div className="flex flex-col gap-3">
                                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                                                <span className="font-bold text-blue-900">
-                                                    Globe / TM
-                                                </span>
-                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">
-                                                    0917 123 4567
-                                                </span>
+                                                <span className="font-bold text-blue-900">Globe / TM</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0917 123 4567</span>
                                             </div>
                                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                                                <span className="font-bold text-blue-900">
-                                                    Smart / TNT
-                                                </span>
-                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">
-                                                    0918 123 4567
-                                                </span>
+                                                <span className="font-bold text-blue-900">Smart / TNT</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0918 123 4567</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="font-bold text-blue-900">
-                                                    DITO
-                                                </span>
-                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">
-                                                    0991 123 4567
-                                                </span>
+                                                <span className="font-bold text-blue-900">DITO</span>
+                                                <span className="font-mono text-sm font-black tracking-widest text-slate-700">0991 123 4567</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2325,26 +2083,13 @@ export default function Dashboard(props) {
                     <div className="w-full max-w-md transform overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                                <svg
-                                    className="h-8 w-8"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                    ></path>
+                                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
-                                Magpadala ng Email
-                            </h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">Magpadala ng Email</h3>
                             <p className="mt-2 px-2 text-sm font-medium text-slate-500">
-                                I-type ang iyong mensahe sa ibaba. Awtomatiko itong ipapasa sa iyong
-                                email app pagka-click ng send.
+                                I-type ang iyong mensahe sa ibaba. Awtomatiko itong ipapasa sa iyong email app pagka-click ng send.
                             </p>
                         </div>
                         <div className="flex flex-col gap-4">
@@ -2355,7 +2100,7 @@ export default function Dashboard(props) {
                                 placeholder="I-type ang iyong katanungan o concern dito bago pumili sa ibaba..."
                                 className="w-full resize-none rounded-xl border border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-800 transition-all outline-none focus:ring-2 focus:ring-blue-600"
                             ></textarea>
-
+                            
                             {concernMessage.trim() === '' && (
                                 <p className="text-center text-xs font-bold text-red-500">
                                     * Paki-type muna ang iyong mensahe sa kahon.
@@ -2372,7 +2117,7 @@ export default function Dashboard(props) {
                                     Proceed to Email
                                 </button>
                             </div>
-
+                            
                             <button
                                 type="button"
                                 onClick={() => {

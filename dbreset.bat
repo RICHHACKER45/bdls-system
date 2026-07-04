@@ -3,7 +3,7 @@
 cd /d "%~dp0"
 
 :: 2. Use 'call' to ensure control returns to this script afterward
-call bun run dbreset
+call npm run dbreset
 
 :: 3. Now 'pause' will actually trigger, even on success or failure
 pause
