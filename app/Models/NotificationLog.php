@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 
 // <-- THE LARAVEL WAY: Clear namespace imports
 
 class NotificationLog extends Model
 {
-    use HasFactory;
+    use HasFactory, Prunable;
 
     // THE LARAVEL WAY: Mass Assignment Protection
     protected $fillable = [
@@ -36,5 +38,13 @@ class NotificationLog extends Model
     public function serviceRequest()
     {
         return $this->belongsTo(ServiceRequest::class);
+    }
+
+    /**
+     * Delete logs older than 30 days to prevent DB flooding
+     */
+    public function prunable(): Builder
+    {
+        return static::where('created_at', '<=', now()->subDays(30));
     }
 }
