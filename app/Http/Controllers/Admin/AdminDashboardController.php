@@ -52,8 +52,23 @@ class AdminDashboardController extends Controller
         $queueStatus = $request->get('queue_status', 'all');
         $queueDoc = $request->get('queue_doc', 'all');
         $queueSort = $request->get('queue_sort', 'oldest');
+        $queueSearch = $request->get('queue_search', '');
 
         $queueBase = ServiceRequest::with(['user', 'documentType']);
+
+        // THE FIX: Universal Search across relationships
+        if (!empty($queueSearch)) {
+            $queueBase->where(function ($q) use ($queueSearch) {
+                $q->where('queue_number', 'like', "%{$queueSearch}%")
+                  ->orWhereHas('user', function ($userQ) use ($queueSearch) {
+                      $userQ->where('first_name', 'like', "%{$queueSearch}%")
+                            ->orWhere('last_name', 'like', "%{$queueSearch}%");
+                  })
+                  ->orWhereHas('documentType', function ($docQ) use ($queueSearch) {
+                      $docQ->where('name', 'like', "%{$queueSearch}%");
+                  });
+            });
+        }
 
         if ($queueSort === 'newest') {
             $queueBase->latest();
@@ -134,6 +149,7 @@ class AdminDashboardController extends Controller
                 'queue_status' => $queueStatus,
                 'queue_doc' => $queueDoc,
                 'queue_sort' => $queueSort,
+                'queue_search' => $queueSearch,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);

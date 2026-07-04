@@ -75,24 +75,31 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
 
-    // Queue Filters State
+    // Queue Filters & Search State
     const [qStatus, setQStatus] = useState(filters?.queue_status || 'all');
     const [qDoc, setQDoc] = useState(filters?.queue_doc || 'all');
     const [qSort, setQSort] = useState(filters?.queue_sort || 'oldest');
+    const [qSearch, setQSearch] = useState(filters?.queue_search || '');
 
     useEffect(() => {
-        if (qStatus !== (filters?.queue_status || 'all') || 
-            qDoc !== (filters?.queue_doc || 'all') || 
-            qSort !== (filters?.queue_sort || 'oldest')) {
-            
-            router.get(route('admin.dashboard'), { 
-                ...filters, 
-                queue_status: qStatus, 
-                queue_doc: qDoc, 
-                queue_sort: qSort 
-            }, { preserveState: true, preserveScroll: true, only: ['activeQueue', 'filters'] });
-        }
-    }, [qStatus, qDoc, qSort]);
+        const delayDebounceFn = setTimeout(() => {
+            if (qStatus !== (filters?.queue_status || 'all') || 
+                qDoc !== (filters?.queue_doc || 'all') || 
+                qSort !== (filters?.queue_sort || 'oldest') ||
+                qSearch !== (filters?.queue_search || '')) {
+                
+                router.get(route('admin.dashboard'), { 
+                    ...filters, 
+                    queue_status: qStatus, 
+                    queue_doc: qDoc, 
+                    queue_sort: qSort,
+                    queue_search: qSearch
+                }, { preserveState: true, preserveScroll: true, only: ['activeQueue', 'receivedQueue', 'filters'] });
+            }
+        }, 300); // 300ms debounce to prevent server lag while typing
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [qStatus, qDoc, qSort, qSearch]);
 
     // --- BATCH PROCESSING STATES ---
     const [selectedRequests, setSelectedRequests] = useState([]);
@@ -385,8 +392,17 @@ export default function AdminDashboard() {
 
                     {queueSubTab === 'queue-active' && (
                         <div>
-                                    {/* QUEUE FILTERS */}
+                                    {/* QUEUE FILTERS & SEARCH */}
                                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                        <div className="flex-1">
+                                            <input 
+                                                type="text" 
+                                                placeholder="I-search ang Queue #, Residente, o Dokumento..." 
+                                                value={qSearch} 
+                                                onChange={e => setQSearch(e.target.value)} 
+                                                className="w-full sm:max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                                            />
+                                        </div>
                                         <select value={qStatus} onChange={e => setQStatus(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
                                             <option value="all">Lahat ng Status</option>
                                             <option value="pending">Pending</option>
@@ -1804,7 +1820,7 @@ export default function AdminDashboard() {
             )}
 
             {logbookModalOpen && (
-                <div className="fixed inset-0 z-[9] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity sm:p-8">
                     <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                             <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-slate-900 uppercase">
