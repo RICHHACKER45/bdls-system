@@ -75,6 +75,12 @@ class SmsService
         $messageContent = preg_replace('/[\x{2600}-\x{26FF}]/u', '', $messageContent);
         $messageContent = preg_replace('/[\x{2700}-\x{27BF}]/u', '', $messageContent);
 
+        // C. WHITESPACE COMPRESSION (Decluttering)
+        // Gawing isahan ang double/triple spaces at limitahan ang newlines sa dalawa
+        $messageContent = preg_replace('/[ \t]+/', ' ', $messageContent);
+        $messageContent = preg_replace('/[\r\n]{3,}/', "\n\n", $messageContent);
+        $messageContent = trim($messageContent);
+
         // ==========================================
         // 4. IDENTITY HEADER (Mandatory NTC Prefix)
         // ==========================================

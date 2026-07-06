@@ -238,10 +238,21 @@ export default function AdminDashboard() {
         announcementForm.clearErrors('message_body');
     };
 
-    // --- ADVANCED SMS PROGRESS LOGIC ---
-    const prefixText = 'Dona Lucia Services: '; // From .env
+    // --- ADVANCED SMS PROGRESS LOGIC (OPTIMIZED & SYNCED) ---
+    const prefixText = "Dona Lucia Services: "; // From .env
     const prefixLength = prefixText.length; // 21 chars
-    const typedLength = announcementForm.data.message_body.length;
+    
+    const rawText = announcementForm.data.message_body || '';
+    
+    // 1. Gayahin ang Backend Sanitizer para 100% accurate ang bilang
+    const cleanTextForCounting = rawText
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '') // Ignore emojis
+        .replace(/[ \t]+/g, ' ') // Compress double spaces
+        .replace(/[\r\n]{3,}/g, '\n\n') // Limit newlines
+        .replace(/[“”]/g, '"').replace(/[‘’]/g, "'") // Convert smart quotes
+        .trim();
+
+    const typedLength = cleanTextForCounting.length;
     const totalLength = typedLength > 0 ? typedLength + prefixLength : 0;
 
     let credits = 0;
