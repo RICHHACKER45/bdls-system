@@ -141,25 +141,17 @@ class SmsService
             $providerResponse = 'Simulated via Laravel Log';
         } elseif ($driver === 'api') {
             try {
-                // THE FIX: Round-Robin Multi-Sender Logic
-                $senderNumbers = explode(',', env('SMS_FROM_NUMBER', ''));
-                $multiMode = env('SMS_MULTI_SENDER_MODE', false);
-                
-                // Gagamitin ang User ID para pumili ng sender para balanse ang distribution
-                $selectedSender = ($multiMode && count($senderNumbers) > 0) 
-                    ? $senderNumbers[$userId % count($senderNumbers)] 
-                    : env('SMS_FROM_NUMBER', '');
-
                 $response = Http::timeout(10)
                     ->withHeaders([
                         'Content-Type' => 'application/json',
                         'X-API-Key' => env('SMS_API_KEY'),
                     ])
                     ->post(env('SMS_API_URL'), [
+                        // INAYOS KO ITO: Ginawa kong SMS_API_URL
                         'SenderName' => env('SMS_SENDER_NAME'),
                         'ToNumber' => $recipientContact,
                         'MessageBody' => $messageContent,
-                        'FromNumber' => trim($selectedSender),
+                        'FromNumber' => env('SMS_FROM_NUMBER'),
                     ]);
 
                 if ($response->successful()) {

@@ -238,8 +238,35 @@ export default function AdminDashboard() {
         announcementForm.clearErrors('message_body');
     };
 
-    const charCount = announcementForm.data.message_body.length;
-    const credits = charCount > 160 ? Math.ceil(charCount / 153) : 1;
+    // --- ADVANCED SMS PROGRESS LOGIC ---
+    const prefixText = 'Dona Lucia Services: '; // From .env
+    const prefixLength = prefixText.length; // 21 chars
+    const typedLength = announcementForm.data.message_body.length;
+    const totalLength = typedLength > 0 ? typedLength + prefixLength : 0;
+
+    let credits = 0;
+    let maxLimit = 150;
+
+    if (totalLength === 0) {
+        credits = 0;
+        maxLimit = 150;
+    } else if (totalLength <= 150) {
+        credits = 1;
+        maxLimit = 150;
+    } else {
+        credits = Math.ceil(totalLength / 144);
+        maxLimit = credits * 144;
+    }
+
+    const rawPercentage = maxLimit > 0 ? (totalLength / maxLimit) * 100 : 0;
+    const progressPercentage = Math.min(rawPercentage, 100);
+
+    let progressColor = 'bg-green-500';
+    if (credits > 1) {
+        progressColor = 'bg-amber-500';
+    } else if (progressPercentage >= 90) {
+        progressColor = 'bg-orange-500';
+    }
     const currentHour = new Date().getHours();
     const isCurfew = currentHour >= 21 || currentHour < 7;
 
@@ -1043,6 +1070,20 @@ export default function AdminDashboard() {
                                         Mensahe (Message Body){' '}
                                         <span className="text-red-500">*</span>
                                     </label>
+                                    {/* NTC PREFIX BADGE */}
+                                    <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 p-2.5 shadow-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="rounded bg-slate-300 px-2 py-1 text-[9px] font-black tracking-widest text-slate-700 uppercase">
+                                                NTC Prefix
+                                            </span>
+                                            <span className="font-mono text-xs font-bold text-slate-900">
+                                                "{prefixText}"
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-500">
+                                            +{prefixLength} Characters
+                                        </span>
+                                    </div>
                                     <textarea
                                         value={announcementForm.data.message_body}
                                         onChange={handleAnnouncementChange}
@@ -1063,18 +1104,40 @@ export default function AdminDashboard() {
                                         </p>
                                     )}
 
-                                    <div className="mt-2 flex items-start justify-between">
-                                        <p
-                                            className={`mt-1 text-xs font-bold text-red-600 ${isLinkDetected ? 'block' : 'hidden'}`}
-                                        >
-                                            ⚠️ Bawal mag-send ng links (http/www).
-                                        </p>
-                                        <p
-                                            className={`mt-1 ml-auto text-xs font-bold ${charCount > 160 ? 'text-amber-600' : 'text-slate-500'}`}
-                                        >
-                                            Characters: {charCount}/160 (Est. {credits} Credit/s per
-                                            user)
-                                        </p>
+                                    {/* VISUAL PROGRESS BAR & COUNTERS */}
+                                    <div className="mt-3 flex flex-col gap-2">
+                                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                                            <div
+                                                className={`h-full transition-all duration-300 ${progressColor}`}
+                                                style={{ width: `${progressPercentage}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="flex items-start justify-between">
+                                            <p
+                                                className={`mt-1 text-xs font-bold text-red-600 ${isLinkDetected ? 'block' : 'hidden'}`}
+                                            >
+                                                ⚠️ Bawal mag-send ng links (http/www).
+                                            </p>
+                                            {totalLength === 0 ? (
+                                                <p className="mt-1 ml-auto text-right text-xs font-medium text-slate-500">
+                                                    Mag-type para makita ang bilang...
+                                                </p>
+                                            ) : (
+                                                <div className="ml-auto text-right text-xs font-medium text-slate-500">
+                                                    <span
+                                                        className={`font-bold ${credits > 1 ? 'text-amber-600' : 'text-slate-700'}`}
+                                                    >
+                                                        {totalLength} / {maxLimit} Chars
+                                                    </span>
+                                                    <br />
+                                                    <span
+                                                        className={`text-[10px] font-black tracking-widest uppercase ${credits > 1 ? 'text-amber-600' : 'text-green-600'}`}
+                                                    >
+                                                        (EST. {credits} CREDIT/S PER USER)
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
