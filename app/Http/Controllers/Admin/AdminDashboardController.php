@@ -6,6 +6,7 @@ use App\Events\AdminDashboardUpdated;
 use App\Events\ResidentRequestUpdated;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessAnnouncementSms;
+use App\Jobs\ProcessRequestUpdate;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\DocumentType;
@@ -57,16 +58,16 @@ class AdminDashboardController extends Controller
         $queueBase = ServiceRequest::with(['user', 'documentType']);
 
         // THE FIX: Universal Search across relationships
-        if (!empty($queueSearch)) {
+        if (! empty($queueSearch)) {
             $queueBase->where(function ($q) use ($queueSearch) {
                 $q->where('queue_number', 'like', "%{$queueSearch}%")
-                  ->orWhereHas('user', function ($userQ) use ($queueSearch) {
-                      $userQ->where('first_name', 'like', "%{$queueSearch}%")
+                    ->orWhereHas('user', function ($userQ) use ($queueSearch) {
+                        $userQ->where('first_name', 'like', "%{$queueSearch}%")
                             ->orWhere('last_name', 'like', "%{$queueSearch}%");
-                  })
-                  ->orWhereHas('documentType', function ($docQ) use ($queueSearch) {
-                      $docQ->where('name', 'like', "%{$queueSearch}%");
-                  });
+                    })
+                    ->orWhereHas('documentType', function ($docQ) use ($queueSearch) {
+                        $docQ->where('name', 'like', "%{$queueSearch}%");
+                    });
             });
         }
 
@@ -585,6 +586,7 @@ class AdminDashboardController extends Controller
             'success_message' => "Ang dokumento ay {$statusStr}.",
         ]);
     }
+
     /**
      * MODULE: Batch Processing (Process Multiple Requests)
      */
@@ -621,11 +623,11 @@ class AdminDashboardController extends Controller
 
             if ($message !== '' && $newStatus !== 'received') {
                 // THE FIX: Push to Background Worker! Walang waiting/hanging sa UI.
-                \App\Jobs\ProcessRequestUpdate::dispatch($serviceRequest, $message);
+                ProcessRequestUpdate::dispatch($serviceRequest, $message);
             }
 
             // Real-time Push via WebSockets
-            event(new \App\Events\ResidentRequestUpdated($serviceRequest->user_id, $message));
+            event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
 
             // Soft Delete kung rejected
             if ($newStatus === 'rejected') {
@@ -642,11 +644,11 @@ class AdminDashboardController extends Controller
             'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
         ]);
 
-        event(new AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         return back()->with([
             'active_tab' => 'queue',
-            'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests."
+            'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests.",
         ]);
     }
 }

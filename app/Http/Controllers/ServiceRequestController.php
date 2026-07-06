@@ -137,7 +137,7 @@ class ServiceRequestController extends Controller
             // THE UX FIX: Only use the document's baseline time for SMS estimates
             $doc = DocumentType::find($validated['document_type_id']);
             $docTime = $doc ? $doc->processing_time_minutes : 30;
-            
+
             $minMins = $docTime;
             $maxMins = $docTime + 15; // 15 mins allowance
 

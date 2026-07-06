@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\DocumentType;
 use App\Models\ServiceRequest;
 use App\Models\User;
-use App\Models\DocumentType;
-use Illuminate\Support\Str;
+use Illuminate\Database\Seeder;
 
 class ServiceRequestTestSeeder extends Seeder
 {
@@ -19,6 +18,7 @@ class ServiceRequestTestSeeder extends Seeder
 
         if ($residents->isEmpty() || $documents->isEmpty()) {
             $this->command->warn('Walang resident o documents sa database. Paki-run muna ang default seeders.');
+
             return;
         }
 
@@ -28,13 +28,13 @@ class ServiceRequestTestSeeder extends Seeder
         foreach ($documents as $doc) {
             // I-loop ang bawat status
             foreach ($statuses as $status) {
-                
+
                 // Gagawa ng lima (5) para sa bawat status ng dokumentong ito
                 for ($i = 1; $i <= 5; $i++) {
                     $resident = $residents->random();
                     $channel = rand(0, 1) ? 'Online' : 'Walk-in';
                     $prefix = $channel === 'Online' ? 'O-' : 'W-';
-                    $queueNumber = $prefix . str_pad($queueCounter, 3, '0', STR_PAD_LEFT);
+                    $queueNumber = $prefix.str_pad($queueCounter, 3, '0', STR_PAD_LEFT);
 
                     ServiceRequest::create([
                         'user_id' => $resident->id,

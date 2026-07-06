@@ -142,11 +142,15 @@ const RequestModal = ({
                             >
                                 <option value="">-- Pumili ng Dokumento --</option>
                                 {documents.map((doc) => (
-                                    <option 
-                                        key={doc.id} 
-                                        value={doc.id} 
+                                    <option
+                                        key={doc.id}
+                                        value={doc.id}
                                         disabled={!doc.is_active}
-                                        className={!doc.is_active ? 'text-slate-400 italic bg-slate-100' : 'text-slate-900 font-bold'}
+                                        className={
+                                            !doc.is_active
+                                                ? 'bg-slate-100 text-slate-400 italic'
+                                                : 'font-bold text-slate-900'
+                                        }
                                     >
                                         {doc.name} {!doc.is_active ? '(Currently Unavailable)' : ''}
                                     </option>
@@ -338,7 +342,7 @@ const RequestModal = ({
                                                                 d.id ===
                                                                 parseInt(data.document_type_id)
                                                         )?.processing_time_minutes || 30;
-                                                    
+
                                                     // THE UX FIX: Use base doc time + 15 mins buffer instead of summing the whole queue
                                                     const minMins = docTime;
                                                     const maxMins = docTime + 15;

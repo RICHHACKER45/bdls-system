@@ -25,29 +25,29 @@ class ProcessRequestUpdate implements ShouldQueue
     {
         try {
             $user = $this->serviceRequest->user;
-            
+
             // 1. Ipadala ang SMS (isAnnouncement = false, isOtp = false)
             $smsService->sendSms(
-                $user->id, 
-                $user->contact_number, 
-                $this->message, 
-                $this->serviceRequest->id, 
-                false, 
+                $user->id,
+                $user->contact_number,
+                $this->message,
+                $this->serviceRequest->id,
+                false,
                 false
             );
 
             // 2. Ipadala ang Email (Kung naka-verify at opt-in)
             if ($user->email_verified_at && $user->wants_email_notification) {
                 $emailService->sendEmail(
-                    $user->id, 
-                    $user->email, 
-                    'BDLS Request Update', 
-                    $this->message, 
+                    $user->id,
+                    $user->email,
+                    'BDLS Request Update',
+                    $this->message,
                     $this->serviceRequest->id
                 );
             }
         } catch (\Exception $e) {
-            Log::error("Failed background notification for {$this->serviceRequest->queue_number}: " . $e->getMessage());
+            Log::error("Failed background notification for {$this->serviceRequest->queue_number}: ".$e->getMessage());
         }
     }
 }

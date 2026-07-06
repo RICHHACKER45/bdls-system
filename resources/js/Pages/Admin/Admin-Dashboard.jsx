@@ -21,7 +21,9 @@ const Pagination = ({ links }) => {
     return (
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             {links.map((link, i) => {
-                const label = link.label.replace('&laquo; Previous', 'Prev').replace('Next &raquo;', 'Next');
+                const label = link.label
+                    .replace('&laquo; Previous', 'Prev')
+                    .replace('Next &raquo;', 'Next');
                 return (
                     <Link
                         key={i}
@@ -83,18 +85,27 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
-            if (qStatus !== (filters?.queue_status || 'all') || 
-                qDoc !== (filters?.queue_doc || 'all') || 
+            if (
+                qStatus !== (filters?.queue_status || 'all') ||
+                qDoc !== (filters?.queue_doc || 'all') ||
                 qSort !== (filters?.queue_sort || 'oldest') ||
-                qSearch !== (filters?.queue_search || '')) {
-                
-                router.get(route('admin.dashboard'), { 
-                    ...filters, 
-                    queue_status: qStatus, 
-                    queue_doc: qDoc, 
-                    queue_sort: qSort,
-                    queue_search: qSearch
-                }, { preserveState: true, preserveScroll: true, only: ['activeQueue', 'receivedQueue', 'filters'] });
+                qSearch !== (filters?.queue_search || '')
+            ) {
+                router.get(
+                    route('admin.dashboard'),
+                    {
+                        ...filters,
+                        queue_status: qStatus,
+                        queue_doc: qDoc,
+                        queue_sort: qSort,
+                        queue_search: qSearch,
+                    },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: ['activeQueue', 'receivedQueue', 'filters'],
+                    }
+                );
             }
         }, 300); // 300ms debounce to prevent server lag while typing
 
@@ -106,28 +117,37 @@ export default function AdminDashboard() {
 
     const toggleSelectAll = (e) => {
         if (e.target.checked && activeQueue.data) {
-            setSelectedRequests(activeQueue.data.map(q => q.id));
+            setSelectedRequests(activeQueue.data.map((q) => q.id));
         } else {
             setSelectedRequests([]);
         }
     };
 
     const toggleSelectOne = (id) => {
-        setSelectedRequests(prev => 
-            prev.includes(id) ? prev.filter(reqId => reqId !== id) : [...prev, id]
+        setSelectedRequests((prev) =>
+            prev.includes(id) ? prev.filter((reqId) => reqId !== id) : [...prev, id]
         );
     };
 
     const submitBatchAction = (newStatus) => {
-        if (!confirm(`Sigurado ka bang gusto mong i-update ang status ng ${selectedRequests.length} request(s) papuntang ${newStatus.toUpperCase()}?`)) return;
+        if (
+            !confirm(
+                `Sigurado ka bang gusto mong i-update ang status ng ${selectedRequests.length} request(s) papuntang ${newStatus.toUpperCase()}?`
+            )
+        )
+            return;
 
-        router.post(route('admin.request.batch_update'), {
-            request_ids: selectedRequests,
-            status: newStatus
-        }, {
-            preserveScroll: true,
-            onSuccess: () => setSelectedRequests([])
-        });
+        router.post(
+            route('admin.request.batch_update'),
+            {
+                request_ids: selectedRequests,
+                status: newStatus,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => setSelectedRequests([]),
+            }
+        );
     };
 
     // --- DOCUMENT MANAGEMENT STATES ---
@@ -392,39 +412,64 @@ export default function AdminDashboard() {
 
                     {queueSubTab === 'queue-active' && (
                         <div>
-                                    {/* QUEUE FILTERS & SEARCH */}
-                                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                                        <div className="flex-1">
-                                            <input 
-                                                type="text" 
-                                                placeholder="I-search ang Queue #, Residente, o Dokumento..." 
-                                                value={qSearch} 
-                                                onChange={e => setQSearch(e.target.value)} 
-                                                className="w-full sm:max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                                            />
-                                        </div>
-                                        <select value={qStatus} onChange={e => setQStatus(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
-                                            <option value="all">Lahat ng Status</option>
-                                            <option value="pending">Pending</option>
-                                            <option value="processing">Processing</option>
-                                            <option value="for_interview">For Interview</option>
-                                            <option value="released">Ready for Release</option>
-                                        </select>
-                                        <select value={qDoc} onChange={e => setQDoc(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
-                                            <option value="all">Group by Document</option>
-                                            {documents.map(doc => <option key={doc.id} value={doc.id}>{doc.name}</option>)}
-                                        </select>
-                                        <select value={qSort} onChange={e => setQSort(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900">
-                                            <option value="oldest">Pila: Luma (Ascending)</option>
-                                            <option value="newest">Pila: Bago (Descending)</option>
-                                        </select>
-                                    </div>
+                            {/* QUEUE FILTERS & SEARCH */}
+                            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="I-search ang Queue #, Residente, o Dokumento..."
+                                        value={qSearch}
+                                        onChange={(e) => setQSearch(e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 sm:max-w-xs"
+                                    />
+                                </div>
+                                <select
+                                    value={qStatus}
+                                    onChange={(e) => setQStatus(e.target.value)}
+                                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                                >
+                                    <option value="all">Lahat ng Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="for_interview">For Interview</option>
+                                    <option value="released">Ready for Release</option>
+                                </select>
+                                <select
+                                    value={qDoc}
+                                    onChange={(e) => setQDoc(e.target.value)}
+                                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                                >
+                                    <option value="all">Group by Document</option>
+                                    {documents.map((doc) => (
+                                        <option key={doc.id} value={doc.id}>
+                                            {doc.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={qSort}
+                                    onChange={(e) => setQSort(e.target.value)}
+                                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                                >
+                                    <option value="oldest">Pila: Luma (Ascending)</option>
+                                    <option value="newest">Pila: Bago (Descending)</option>
+                                </select>
+                            </div>
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
                                         <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
-                                            <th className="p-4 w-12 text-center">
-                                                <input type="checkbox" onChange={toggleSelectAll} checked={activeQueue.data?.length > 0 && selectedRequests.length === activeQueue.data?.length} className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600" />
+                                            <th className="w-12 p-4 text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    onChange={toggleSelectAll}
+                                                    checked={
+                                                        activeQueue.data?.length > 0 &&
+                                                        selectedRequests.length ===
+                                                            activeQueue.data?.length
+                                                    }
+                                                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600"
+                                                />
                                             </th>
                                             <th className="p-4 font-black">Queue #</th>
                                             <th className="p-4 font-black">Residente</th>
@@ -489,7 +534,16 @@ export default function AdminDashboard() {
                                                         className={`transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
                                                     >
                                                         <td className="p-4 text-center">
-                                                            <input type="checkbox" checked={selectedRequests.includes(queue.id)} onChange={() => toggleSelectOne(queue.id)} className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600" />
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedRequests.includes(
+                                                                    queue.id
+                                                                )}
+                                                                onChange={() =>
+                                                                    toggleSelectOne(queue.id)
+                                                                }
+                                                                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600"
+                                                            />
                                                         </td>
                                                         <td className="p-4 text-xl font-black tracking-tighter text-slate-900">
                                                             {queue.queue_number}
@@ -513,23 +567,49 @@ export default function AdminDashboard() {
                                                                 {rawStatus.replace('_', ' ')}
                                                             </span>
                                                         </td>
-                                                    <td className="p-4 align-middle">
-                                                        <div className="flex flex-col items-end gap-2">
-                                                            {btnLabel && (
-                                                                <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus, label: btnLabel })} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">
-                                                                    {btnLabel}
-                                                                </button>
-                                                            )}
-                                                            {(rawStatus === 'pending' || rawStatus === 'processing') && (
-                                                                <button onClick={() => setStatusModal({ isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request' })} className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">
-                                                                    Reject
-                                                                </button>
-                                                            )}
-                                                            {!btnLabel && rawStatus !== 'pending' && rawStatus !== 'processing' && (
-                                                                <span className="w-36 text-center text-xs font-bold text-slate-400 italic">No Action</span>
-                                                            )}
-                                                        </div>
-                                                    </td>
+                                                        <td className="p-4 align-middle">
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                {btnLabel && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus,
+                                                                                label: btnLabel,
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                                                    >
+                                                                        {btnLabel}
+                                                                    </button>
+                                                                )}
+                                                                {(rawStatus === 'pending' ||
+                                                                    rawStatus === 'processing') && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus:
+                                                                                    'rejected',
+                                                                                label: 'Reject Request',
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                )}
+                                                                {!btnLabel &&
+                                                                    rawStatus !== 'pending' &&
+                                                                    rawStatus !== 'processing' && (
+                                                                        <span className="w-36 text-center text-xs font-bold text-slate-400 italic">
+                                                                            No Action
+                                                                        </span>
+                                                                    )}
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 );
                                             })
@@ -1444,7 +1524,10 @@ export default function AdminDashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                     Document Management
                                 </h2>
-                                <p className="text-sm text-slate-500">Kontrolin ang presyo, processing time, at requirements ng mga dokumento.</p>
+                                <p className="text-sm text-slate-500">
+                                    Kontrolin ang presyo, processing time, at requirements ng mga
+                                    dokumento.
+                                </p>
                             </div>
                             <button
                                 onClick={() => openDocModal('add')}
@@ -1466,19 +1549,32 @@ export default function AdminDashboard() {
                                 <tbody className="divide-y divide-slate-100">
                                     {documents.length > 0 ? (
                                         documents.map((doc) => (
-                                            <tr key={doc.id} className="transition-colors hover:bg-slate-50">
+                                            <tr
+                                                key={doc.id}
+                                                className="transition-colors hover:bg-slate-50"
+                                            >
                                                 <td className="p-4">
-                                                    <p className={`text-sm font-bold uppercase ${doc.is_active ? 'text-slate-900' : 'text-slate-400'}`}>
+                                                    <p
+                                                        className={`text-sm font-bold uppercase ${doc.is_active ? 'text-slate-900' : 'text-slate-400'}`}
+                                                    >
                                                         {doc.name}
                                                     </p>
-                                                    <p className="mt-1 max-w-xs truncate text-[10px] text-slate-500">{doc.requirements_description}</p>
+                                                    <p className="mt-1 max-w-xs truncate text-[10px] text-slate-500">
+                                                        {doc.requirements_description}
+                                                    </p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="text-xs font-bold text-slate-700">₱{doc.processing_fee}</p>
-                                                    <p className="text-[10px] font-medium text-slate-500">{doc.processing_time_minutes} mins avg</p>
+                                                    <p className="text-xs font-bold text-slate-700">
+                                                        ₱{doc.processing_fee}
+                                                    </p>
+                                                    <p className="text-[10px] font-medium text-slate-500">
+                                                        {doc.processing_time_minutes} mins avg
+                                                    </p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm ${doc.is_active ? 'border border-green-200 bg-green-100 text-green-700' : 'border border-slate-200 bg-slate-100 text-slate-500'}`}>
+                                                    <span
+                                                        className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm ${doc.is_active ? 'border border-green-200 bg-green-100 text-green-700' : 'border border-slate-200 bg-slate-100 text-slate-500'}`}
+                                                    >
                                                         {doc.is_active ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
@@ -1500,7 +1596,10 @@ export default function AdminDashboard() {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="4" className="p-12 text-center font-bold text-slate-400 italic">
+                                            <td
+                                                colSpan="4"
+                                                className="p-12 text-center font-bold text-slate-400 italic"
+                                            >
                                                 Walang nakarehistrong dokumento.
                                             </td>
                                         </tr>
@@ -1644,26 +1743,84 @@ export default function AdminDashboard() {
                         </h3>
                         <form onSubmit={submitDoc} className="space-y-4">
                             <div>
-                                <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Document Name</label>
-                                <input type="text" value={docForm.data.name} onChange={e => docForm.setData('name', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900" />
+                                <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                    Document Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={docForm.data.name}
+                                    onChange={(e) => docForm.setData('name', e.target.value)}
+                                    required
+                                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                />
                             </div>
                             <div>
-                                <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Requirements (Comma separated)</label>
-                                <textarea value={docForm.data.requirements_description} onChange={e => docForm.setData('requirements_description', e.target.value)} required rows="3" className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+                                <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                    Requirements (Comma separated)
+                                </label>
+                                <textarea
+                                    value={docForm.data.requirements_description}
+                                    onChange={(e) =>
+                                        docForm.setData('requirements_description', e.target.value)
+                                    }
+                                    required
+                                    rows="3"
+                                    className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                ></textarea>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Processing Fee (₱)</label>
-                                    <input type="number" step="0.01" min="0" value={docForm.data.processing_fee} onChange={e => docForm.setData('processing_fee', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Processing Fee (₱)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={docForm.data.processing_fee}
+                                        onChange={(e) =>
+                                            docForm.setData('processing_fee', e.target.value)
+                                        }
+                                        required
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Processing Time (Mins)</label>
-                                    <input type="number" min="1" value={docForm.data.processing_time_minutes} onChange={e => docForm.setData('processing_time_minutes', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Processing Time (Mins)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={docForm.data.processing_time_minutes}
+                                        onChange={(e) =>
+                                            docForm.setData(
+                                                'processing_time_minutes',
+                                                e.target.value
+                                            )
+                                        }
+                                        required
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
-                                <button type="button" onClick={() => setDocModal({ isOpen: false, mode: 'add', docId: null })} className="rounded-xl bg-slate-200 px-5 py-2.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
-                                <button type="submit" disabled={docForm.processing} className="rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">{docForm.processing ? 'Saving...' : 'Save Document'}</button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setDocModal({ isOpen: false, mode: 'add', docId: null })
+                                    }
+                                    className="rounded-xl bg-slate-200 px-5 py-2.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={docForm.processing}
+                                    className="rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                                >
+                                    {docForm.processing ? 'Saving...' : 'Save Document'}
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -1885,15 +2042,32 @@ export default function AdminDashboard() {
                 </div>
             )}
             {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING */}
-            <div className={`fixed bottom-8 left-1/2 z-[1] flex items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl transition-transform duration-300 ease-in-out sm:bottom-12 ${selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 translate-y-40'}`}>
-                <span className="whitespace-nowrap text-xs font-black tracking-widest text-white uppercase sm:text-sm">
+            <div
+                className={`fixed bottom-8 left-1/2 z-[1] flex items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl transition-transform duration-300 ease-in-out sm:bottom-12 ${selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 translate-y-40'}`}
+            >
+                <span className="text-xs font-black tracking-widest whitespace-nowrap text-white uppercase sm:text-sm">
                     {selectedRequests.length} Selected
                 </span>
                 <div className="h-6 w-px bg-slate-600"></div>
                 <div className="flex gap-2 sm:gap-3">
-                    <button onClick={() => submitBatchAction('processing')} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">Process</button>
-                    <button onClick={() => submitBatchAction('released')} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">Release</button>
-                    <button onClick={() => submitBatchAction('rejected')} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">Reject</button>
+                    <button
+                        onClick={() => submitBatchAction('processing')}
+                        className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]"
+                    >
+                        Process
+                    </button>
+                    <button
+                        onClick={() => submitBatchAction('released')}
+                        className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]"
+                    >
+                        Release
+                    </button>
+                    <button
+                        onClick={() => submitBatchAction('rejected')}
+                        className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]"
+                    >
+                        Reject
+                    </button>
                 </div>
             </div>
         </AdminLayout>
