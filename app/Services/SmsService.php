@@ -87,45 +87,25 @@ class SmsService
         // 5. ROUTING: Transactional vs Announcement
         // ==========================================
         if (! $isAnnouncement) {
-            // TRANSACTIONAL (OTP / Queue Updates) -> STRICTLY 160 CHARACTERS
-            if (Str::length($fullMessage) > 160) {
-                $fullMessage = Str::limit($fullMessage, 160, ''); // Puputulin pilit para tipid credit
-                Log::warning(
-                    "SMS Truncated to 160 chars for {$recipientContact} para iwas double-charge.",
-                );
+            // TRANSACTIONAL (OTP / Queue Updates) -> STRICTLY 150 CHARACTERS
+            if (Str::length($fullMessage) > 150) {
+                $fullMessage = Str::limit($fullMessage, 150, ''); // Puputulin pilit para tipid credit
+                Log::warning("SMS Truncated to 150 chars for {$recipientContact} para iwas double-charge.");
             }
-            $this->executeSend(
-                $userId,
-                $recipientContact,
-                $fullMessage,
-                $serviceRequestId,
-                $driver,
-            );
+            $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
         } else {
             // ANNOUNCEMENTS (Concatenation Logic - Multi-part SMS)
-            if (Str::length($fullMessage) <= 160) {
-                $this->executeSend(
-                    $userId,
-                    $recipientContact,
-                    $fullMessage,
-                    $serviceRequestId,
-                    $driver,
-                );
+            if (Str::length($fullMessage) <= 150) {
+                $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
             } else {
-                // Hahatiin natin sa 148 characters + 5 chars para sa "(1/2) " = 153 max payload per credit
-                $chunks = str_split($fullMessage, 148);
+                // Hahatiin natin sa 144 characters + 6 chars para sa "(1/10)" = 150 max payload per credit
+                $chunks = str_split($fullMessage, 144);
                 $totalChunks = count($chunks);
 
                 foreach ($chunks as $index => $chunk) {
                     $partNum = $index + 1;
                     $segmentMessage = $chunk." ({$partNum}/{$totalChunks})";
-                    $this->executeSend(
-                        $userId,
-                        $recipientContact,
-                        $segmentMessage,
-                        $serviceRequestId,
-                        $driver,
-                    );
+                    $this->executeSend($userId, $recipientContact, $segmentMessage, $serviceRequestId, $driver);
                 }
             }
         }
@@ -161,17 +141,25 @@ class SmsService
             $providerResponse = 'Simulated via Laravel Log';
         } elseif ($driver === 'api') {
             try {
+                // THE FIX: Round-Robin Multi-Sender Logic
+                $senderNumbers = explode(',', env('SMS_FROM_NUMBER', ''));
+                $multiMode = env('SMS_MULTI_SENDER_MODE', false);
+                
+                // Gagamitin ang User ID para pumili ng sender para balanse ang distribution
+                $selectedSender = ($multiMode && count($senderNumbers) > 0) 
+                    ? $senderNumbers[$userId % count($senderNumbers)] 
+                    : env('SMS_FROM_NUMBER', '');
+
                 $response = Http::timeout(10)
                     ->withHeaders([
                         'Content-Type' => 'application/json',
                         'X-API-Key' => env('SMS_API_KEY'),
                     ])
                     ->post(env('SMS_API_URL'), [
-                        // INAYOS KO ITO: Ginawa kong SMS_API_URL
                         'SenderName' => env('SMS_SENDER_NAME'),
                         'ToNumber' => $recipientContact,
                         'MessageBody' => $messageContent,
-                        'FromNumber' => env('SMS_FROM_NUMBER'),
+                        'FromNumber' => trim($selectedSender),
                     ]);
 
                 if ($response->successful()) {
