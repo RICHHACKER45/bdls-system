@@ -234,47 +234,23 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * PHASE 1: Walk-In Search-First Logic
-     */
-    public function searchWalkinAccount(Request $request)
-    {
-        $request->validate([
-            'contact_number' => 'required|string|max:20',
-        ]);
-
-        // Hanapin ang user gamit ang unique contact number
-        $walkinUser = User::where('contact_number', $request->contact_number)->first();
-
-        // Ibalik sa Walk-in Tab kasama ang resulta
-        return back()->with([
-            'active_tab' => 'walkin',
-            'walkin_searched' => true,
-            'walkin_search_number' => $request->contact_number,
-            'walkin_user' => $walkinUser,
-        ]);
-    }
-
-    /**
-     * PHASE 2: Walk-in Shadow Profile & Request Creation
+     * MODULE: Direct Unified Walk-in Encoding
      */
     public function storeWalkinRequest(Request $request, SmsService $smsService)
     {
-        // 1. Validation (Pinagsamang Resident Data at Request Data)
+        // 1. Unified Validation (Isang bagsakang validation)
         $request->validate([
             'contact_number' => 'required|string|max:20',
-            'is_new_user' => 'required|boolean',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-
-            // Required lang kung gagawa ng Shadow Profile:
-            'first_name' => 'required_if:is_new_user,1|string|max:255',
-            'last_name' => 'required_if:is_new_user,1|string|max:255',
-            'sex' => 'required_if:is_new_user,1|string|in:Male,Female',
-            'date_of_birth' => 'required_if:is_new_user,1|date',
-            'address' => $validatedData['address'],
         ]);
 
-        // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
+        // 2. Harangin kung ang number ay pagmamay-ari ng Admin
         $isAdmin = User::where('contact_number', $request->contact_number)->where('role', 'admin')->exists();
 
         if ($isAdmin) {
@@ -283,32 +259,29 @@ class AdminDashboardController extends Controller
             ])->with('active_tab', 'walkin');
         }
 
-        // 2. I-wrap sa Transaction para ligtas ang pera sa SMS
+        // 3. Ligtas na Database Transaction
         DB::transaction(function () use ($request, $smsService) {
-            // A. Hanapin o Gumawa ng Shadow Profile
-            if ($request->is_new_user) {
+            // A. Hahanapin kung may existing resident record na gamit ang number, kung wala, gagawa ng bago.
+            $user = User::where('contact_number', $request->contact_number)->first();
+
+            if (!$user) {
                 $user = User::create([
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
                     'sex' => $request->sex,
                     'date_of_birth' => $request->date_of_birth,
-                    'house_number' => $request->house_number,
-                    'purok_street' => $request->purok_street,
+                    'address' => $request->address, // THE FIX: Isang address field na lang
                     'contact_number' => $request->contact_number,
-                    'password' => Hash::make(Str::random(12)),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
                     'role' => 'resident',
                     'contact_verified_at' => now(),
-                    'is_verified' => true, // Walk-ins are physically verified by Admin
+                    'is_verified' => true, // Auto-verified kasi kaharap ng Admin
                     'terms_accepted_at' => now(),
                 ]);
-            } else {
-                $user = User::where('contact_number', $request->contact_number)->firstOrFail();
             }
 
-            // B. Gumawa ng W-XXX Queue Number (W para sa Walk-in)
-            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')
-                ->latest('id')
-                ->first();
+            // B. Gumawa ng W-XXX Queue Number
+            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')->latest('id')->first();
             $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
             $queueNumber = 'W-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
@@ -322,18 +295,14 @@ class AdminDashboardController extends Controller
                 'status' => 'pending',
             ]);
 
-            // ========================================================
-            // THE FIX: AUDIT LOG AT TRY-CATCH NA NASA LOOB NG TRANSACTION
-            // ========================================================
-
-            // 1. THE LARAVEL WAY: I-record agad sa Audit Log ang ginawa ni Admin
-            AuditLog::create([
+            // D. I-record sa System Audit Log
+            \App\Models\AuditLog::create([
                 'admin_id' => Auth::id(),
                 'action' => 'WALKIN_ENCODED',
                 'description' => "Nag-encode ng walk-in request ({$queueNumber}) para kay {$user->first_name} {$user->last_name}.",
             ]);
 
-            // 2. DEFENSIVE SECURITY: I-wrap ang SMS sa Try-Catch para hindi mag-rollback ang DB kapag Curfew
+            // E. Magpadala ng SMS Payload (Decluttered & Optimized)
             try {
                 $message = "Walk-in Queue: {$queueNumber}. Naipasa na ang request. Maghintay tawagin o ng text update.";
                 $smsService->sendSms(
@@ -343,16 +312,12 @@ class AdminDashboardController extends Controller
                     $serviceRequest->id,
                 );
             } catch (\Exception $e) {
-                // I-log lang ang error para makita mo, pero HINDI magka-crash ang system. Ligtas ang data sa taas.
-                Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
+                \Illuminate\Support\Facades\Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
             }
+        });
 
-            // ========================================================
-        }); // <-- Dito nagtatapos ang DB::transaction()
+        event(new \App\Events\AdminDashboardUpdated);
 
-        event(new AdminDashboardUpdated);
-
-        // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
         return redirect()
             ->route('admin.dashboard')
             ->with('active_tab', 'queue')

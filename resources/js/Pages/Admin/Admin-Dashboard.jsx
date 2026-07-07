@@ -289,34 +289,16 @@ export default function AdminDashboard() {
         });
     };
 
-    const walkinSearchForm = useForm({ contact_number: flash?.walkin_search_number || '' });
-    const submitWalkinSearch = (e) => {
-        e.preventDefault();
-        walkinSearchForm.post(route('admin.walkin.search'), { preserveScroll: true });
-    };
-
     const walkinStoreForm = useForm({
         contact_number: '',
-        is_new_user: '1',
-        document_type_id: '',
-        purpose: '',
         first_name: '',
         last_name: '',
         sex: '',
         date_of_birth: '',
-        house_number: '',
-        purok_street: '',
+        address: '',
+        document_type_id: '',
+        purpose: '',
     });
-
-    useEffect(() => {
-        if (flash?.walkin_searched) {
-            walkinStoreForm.setData((data) => ({
-                ...data,
-                contact_number: flash?.walkin_search_number || '',
-                is_new_user: flash?.walkin_user ? '0' : '1',
-            }));
-        }
-    }, [flash?.walkin_searched, flash?.walkin_search_number, flash?.walkin_user]);
 
     const submitWalkinStore = (e) => {
         e.preventDefault();
@@ -324,7 +306,6 @@ export default function AdminDashboard() {
             preserveScroll: true,
             onSuccess: () => {
                 walkinStoreForm.reset();
-                walkinSearchForm.reset();
                 setActiveTab('queue');
             },
         });
@@ -762,256 +743,68 @@ export default function AdminDashboard() {
             {/* --- TAB 3: WALK-IN --- */}
             {activeTab === 'walkin' && (
                 <div className="animate-in fade-in duration-500">
-                    <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-                        <div className="mb-6 text-center">
+                    <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                        <div className="mb-6 border-b border-slate-100 pb-6 text-center">
                             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-900">
-                                <svg
-                                    className="h-7 w-7"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                    ></path>
-                                </svg>
+                                <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">
-                                Walk-in Search
-                            </h2>
-                            <p className="mt-1 text-sm font-medium text-slate-500">
-                                Hanapin ang contact number bago gumawa ng request.
-                            </p>
+                            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Direct Walk-in Encoding</h2>
+                            <p className="mt-1 text-sm font-medium text-slate-500">I-type ang impormasyon. Awtomatikong hahanapin ng system kung luma o bagong residente base sa Contact Number.</p>
                         </div>
 
-                        <form
-                            onSubmit={submitWalkinSearch}
-                            className="flex flex-col gap-3 sm:flex-row"
-                        >
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    value={walkinSearchForm.data.contact_number}
-                                    onChange={(e) =>
-                                        walkinSearchForm.setData(
-                                            'contact_number',
-                                            e.target.value.replace(/[^0-9]/g, '')
-                                        )
-                                    }
-                                    required
-                                    placeholder="09XXXXXXXXX"
-                                    maxLength="11"
-                                    className="w-full rounded-lg border border-slate-300 px-5 py-3 text-center font-mono text-xl font-bold tracking-widest transition-all outline-none focus:ring-2 focus:ring-slate-900 sm:text-left"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={walkinSearchForm.processing}
-                                className="shrink-0 rounded-lg bg-slate-900 px-8 py-3 text-xs font-black tracking-widest whitespace-nowrap text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
-                            >
-                                I-Search
-                            </button>
-                        </form>
-
-                        {flash?.walkin_searched && (
-                            <div className="mt-8 border-t border-slate-100 pt-6">
-                                {flash?.walkin_user ? (
-                                    <form
-                                        onSubmit={submitWalkinStore}
-                                        className="rounded-xl border border-green-200 bg-green-50 p-5"
-                                    >
-                                        <div className="mb-4">
-                                            <p className="mb-1 text-[10px] font-black tracking-widest text-green-600 uppercase">
-                                                Record Found
-                                            </p>
-                                            <p className="mb-1 text-lg leading-none font-bold text-slate-900 uppercase">
-                                                {flash.walkin_user.last_name},{' '}
-                                                {flash.walkin_user.first_name}
-                                            </p>
-                                            <p className="text-xs font-bold text-slate-500">
-                                                {flash.walkin_user.sex} | {flash.walkin_user.age}{' '}
-                                                YRS OLD
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-col gap-3 sm:flex-row">
-                                            <select
-                                                value={walkinStoreForm.data.document_type_id}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'document_type_id',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                required
-                                                className="min-w-0 flex-1 rounded-lg border border-green-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-green-600"
-                                            >
-                                                <option value="">-- Piliin ang Dokumento --</option>
-                                                {documents.map((doc) => (
-                                                    <option key={doc.id} value={doc.id}>
-                                                        {doc.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.purpose}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'purpose',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Layunin (Purpose)"
-                                                required
-                                                className="min-w-0 flex-1 rounded-lg border border-green-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-green-600"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={walkinStoreForm.processing}
-                                                className="shrink-0 rounded-lg bg-green-600 px-6 py-3 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95 disabled:opacity-50"
-                                            >
-                                                Create Request
-                                            </button>
-                                        </div>
-                                    </form>
-                                ) : (
-                                    <form
-                                        onSubmit={submitWalkinStore}
-                                        className="rounded-xl border border-amber-200 bg-amber-50 p-5 md:p-6"
-                                    >
-                                        <p className="mb-3 text-[10px] font-black tracking-widest text-amber-600 uppercase">
-                                            Walang Record: I-rehistro bilang Walk-in
-                                        </p>
-                                        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.first_name}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'first_name',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="First Name *"
-                                                required
-                                                className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-600"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.last_name}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'last_name',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Last Name *"
-                                                required
-                                                className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-600"
-                                            />
-                                            <select
-                                                value={walkinStoreForm.data.sex}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData('sex', e.target.value)
-                                                }
-                                                required
-                                                className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-600"
-                                            >
-                                                <option value="">-- Kasarian * --</option>
-                                                <option value="Male">Lalaki</option>
-                                                <option value="Female">Babae</option>
-                                            </select>
-                                            <div className="flex items-center rounded-lg border border-amber-300 bg-white px-3 focus-within:ring-2 focus-within:ring-amber-600">
-                                                <span className="mr-2 text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                                    DOB*
-                                                </span>
-                                                <input
-                                                    type="date"
-                                                    value={walkinStoreForm.data.date_of_birth}
-                                                    onChange={(e) =>
-                                                        walkinStoreForm.setData(
-                                                            'date_of_birth',
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    required
-                                                    className="w-full bg-transparent py-2.5 text-sm font-bold outline-none"
-                                                />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.house_number}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'house_number',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="House No. *"
-                                                required
-                                                className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-600"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.purok_street}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'purok_street',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Purok/Street *"
-                                                required
-                                                className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-600"
-                                            />
-                                        </div>
-                                        <div className="mt-2 flex flex-col gap-3 border-t border-amber-200 pt-4 sm:flex-row">
-                                            <select
-                                                value={walkinStoreForm.data.document_type_id}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'document_type_id',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                required
-                                                className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-amber-600"
-                                            >
-                                                <option value="">-- Piliin ang Dokumento --</option>
-                                                {documents.map((doc) => (
-                                                    <option key={doc.id} value={doc.id}>
-                                                        {doc.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="text"
-                                                value={walkinStoreForm.data.purpose}
-                                                onChange={(e) =>
-                                                    walkinStoreForm.setData(
-                                                        'purpose',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="Layunin (Purpose)"
-                                                required
-                                                className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-amber-600"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={walkinStoreForm.processing}
-                                                className="shrink-0 rounded-lg bg-amber-600 px-6 py-3 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase shadow-sm transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-50"
-                                            >
-                                                Register & Create
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
+                        {errors.walkin_error && (
+                            <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm font-bold text-red-600">
+                                {errors.walkin_error}
                             </div>
                         )}
+
+                        <form onSubmit={submitWalkinStore} className="space-y-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div className="sm:col-span-3">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Contact Number *</label>
+                                    <input type="text" value={walkinStoreForm.data.contact_number} onChange={e => walkinStoreForm.setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))} maxLength="11" required placeholder="09XXXXXXXXX" className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-mono text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">First Name *</label>
+                                    <input type="text" value={walkinStoreForm.data.first_name} onChange={e => walkinStoreForm.setData('first_name', e.target.value)} required placeholder="Pangalan" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Last Name *</label>
+                                    <input type="text" value={walkinStoreForm.data.last_name} onChange={e => walkinStoreForm.setData('last_name', e.target.value)} required placeholder="Apelyido" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Sex *</label>
+                                    <select value={walkinStoreForm.data.sex} onChange={e => walkinStoreForm.setData('sex', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900">
+                                        <option value="">-- Kasarian --</option>
+                                        <option value="Male">Lalaki</option>
+                                        <option value="Female">Babae</option>
+                                    </select>
+                                </div>
+                                <div className="sm:col-span-1">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Date of Birth *</label>
+                                    <input type="date" value={walkinStoreForm.data.date_of_birth} onChange={e => walkinStoreForm.setData('date_of_birth', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Address *</label>
+                                    <input type="text" value={walkinStoreForm.data.address} onChange={e => walkinStoreForm.setData('address', e.target.value)} required placeholder="Hal. 123 Purok 1" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-6">
+                                <div className="flex flex-col gap-3 sm:flex-row">
+                                    <select value={walkinStoreForm.data.document_type_id} onChange={e => walkinStoreForm.setData('document_type_id', e.target.value)} required className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600">
+                                        <option value="">-- Piliin ang Dokumento --</option>
+                                        {documents.map(doc => (
+                                            <option key={doc.id} value={doc.id}>{doc.name}</option>
+                                        ))}
+                                    </select>
+                                    <input type="text" value={walkinStoreForm.data.purpose} onChange={e => walkinStoreForm.setData('purpose', e.target.value)} placeholder="Layunin (Purpose)" required className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600" />
+                                    <button type="submit" disabled={walkinStoreForm.processing} className="shrink-0 rounded-lg bg-slate-900 px-8 py-3 text-[11px] font-black tracking-widest whitespace-nowrap text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
+                                        {walkinStoreForm.processing ? 'Sinasave...' : 'I-save & Create Queue'}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
