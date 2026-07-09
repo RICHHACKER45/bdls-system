@@ -89,11 +89,11 @@ Route::middleware(['auth'])->group(function () {
             ])->name('request.batch_update');
 
             // // WALK-IN MODULE ROUTES
-            Route::post('/walkin/search', [
+            Route::get('/walkin/check-number/{number}', [
                 AdminDashboardController::class,
-                'searchWalkinAccount',
-            ])->name('walkin.search');
-            // IDAGDAG ITO PARA SA PHASE 2:
+                'checkWalkinNumber',
+            ])->name('walkin.check_number');
+
             Route::post('/walkin/store', [
                 AdminDashboardController::class,
                 'storeWalkinRequest',

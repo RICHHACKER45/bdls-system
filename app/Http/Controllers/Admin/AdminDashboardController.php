@@ -234,6 +234,33 @@ class AdminDashboardController extends Controller
     }
 
     /**
+     * MODULE: Silent Background Number Checker
+     * Used by React Axios to auto-fill the form if the resident already exists.
+     */
+    public function checkWalkinNumber($number)
+    {
+        // Hanapin ang resident record
+        $user = \App\Models\User::where('contact_number', $number)
+            ->where('role', 'resident')
+            ->first();
+
+        if ($user) {
+            return response()->json([
+                'found' => true,
+                'user' => [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'sex' => $user->sex,
+                    'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '',
+                    'address' => $user->address,
+                ]
+            ]);
+        }
+
+        return response()->json(['found' => false]);
+    }
+
+    /**
      * MODULE: Direct Unified Walk-in Encoding
      */
     public function storeWalkinRequest(Request $request, SmsService $smsService)

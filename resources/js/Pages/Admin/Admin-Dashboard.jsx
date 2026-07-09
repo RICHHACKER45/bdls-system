@@ -760,9 +760,41 @@ export default function AdminDashboard() {
 
                         <form onSubmit={submitWalkinStore} className="space-y-6">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="sm:col-span-3">
+                                <div className="sm:col-span-3 relative">
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Contact Number *</label>
-                                    <input type="text" value={walkinStoreForm.data.contact_number} onChange={e => walkinStoreForm.setData('contact_number', e.target.value.replace(/[^0-9]/g, ''))} maxLength="11" required placeholder="09XXXXXXXXX" className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-mono text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <input 
+                                        type="text" 
+                                        value={walkinStoreForm.data.contact_number} 
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            walkinStoreForm.setData('contact_number', val);
+                                            
+                                            // THE FIX: Event-Driven Silent Background Check (No polling!)
+                                            if (val.length === 11) {
+                                                axios.get(`/admin/walkin/check-number/${val}`)
+                                                    .then(res => {
+                                                        if (res.data.found) {
+                                                            const u = res.data.user;
+                                                            // Silent Auto-fill!
+                                                            walkinStoreForm.setData(data => ({
+                                                                ...data,
+                                                                contact_number: val,
+                                                                first_name: u.first_name,
+                                                                last_name: u.last_name,
+                                                                sex: u.sex,
+                                                                date_of_birth: u.date_of_birth,
+                                                                address: u.address
+                                                            }));
+                                                        }
+                                                    })
+                                                    .catch(err => console.error("Check failed silently", err));
+                                            }
+                                        }} 
+                                        maxLength="11" 
+                                        required 
+                                        placeholder="09XXXXXXXXX" 
+                                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-mono text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" 
+                                    />
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">First Name *</label>
@@ -1603,7 +1635,7 @@ export default function AdminDashboard() {
 
             {/* Document Management Modal */}
             {docModal.isOpen && (
-                <div className="fixed inset-0 z-[1] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
                         <h3 className="mb-4 text-xl font-black tracking-tight text-slate-900 uppercase">
                             {docModal.mode === 'add' ? 'Add New Document' : 'Edit Document'}
