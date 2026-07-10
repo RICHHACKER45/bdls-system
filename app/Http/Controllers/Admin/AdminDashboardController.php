@@ -388,8 +388,8 @@ class AdminDashboardController extends Controller
             'message_body' => $request->message_body,
         ]);
 
-        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang (Exclude Admins)
-        $verifiedResidents = User::approved()->where('role', 'resident')->get();
+        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang gamit ang bagong KYC flag
+        $verifiedResidents = User::where('is_verified', 1)->where('role', 'resident')->get();
         $sentCount = 0;
 
         // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs na may DELAY para hindi ma-spam ang API
