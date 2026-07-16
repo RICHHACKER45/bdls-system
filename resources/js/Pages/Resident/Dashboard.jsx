@@ -395,6 +395,10 @@ const RequestModal = ({
 // ==========================================
 const faqs = [
     {
+        q: '📌 Paano ko malalaman kung kailangan ko ng interview para sa aking dokumento?',
+        a: 'Ayon sa proseso ng barangay, ang mga dokumento tulad ng First Time Jobseeker, Senior Citizen, Solo Parent, Indigency, Livelihood, Co-Habitation, PWD, at Special Purpose ay mahigpit na nangangailangan ng panayam (probing interview). Makakatanggap ka ng text kung "For Interview" na ang status ng iyong request. Maaari ka ring magpadala ng email o mensahe sa admin gamit ang "Mag-Email Dito" button sa ibaba kung may katanungan.',
+    },
+    {
         q: '📌 Paano ko malalaman kung ready na ang dokumento ko?',
         a: 'Pumunta lamang sa "Track Requests" tab. Makakatanggap ka rin ng awtomatikong text message mula sa amin kapag maaari mo na itong kunin sa Barangay Hall.',
     },

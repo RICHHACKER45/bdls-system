@@ -501,31 +501,9 @@ export default function AdminDashboard() {
                                         {activeQueue.data && activeQueue.data.length > 0 ? (
                                             activeQueue.data.map((queue) => {
                                                 const rawStatus = queue.status.toLowerCase();
-                                                let nextStatus = '';
-                                                let btnLabel = '';
-                                                const interviewDocs = [1 - 8];
-                                                if (rawStatus === 'pending') {
-                                                    nextStatus = 'processing';
-                                                    btnLabel = 'Process Request';
-                                                } else if (rawStatus === 'processing') {
-                                                    if (
-                                                        interviewDocs.includes(
-                                                            queue.document_type_id
-                                                        )
-                                                    ) {
-                                                        nextStatus = 'for_interview';
-                                                        btnLabel = 'Set for Interview';
-                                                    } else {
-                                                        nextStatus = 'released';
-                                                        btnLabel = 'Release Document';
-                                                    }
-                                                } else if (rawStatus === 'for_interview') {
-                                                    nextStatus = 'released';
-                                                    btnLabel = 'Release Document';
-                                                } else if (rawStatus === 'released') {
-                                                    nextStatus = 'received';
-                                                    btnLabel = 'Mark as Received';
-                                                }
+                                                // THE FIX: Specific IDs that strictly require probing interview based on the manual
+                                                const interviewDocs = [3, 4, 5, 6, 8, 9, 10, 11];
+                                                const isInterviewDoc = interviewDocs.includes(queue.document_type_id);
 
                                                 let badgeClass = '';
                                                 if (rawStatus === 'pending')
@@ -588,45 +566,43 @@ export default function AdminDashboard() {
                                                         </td>
                                                         <td className="p-4 align-middle">
                                                             <div className="flex flex-col items-end gap-2">
-                                                                {btnLabel && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setStatusModal({
-                                                                                isOpen: true,
-                                                                                requestId: queue.id,
-                                                                                nextStatus,
-                                                                                label: btnLabel,
-                                                                            })
-                                                                        }
-                                                                        className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-                                                                    >
-                                                                        {btnLabel}
-                                                                    </button>
+                                                                {/* PENDING STATE */}
+                                                                {rawStatus === 'pending' && (
+                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'processing', label: 'Process Request'})} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Process Request</button>
                                                                 )}
-                                                                {(rawStatus === 'pending' ||
-                                                                    rawStatus === 'processing') && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setStatusModal({
-                                                                                isOpen: true,
-                                                                                requestId: queue.id,
-                                                                                nextStatus:
-                                                                                    'rejected',
-                                                                                label: 'Reject Request',
-                                                                            })
-                                                                        }
-                                                                        className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                                    >
-                                                                        Reject
-                                                                    </button>
+
+                                                                {/* PROCESSING STATE WITH CHOICES (FOR INTERVIEW DOCS) */}
+                                                                {rawStatus === 'processing' && isInterviewDoc && (
+                                                                    <>
+                                                                        <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'for_interview', label: 'Set for Interview'})} className="w-36 rounded-lg bg-purple-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-700 active:scale-95">Set for Interview</button>
+                                                                        <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
+                                                                    </>
                                                                 )}
-                                                                {!btnLabel &&
-                                                                    rawStatus !== 'pending' &&
-                                                                    rawStatus !== 'processing' && (
-                                                                        <span className="w-36 text-center text-xs font-bold text-slate-400 italic">
-                                                                            No Action
-                                                                        </span>
-                                                                    )}
+
+                                                                {/* PROCESSING STATE (NON-INTERVIEW DOCS) */}
+                                                                {rawStatus === 'processing' && !isInterviewDoc && (
+                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
+                                                                )}
+
+                                                                {/* FOR INTERVIEW STATE */}
+                                                                {rawStatus === 'for_interview' && (
+                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
+                                                                )}
+
+                                                                {/* RELEASED STATE */}
+                                                                {rawStatus === 'released' && (
+                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'received', label: 'Mark as Received'})} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Mark as Received</button>
+                                                                )}
+
+                                                                {/* GLOBAL REJECT BUTTON (Only in Pending/Processing) */}
+                                                                {(rawStatus === 'pending' || rawStatus === 'processing') && (
+                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request'})} className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">Reject</button>
+                                                                )}
+
+                                                                {/* NO ACTION FALLBACK */}
+                                                                {!['pending', 'processing', 'for_interview', 'released'].includes(rawStatus) && (
+                                                                    <span className="w-36 mt-2 text-center text-xs font-bold text-slate-400 italic">No Action</span>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
