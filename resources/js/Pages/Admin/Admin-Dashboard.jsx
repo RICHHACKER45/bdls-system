@@ -242,17 +242,21 @@ export default function AdminDashboard() {
     };
 
     // --- ADVANCED SMS PROGRESS LOGIC (OPTIMIZED & SYNCED) ---
-    const prefixText = "Dona Lucia Services: "; // From .env
+    const prefixText = 'Dona Lucia Services: '; // From .env
     const prefixLength = prefixText.length; // 21 chars
-    
+
     const rawText = announcementForm.data.message_body || '';
-    
+
     // 1. Gayahin ang Backend Sanitizer para 100% accurate ang bilang
     const cleanTextForCounting = rawText
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '') // Ignore emojis
+        .replace(
+            /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+            ''
+        ) // Ignore emojis
         .replace(/[ \t]+/g, ' ') // Compress double spaces
         .replace(/[\r\n]{3,}/g, '\n\n') // Limit newlines
-        .replace(/[“”]/g, '"').replace(/[‘’]/g, "'") // Convert smart quotes
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'") // Convert smart quotes
         .trim();
 
     const typedLength = cleanTextForCounting.length;
@@ -506,7 +510,9 @@ export default function AdminDashboard() {
                                                 const rawStatus = queue.status.toLowerCase();
                                                 // THE FIX: Specific IDs that strictly require probing interview based on the manual
                                                 const interviewDocs = [3, 4, 5, 6, 8, 9, 10, 11];
-                                                const isInterviewDoc = interviewDocs.includes(queue.document_type_id);
+                                                const isInterviewDoc = interviewDocs.includes(
+                                                    queue.document_type_id
+                                                );
 
                                                 let badgeClass = '';
                                                 if (rawStatus === 'pending')
@@ -571,40 +577,144 @@ export default function AdminDashboard() {
                                                             <div className="flex flex-col items-end gap-2">
                                                                 {/* PENDING STATE */}
                                                                 {rawStatus === 'pending' && (
-                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'processing', label: 'Process Request'})} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Process Request</button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus:
+                                                                                    'processing',
+                                                                                label: 'Process Request',
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                                                    >
+                                                                        Process Request
+                                                                    </button>
                                                                 )}
 
                                                                 {/* PROCESSING STATE WITH CHOICES (FOR INTERVIEW DOCS) */}
-                                                                {rawStatus === 'processing' && isInterviewDoc && (
-                                                                    <>
-                                                                        <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'for_interview', label: 'Set for Interview'})} className="w-36 rounded-lg bg-purple-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-700 active:scale-95">Set for Interview</button>
-                                                                        <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
-                                                                    </>
-                                                                )}
+                                                                {rawStatus === 'processing' &&
+                                                                    isInterviewDoc && (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setStatusModal({
+                                                                                        isOpen: true,
+                                                                                        requestId:
+                                                                                            queue.id,
+                                                                                        nextStatus:
+                                                                                            'for_interview',
+                                                                                        label: 'Set for Interview',
+                                                                                    })
+                                                                                }
+                                                                                className="w-36 rounded-lg bg-purple-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-700 active:scale-95"
+                                                                            >
+                                                                                Set for Interview
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setStatusModal({
+                                                                                        isOpen: true,
+                                                                                        requestId:
+                                                                                            queue.id,
+                                                                                        nextStatus:
+                                                                                            'released',
+                                                                                        label: 'Release Document',
+                                                                                    })
+                                                                                }
+                                                                                className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95"
+                                                                            >
+                                                                                Release Document
+                                                                            </button>
+                                                                        </>
+                                                                    )}
 
                                                                 {/* PROCESSING STATE (NON-INTERVIEW DOCS) */}
-                                                                {rawStatus === 'processing' && !isInterviewDoc && (
-                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
-                                                                )}
+                                                                {rawStatus === 'processing' &&
+                                                                    !isInterviewDoc && (
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                setStatusModal({
+                                                                                    isOpen: true,
+                                                                                    requestId:
+                                                                                        queue.id,
+                                                                                    nextStatus:
+                                                                                        'released',
+                                                                                    label: 'Release Document',
+                                                                                })
+                                                                            }
+                                                                            className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95"
+                                                                        >
+                                                                            Release Document
+                                                                        </button>
+                                                                    )}
 
                                                                 {/* FOR INTERVIEW STATE */}
                                                                 {rawStatus === 'for_interview' && (
-                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'released', label: 'Release Document'})} className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95">Release Document</button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus:
+                                                                                    'released',
+                                                                                label: 'Release Document',
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95"
+                                                                    >
+                                                                        Release Document
+                                                                    </button>
                                                                 )}
 
                                                                 {/* RELEASED STATE */}
                                                                 {rawStatus === 'released' && (
-                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'received', label: 'Mark as Received'})} className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95">Mark as Received</button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus:
+                                                                                    'received',
+                                                                                label: 'Mark as Received',
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                                                    >
+                                                                        Mark as Received
+                                                                    </button>
                                                                 )}
 
                                                                 {/* GLOBAL REJECT BUTTON (Only in Pending/Processing) */}
-                                                                {(rawStatus === 'pending' || rawStatus === 'processing') && (
-                                                                    <button onClick={() => setStatusModal({isOpen: true, requestId: queue.id, nextStatus: 'rejected', label: 'Reject Request'})} className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95">Reject</button>
+                                                                {(rawStatus === 'pending' ||
+                                                                    rawStatus === 'processing') && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setStatusModal({
+                                                                                isOpen: true,
+                                                                                requestId: queue.id,
+                                                                                nextStatus:
+                                                                                    'rejected',
+                                                                                label: 'Reject Request',
+                                                                            })
+                                                                        }
+                                                                        className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
                                                                 )}
 
                                                                 {/* NO ACTION FALLBACK */}
-                                                                {!['pending', 'processing', 'for_interview', 'released'].includes(rawStatus) && (
-                                                                    <span className="w-36 mt-2 text-center text-xs font-bold text-slate-400 italic">No Action</span>
+                                                                {![
+                                                                    'pending',
+                                                                    'processing',
+                                                                    'for_interview',
+                                                                    'released',
+                                                                ].includes(rawStatus) && (
+                                                                    <span className="mt-2 w-36 text-center text-xs font-bold text-slate-400 italic">
+                                                                        No Action
+                                                                    </span>
                                                                 )}
                                                             </div>
                                                         </td>
@@ -725,10 +835,27 @@ export default function AdminDashboard() {
                     <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <div className="mb-6 border-b border-slate-100 pb-6 text-center">
                             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-900">
-                                <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                <svg
+                                    className="h-7 w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 4v16m8-8H4"
+                                    ></path>
+                                </svg>
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Direct Walk-in Encoding</h2>
-                            <p className="mt-1 text-sm font-medium text-slate-500">I-type ang impormasyon. Awtomatikong hahanapin ng system kung luma o bagong residente base sa Contact Number.</p>
+                            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">
+                                Direct Walk-in Encoding
+                            </h2>
+                            <p className="mt-1 text-sm font-medium text-slate-500">
+                                I-type ang impormasyon. Awtomatikong hahanapin ng system kung luma o
+                                bagong residente base sa Contact Number.
+                            </p>
                         </div>
 
                         {errors.walkin_error && (
@@ -739,79 +866,163 @@ export default function AdminDashboard() {
 
                         <form onSubmit={submitWalkinStore} className="space-y-6">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="sm:col-span-3 relative">
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Contact Number *</label>
-                                    <input 
-                                        type="text" 
-                                        value={walkinStoreForm.data.contact_number} 
-                                        onChange={e => {
+                                <div className="relative sm:col-span-3">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Contact Number *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.contact_number}
+                                        onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             walkinStoreForm.setData('contact_number', val);
-                                            
+
                                             // THE FIX: Event-Driven Silent Background Check (No polling!)
                                             if (val.length === 11) {
-                                                axios.get(`/admin/walkin/check-number/${val}`)
-                                                    .then(res => {
+                                                axios
+                                                    .get(`/admin/walkin/check-number/${val}`)
+                                                    .then((res) => {
                                                         if (res.data.found) {
                                                             const u = res.data.user;
                                                             // Silent Auto-fill!
-                                                            walkinStoreForm.setData(data => ({
+                                                            walkinStoreForm.setData((data) => ({
                                                                 ...data,
                                                                 contact_number: val,
                                                                 first_name: u.first_name,
                                                                 last_name: u.last_name,
                                                                 sex: u.sex,
                                                                 date_of_birth: u.date_of_birth,
-                                                                address: u.address
+                                                                address: u.address,
                                                             }));
                                                         }
                                                     })
-                                                    .catch(err => console.error("Check failed silently", err));
+                                                    .catch((err) =>
+                                                        console.error('Check failed silently', err)
+                                                    );
                                             }
-                                        }} 
-                                        maxLength="11" 
-                                        required 
-                                        placeholder="09XXXXXXXXX" 
-                                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-mono text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900" 
+                                        }}
+                                        maxLength="11"
+                                        required
+                                        placeholder="09XXXXXXXXX"
+                                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-mono text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900"
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">First Name *</label>
-                                    <input type="text" value={walkinStoreForm.data.first_name} onChange={e => walkinStoreForm.setData('first_name', e.target.value)} required placeholder="Pangalan" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        First Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.first_name}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('first_name', e.target.value)
+                                        }
+                                        required
+                                        placeholder="Pangalan"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Last Name *</label>
-                                    <input type="text" value={walkinStoreForm.data.last_name} onChange={e => walkinStoreForm.setData('last_name', e.target.value)} required placeholder="Apelyido" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Last Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.last_name}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('last_name', e.target.value)
+                                        }
+                                        required
+                                        placeholder="Apelyido"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Sex *</label>
-                                    <select value={walkinStoreForm.data.sex} onChange={e => walkinStoreForm.setData('sex', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Sex *
+                                    </label>
+                                    <select
+                                        value={walkinStoreForm.data.sex}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('sex', e.target.value)
+                                        }
+                                        required
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    >
                                         <option value="">-- Kasarian --</option>
                                         <option value="Male">Lalaki</option>
                                         <option value="Female">Babae</option>
                                     </select>
                                 </div>
                                 <div className="sm:col-span-1">
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Date of Birth *</label>
-                                    <input type="date" value={walkinStoreForm.data.date_of_birth} onChange={e => walkinStoreForm.setData('date_of_birth', e.target.value)} required className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Date of Birth *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={walkinStoreForm.data.date_of_birth}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('date_of_birth', e.target.value)
+                                        }
+                                        required
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                                 <div className="sm:col-span-2">
-                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Address *</label>
-                                    <input type="text" value={walkinStoreForm.data.address} onChange={e => walkinStoreForm.setData('address', e.target.value)} required placeholder="Hal. 123 Purok 1" className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900" />
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Address *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.address}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('address', e.target.value)
+                                        }
+                                        required
+                                        placeholder="Hal. 123 Purok 1"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
                             </div>
 
                             <div className="border-t border-slate-100 pt-6">
                                 <div className="flex flex-col gap-3 sm:flex-row">
-                                    <select value={walkinStoreForm.data.document_type_id} onChange={e => walkinStoreForm.setData('document_type_id', e.target.value)} required className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600">
+                                    <select
+                                        value={walkinStoreForm.data.document_type_id}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData(
+                                                'document_type_id',
+                                                e.target.value
+                                            )
+                                        }
+                                        required
+                                        className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600"
+                                    >
                                         <option value="">-- Piliin ang Dokumento --</option>
-                                        {documents.map(doc => (
-                                            <option key={doc.id} value={doc.id}>{doc.name}</option>
+                                        {documents.map((doc) => (
+                                            <option key={doc.id} value={doc.id}>
+                                                {doc.name}
+                                            </option>
                                         ))}
                                     </select>
-                                    <input type="text" value={walkinStoreForm.data.purpose} onChange={e => walkinStoreForm.setData('purpose', e.target.value)} placeholder="Layunin (Purpose)" required className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600" />
-                                    <button type="submit" disabled={walkinStoreForm.processing} className="shrink-0 rounded-lg bg-slate-900 px-8 py-3 text-[11px] font-black tracking-widest whitespace-nowrap text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
-                                        {walkinStoreForm.processing ? 'Sinasave...' : 'I-save & Create Queue'}
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.purpose}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('purpose', e.target.value)
+                                        }
+                                        placeholder="Layunin (Purpose)"
+                                        required
+                                        className="min-w-0 flex-1 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-600"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={walkinStoreForm.processing}
+                                        className="shrink-0 rounded-lg bg-slate-900 px-8 py-3 text-[11px] font-black tracking-widest whitespace-nowrap text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {walkinStoreForm.processing
+                                            ? 'Sinasave...'
+                                            : 'I-save & Create Queue'}
                                     </button>
                                 </div>
                             </div>
@@ -1922,20 +2133,36 @@ export default function AdminDashboard() {
             {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING - CONTEXT AWARE */}
             {(() => {
                 // 1. Kuhanin ang buong data ng mga naka-check
-                const selectedItems = activeQueue.data ? activeQueue.data.filter((q) => selectedRequests.includes(q.id)) : [];
-                
+                const selectedItems = activeQueue.data
+                    ? activeQueue.data.filter((q) => selectedRequests.includes(q.id))
+                    : [];
+
                 // 2. Dokumento na STRIKTONG may interview base sa Manual
                 const interviewDocsList = [3, 4, 5, 6, 8, 9, 10, 11];
 
                 // 3. I-filter ang mga ELIGIBLE IDs bawat aksyon
-                const eligibleForProcess = selectedItems.filter((q) => q.status.toLowerCase() === 'pending').map((q) => q.id);
-                const eligibleForInterview = selectedItems.filter((q) => q.status.toLowerCase() === 'processing' && interviewDocsList.includes(q.document_type_id)).map((q) => q.id);
-                
+                const eligibleForProcess = selectedItems
+                    .filter((q) => q.status.toLowerCase() === 'pending')
+                    .map((q) => q.id);
+                const eligibleForInterview = selectedItems
+                    .filter(
+                        (q) =>
+                            q.status.toLowerCase() === 'processing' &&
+                            interviewDocsList.includes(q.document_type_id)
+                    )
+                    .map((q) => q.id);
+
                 // Pwedeng i-release ang 'processing' (bypass) OR 'for_interview' (tapos na)
-                const eligibleForRelease = selectedItems.filter((q) => ['processing', 'for_interview'].includes(q.status.toLowerCase())).map((q) => q.id);
-                
-                const eligibleForReceive = selectedItems.filter((q) => q.status.toLowerCase() === 'released').map((q) => q.id);
-                const eligibleForReject = selectedItems.filter((q) => ['pending', 'processing'].includes(q.status.toLowerCase())).map((q) => q.id);
+                const eligibleForRelease = selectedItems
+                    .filter((q) => ['processing', 'for_interview'].includes(q.status.toLowerCase()))
+                    .map((q) => q.id);
+
+                const eligibleForReceive = selectedItems
+                    .filter((q) => q.status.toLowerCase() === 'released')
+                    .map((q) => q.id);
+                const eligibleForReject = selectedItems
+                    .filter((q) => ['pending', 'processing'].includes(q.status.toLowerCase()))
+                    .map((q) => q.id);
 
                 return (
                     <div
@@ -1946,37 +2173,58 @@ export default function AdminDashboard() {
                         </span>
                         <div className="h-6 w-px bg-slate-600"></div>
                         <div className="flex flex-wrap gap-2 sm:gap-3">
-                            
                             {eligibleForProcess.length > 0 && (
-                                <button onClick={() => submitBatchAction('processing', eligibleForProcess)} className="rounded-full bg-slate-100 px-4 py-2.5 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:bg-white active:scale-95 sm:px-6 sm:text-[10px]">
+                                <button
+                                    onClick={() =>
+                                        submitBatchAction('processing', eligibleForProcess)
+                                    }
+                                    className="rounded-full bg-slate-100 px-4 py-2.5 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:bg-white active:scale-95 sm:px-6 sm:text-[10px]"
+                                >
                                     Process ({eligibleForProcess.length})
                                 </button>
                             )}
 
                             {eligibleForInterview.length > 0 && (
-                                <button onClick={() => submitBatchAction('for_interview', eligibleForInterview)} className="rounded-full bg-purple-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                <button
+                                    onClick={() =>
+                                        submitBatchAction('for_interview', eligibleForInterview)
+                                    }
+                                    className="rounded-full bg-purple-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-500 active:scale-95 sm:px-6 sm:text-[10px]"
+                                >
                                     Interview ({eligibleForInterview.length})
                                 </button>
                             )}
 
                             {eligibleForRelease.length > 0 && (
-                                <button onClick={() => submitBatchAction('released', eligibleForRelease)} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                <button
+                                    onClick={() =>
+                                        submitBatchAction('released', eligibleForRelease)
+                                    }
+                                    className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]"
+                                >
                                     Release ({eligibleForRelease.length})
                                 </button>
                             )}
 
                             {eligibleForReceive.length > 0 && (
-                                <button onClick={() => submitBatchAction('received', eligibleForReceive)} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                <button
+                                    onClick={() =>
+                                        submitBatchAction('received', eligibleForReceive)
+                                    }
+                                    className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]"
+                                >
                                     Receive ({eligibleForReceive.length})
                                 </button>
                             )}
 
                             {eligibleForReject.length > 0 && (
-                                <button onClick={() => submitBatchAction('rejected', eligibleForReject)} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">
+                                <button
+                                    onClick={() => submitBatchAction('rejected', eligibleForReject)}
+                                    className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]"
+                                >
                                     Reject ({eligibleForReject.length})
                                 </button>
                             )}
-
                         </div>
                     </div>
                 );
