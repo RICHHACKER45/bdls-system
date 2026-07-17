@@ -129,10 +129,13 @@ export default function AdminDashboard() {
         );
     };
 
-    const submitBatchAction = (newStatus) => {
+    // THE FIX: Modified to accept specific, context-aware valid IDs
+    const submitBatchAction = (newStatus, specificIds) => {
+        if (!specificIds || specificIds.length === 0) return;
+
         if (
             !confirm(
-                `Sigurado ka bang gusto mong i-update ang status ng ${selectedRequests.length} request(s) papuntang ${newStatus.toUpperCase()}?`
+                `Mayroong ${specificIds.length} eligible request(s). Sigurado ka bang gusto mong i-update ang status nila papuntang ${newStatus.toUpperCase()}? (Ang mga hindi eligible ay awtomatikong i-i-ignore)`
             )
         )
             return;
@@ -140,7 +143,7 @@ export default function AdminDashboard() {
         router.post(
             route('admin.request.batch_update'),
             {
-                request_ids: selectedRequests,
+                request_ids: specificIds, // Ipapadala lang ang mga valid IDs
                 status: newStatus,
             },
             {
@@ -1916,35 +1919,68 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
-            {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING */}
-            <div
-                className={`fixed bottom-8 left-1/2 z-[1] flex items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl transition-transform duration-300 ease-in-out sm:bottom-12 ${selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 translate-y-40'}`}
-            >
-                <span className="text-xs font-black tracking-widest whitespace-nowrap text-white uppercase sm:text-sm">
-                    {selectedRequests.length} Selected
-                </span>
-                <div className="h-6 w-px bg-slate-600"></div>
-                <div className="flex gap-2 sm:gap-3">
-                    <button
-                        onClick={() => submitBatchAction('processing')}
-                        className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]"
+            {/* FLOATING ACTION BUTTON (FAB) PARA SA BATCH PROCESSING - CONTEXT AWARE */}
+            {(() => {
+                // 1. Kuhanin ang buong data ng mga naka-check
+                const selectedItems = activeQueue.data ? activeQueue.data.filter((q) => selectedRequests.includes(q.id)) : [];
+                
+                // 2. Dokumento na STRIKTONG may interview base sa Manual
+                const interviewDocsList = [3, 4, 5, 6, 8, 9, 10, 11];
+
+                // 3. I-filter ang mga ELIGIBLE IDs bawat aksyon
+                const eligibleForProcess = selectedItems.filter((q) => q.status.toLowerCase() === 'pending').map((q) => q.id);
+                const eligibleForInterview = selectedItems.filter((q) => q.status.toLowerCase() === 'processing' && interviewDocsList.includes(q.document_type_id)).map((q) => q.id);
+                
+                // Pwedeng i-release ang 'processing' (bypass) OR 'for_interview' (tapos na)
+                const eligibleForRelease = selectedItems.filter((q) => ['processing', 'for_interview'].includes(q.status.toLowerCase())).map((q) => q.id);
+                
+                const eligibleForReceive = selectedItems.filter((q) => q.status.toLowerCase() === 'released').map((q) => q.id);
+                const eligibleForReject = selectedItems.filter((q) => ['pending', 'processing'].includes(q.status.toLowerCase())).map((q) => q.id);
+
+                return (
+                    <div
+                        className={`fixed bottom-8 left-1/2 z-[9] flex items-center gap-4 rounded-full border border-slate-700 bg-slate-900 px-6 py-4 shadow-2xl transition-transform duration-300 ease-in-out sm:bottom-12 ${selectedRequests.length > 0 && activeTab === 'queue' && queueSubTab === 'queue-active' ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 translate-y-40'}`}
                     >
-                        Process
-                    </button>
-                    <button
-                        onClick={() => submitBatchAction('released')}
-                        className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]"
-                    >
-                        Release
-                    </button>
-                    <button
-                        onClick={() => submitBatchAction('rejected')}
-                        className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]"
-                    >
-                        Reject
-                    </button>
-                </div>
-            </div>
+                        <span className="text-xs font-black tracking-widest whitespace-nowrap text-white uppercase sm:text-sm">
+                            {selectedRequests.length} Selected
+                        </span>
+                        <div className="h-6 w-px bg-slate-600"></div>
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
+                            
+                            {eligibleForProcess.length > 0 && (
+                                <button onClick={() => submitBatchAction('processing', eligibleForProcess)} className="rounded-full bg-slate-100 px-4 py-2.5 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:bg-white active:scale-95 sm:px-6 sm:text-[10px]">
+                                    Process ({eligibleForProcess.length})
+                                </button>
+                            )}
+
+                            {eligibleForInterview.length > 0 && (
+                                <button onClick={() => submitBatchAction('for_interview', eligibleForInterview)} className="rounded-full bg-purple-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                    Interview ({eligibleForInterview.length})
+                                </button>
+                            )}
+
+                            {eligibleForRelease.length > 0 && (
+                                <button onClick={() => submitBatchAction('released', eligibleForRelease)} className="rounded-full bg-green-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                    Release ({eligibleForRelease.length})
+                                </button>
+                            )}
+
+                            {eligibleForReceive.length > 0 && (
+                                <button onClick={() => submitBatchAction('received', eligibleForReceive)} className="rounded-full bg-blue-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-500 active:scale-95 sm:px-6 sm:text-[10px]">
+                                    Receive ({eligibleForReceive.length})
+                                </button>
+                            )}
+
+                            {eligibleForReject.length > 0 && (
+                                <button onClick={() => submitBatchAction('rejected', eligibleForReject)} className="rounded-full border border-red-500 bg-transparent px-4 py-2.5 text-[9px] font-black tracking-widest text-red-500 uppercase shadow-sm transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:px-6 sm:text-[10px]">
+                                    Reject ({eligibleForReject.length})
+                                </button>
+                            )}
+
+                        </div>
+                    </div>
+                );
+            })()}
         </AdminLayout>
     );
 }
