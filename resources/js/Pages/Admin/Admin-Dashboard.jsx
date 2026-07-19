@@ -68,6 +68,7 @@ export default function AdminDashboard() {
         documents = [],
         auditLogs = { data: [], links: [] },
         analyticsSummary = {},
+        censusRecords = { data: [], links: [] },
         filters = {},
         auth,
         flash = {},
@@ -76,6 +77,69 @@ export default function AdminDashboard() {
 
     const [activeTab, setActiveTab] = useState('queue');
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
+    const [residentSearch, setResidentSearch] = useState('');
+    const [residentModalOpen, setResidentModalOpen] = useState(false);
+    const [importModalOpen, setImportModalOpen] = useState(false);
+
+    const [residentFormMode, setResidentFormMode] = useState('add'); // 'add' or 'edit'
+    const [residentEditId, setResidentEditId] = useState(null);
+    const residentForm = useForm({
+        first_name: '', middle_name: '', last_name: '', suffix: '', sex: '', date_of_birth: '', address: ''
+    });
+    const importForm = useForm({ import_file: null });
+
+    const openResidentModal = (mode, resident = null) => {
+        setResidentFormMode(mode);
+        if (mode === 'edit' && resident) {
+            setResidentEditId(resident.id);
+            residentForm.setData({
+                first_name: resident.first_name || '',
+                middle_name: resident.middle_name || '',
+                last_name: resident.last_name || '',
+                suffix: resident.suffix || '',
+                sex: resident.sex || '',
+                date_of_birth: resident.date_of_birth || '',
+                address: resident.address || ''
+            });
+        } else {
+            setResidentEditId(null);
+            residentForm.reset();
+        }
+        residentForm.clearErrors();
+        setResidentModalOpen(true);
+    };
+
+    const submitResident = (e) => {
+        e.preventDefault();
+        if (residentFormMode === 'add') {
+            residentForm.post(route('admin.census.store'), {
+                preserveScroll: true,
+                onSuccess: () => setResidentModalOpen(false),
+            });
+        } else {
+            residentForm.post(route('admin.census.update', residentEditId), {
+                preserveScroll: true,
+                onSuccess: () => setResidentModalOpen(false),
+            });
+        }
+    };
+
+    const deleteResident = (id) => {
+        if (confirm('Sigurado ka bang gusto mong burahin ang residenteng ito sa masterlist?')) {
+            router.delete(route('admin.census.destroy', id), { preserveScroll: true });
+        }
+    };
+
+    const submitImport = (e) => {
+        e.preventDefault();
+        importForm.post(route('admin.census.import'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setImportModalOpen(false);
+                importForm.reset();
+            }
+        });
+    };
 
     // Queue Filters & Search State
     const [qStatus, setQStatus] = useState(filters?.queue_status || 'all');
@@ -112,6 +176,19 @@ export default function AdminDashboard() {
         return () => clearTimeout(delayDebounceFn);
     }, [qStatus, qDoc, qSort, qSearch]);
 
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (residentSearch !== (filters?.resident_search || '')) {
+                router.get(
+                    route('admin.dashboard'),
+                    { ...filters, resident_search: residentSearch },
+                    { preserveState: true, preserveScroll: true, only: ['censusRecords', 'filters'] }
+                );
+            }
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [residentSearch]);
+
     // --- BATCH PROCESSING STATES ---
     const [selectedRequests, setSelectedRequests] = useState([]);
 
@@ -130,25 +207,26 @@ export default function AdminDashboard() {
     };
 
     // THE FIX: Modified to accept specific, context-aware valid IDs
+    const [batchModal, setBatchModal] = useState({ isOpen: false, nextStatus: '', specificIds: [] });
+
     const submitBatchAction = (newStatus, specificIds) => {
         if (!specificIds || specificIds.length === 0) return;
+        setBatchModal({ isOpen: true, nextStatus: newStatus, specificIds });
+    };
 
-        if (
-            !confirm(
-                `Mayroong ${specificIds.length} eligible request(s). Sigurado ka bang gusto mong i-update ang status nila papuntang ${newStatus.toUpperCase()}? (Ang mga hindi eligible ay awtomatikong i-i-ignore)`
-            )
-        )
-            return;
-
+    const confirmBatchAction = () => {
         router.post(
             route('admin.request.batch_update'),
             {
-                request_ids: specificIds, // Ipapadala lang ang mga valid IDs
-                status: newStatus,
+                request_ids: batchModal.specificIds,
+                status: batchModal.nextStatus,
             },
             {
                 preserveScroll: true,
-                onSuccess: () => setSelectedRequests([]),
+                onSuccess: () => {
+                    setSelectedRequests([]);
+                    setBatchModal({ isOpen: false, nextStatus: '', specificIds: [] });
+                },
             }
         );
     };
@@ -482,9 +560,10 @@ export default function AdminDashboard() {
                                 </select>
                             </div>
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                                <table className="w-full border-collapse text-left">
-                                    <thead>
-                                        <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                <div className="overflow-y-auto max-h-[60vh] relative">
+                                    <table className="w-full border-collapse text-left">
+                                        <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm">
+                                            <tr className="border-b border-slate-200 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
                                             <th className="w-12 p-4 text-center">
                                                 <input
                                                     type="checkbox"
@@ -733,6 +812,7 @@ export default function AdminDashboard() {
                                         )}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                             <Pagination links={activeQueue.links} />
                         </div>
@@ -765,9 +845,10 @@ export default function AdminDashboard() {
                                         Tingnan ang Logbook
                                     </button>
                                 </div>
-                                <table className="w-full border-collapse text-left">
-                                    <thead>
-                                        <tr className="border-b border-slate-200 bg-slate-50 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                <div className="overflow-y-auto max-h-[60vh] relative">
+                                    <table className="w-full border-collapse text-left">
+                                        <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm">
+                                            <tr className="border-b border-slate-200 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
                                             <th className="p-4 font-black">Queue #</th>
                                             <th className="p-4 font-black">Residente</th>
                                             <th className="p-4 font-black">Dokumento</th>
@@ -822,6 +903,7 @@ export default function AdminDashboard() {
                                         )}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                             <Pagination links={receivedQueue.links} />
                         </div>
@@ -1699,6 +1781,105 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
+            {/* --- TAB 7: RESIDENT MASTERLIST (KYC CENSUS) --- */}
+            {activeTab === 'residents' && (
+                <div className="animate-in fade-in duration-500">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        
+                        {/* HEADER & ACTION BUTTONS */}
+                        <div className="flex flex-col items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center">
+                            <div>
+                                <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                    Resident Masterlist
+                                </h2>
+                                <p className="text-sm text-slate-500">
+                                    Pamahalaan ang opisyal na listahan ng mga residente para sa Automated KYC scanner.
+                                </p>
+                            </div>
+                            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                                <button
+                                    onClick={() => setImportModalOpen(true)}
+                                    className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 px-5 py-2.5 text-xs font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                >
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    Upload CSV/Excel
+                                </button>
+                                <button
+                                    onClick={() => openResidentModal('add')}
+                                    className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                >
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                    + Add Resident
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* SEARCH BAR */}
+                        <div className="border-b border-slate-100 bg-white p-4">
+                            <input
+                                type="text"
+                                placeholder="I-search ang pangalan ng residente..."
+                                value={residentSearch}
+                                onChange={(e) => setResidentSearch(e.target.value)}
+                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 sm:max-w-md"
+                            />
+                        </div>
+
+                        {/* THE MASTERLIST TABLE */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-left">
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                        <th className="p-4 font-black">Pangalan</th>
+                                        <th className="p-4 font-black">Kasarian & Edad</th>
+                                        <th className="p-4 font-black">Tirahan</th>
+                                        <th className="p-4 text-right font-black">Aksyon</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {censusRecords.data && censusRecords.data.length > 0 ? (
+                                        censusRecords.data.map((resident) => (
+                                            <tr key={resident.id} className="transition-colors hover:bg-slate-50">
+                                                <td className="p-4">
+                                                    <p className="text-sm font-bold uppercase text-slate-900">
+                                                        {resident.last_name}, {resident.first_name} {resident.middle_name ? resident.middle_name.charAt(0) + '.' : ''} {resident.suffix || ''}
+                                                    </p>
+                                                </td>
+                                                <td className="p-4">
+                                                    <p className="text-xs font-bold text-slate-700">
+                                                        {resident.sex} | {new Date().getFullYear() - new Date(resident.date_of_birth).getFullYear()} yrs old
+                                                    </p>
+                                                </td>
+                                                <td className="p-4">
+                                                    <p className="text-xs font-medium text-slate-600">
+                                                        {resident.address}
+                                                    </p>
+                                                </td>
+                                                <td className="flex justify-end gap-2 p-4 text-right">
+                                                    <button onClick={() => openResidentModal('edit', resident)} className="rounded-lg bg-blue-50 px-3 py-1.5 text-[10px] font-black text-blue-600 uppercase transition-all hover:bg-blue-100 active:scale-95">
+                                                        Edit
+                                                    </button>
+                                                    <button onClick={() => deleteResident(resident.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-black text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="p-12 text-center font-bold text-slate-400 italic">
+                                                Walang nahanap na residente.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <Pagination links={censusRecords.links} />
+                        
+                    </div>
+                </div>
+            )}
             {/* --- TAB 6: SETTINGS (PHASE 5 COMPLETED) --- */}
             {activeTab === 'settings' && (
                 <div className="animate-in fade-in duration-500">
@@ -1822,6 +2003,157 @@ export default function AdminDashboard() {
             )}
 
             {/* --- MODALS --- */}
+
+            {/* Resident Masterlist Add/Edit Modal */}
+            {residentModalOpen && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-2xl transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all md:p-8">
+                        <div className="mb-6 flex items-center gap-3">
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Add / Edit Resident
+                            </h3>
+                        </div>
+                        <form onSubmit={submitResident}>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">First Name</label>
+                                    <input type="text" value={residentForm.data.first_name} onChange={e => residentForm.setData('first_name', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" />
+                                    {residentForm.errors.first_name && <div className="text-red-500 text-xs mt-1">{residentForm.errors.first_name}</div>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Middle Name</label>
+                                    <input type="text" value={residentForm.data.middle_name} onChange={e => residentForm.setData('middle_name', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" />
+                                    {residentForm.errors.middle_name && <div className="text-red-500 text-xs mt-1">{residentForm.errors.middle_name}</div>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Last Name</label>
+                                    <input type="text" value={residentForm.data.last_name} onChange={e => residentForm.setData('last_name', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" />
+                                    {residentForm.errors.last_name && <div className="text-red-500 text-xs mt-1">{residentForm.errors.last_name}</div>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Suffix</label>
+                                    <input type="text" value={residentForm.data.suffix} onChange={e => residentForm.setData('suffix', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" placeholder="e.g. Jr., Sr., III" />
+                                    {residentForm.errors.suffix && <div className="text-red-500 text-xs mt-1">{residentForm.errors.suffix}</div>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Date of Birth</label>
+                                    <input type="date" value={residentForm.data.date_of_birth} onChange={e => residentForm.setData('date_of_birth', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" />
+                                    {residentForm.errors.date_of_birth && <div className="text-red-500 text-xs mt-1">{residentForm.errors.date_of_birth}</div>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Sex</label>
+                                    <select value={residentForm.data.sex} onChange={e => residentForm.setData('sex', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500">
+                                        <option value="">Select Sex...</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                    {residentForm.errors.sex && <div className="text-red-500 text-xs mt-1">{residentForm.errors.sex}</div>}
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Address</label>
+                                    <input type="text" value={residentForm.data.address} onChange={e => residentForm.setData('address', e.target.value)} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500" />
+                                    {residentForm.errors.address && <div className="text-red-500 text-xs mt-1">{residentForm.errors.address}</div>}
+                                </div>
+                            </div>
+                            <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setResidentModalOpen(false)}
+                                    className="rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={residentForm.processing}
+                                    className="rounded-lg bg-slate-900 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                                >
+                                    {residentForm.processing ? 'Saving...' : 'Save Resident'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Smart Importer Modal */}
+            {importModalOpen && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
+                        <h3 className="mb-4 text-xl font-black tracking-tight text-slate-900 uppercase">Upload CSV Records</h3>
+                        
+                        <div className="mb-6 rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4 shadow-sm">
+                            <p className="text-sm font-bold text-blue-800">Paalala: Smart Upsert Logic</p>
+                            <p className="mt-1 text-xs font-medium text-blue-700">
+                                Kung ang Pangalan at Petsa ng Kapanganakan ay nasa database na, ia-update lamang nito ang record at hindi gagawa ng duplicate.
+                            </p>
+                        </div>
+
+                        <div className="mb-6 flex justify-center">
+                            <a href={route('admin.census.template')} download className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-[10px] font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-200 active:scale-95">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Download CSV Template
+                            </a>
+                        </div>
+
+                        <form onSubmit={submitImport} className="space-y-4">
+                            <div>
+                                <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">Piliin ang CSV File</label>
+                                <input 
+                                    type="file" 
+                                    accept=".csv"
+                                    onChange={e => importForm.setData('import_file', e.target.files[0])}
+                                    required
+                                    className="w-full cursor-pointer rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200"
+                                />
+                                {importForm.errors.import_file && <p className="mt-1 text-xs font-bold text-red-500">{importForm.errors.import_file}</p>}
+                            </div>
+                            
+                            <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                                <button type="button" onClick={() => { setImportModalOpen(false); importForm.reset(); }} className="rounded-xl bg-slate-200 px-5 py-2.5 text-xs font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-300 active:scale-95">Cancel</button>
+                                <button type="submit" disabled={importForm.processing} className="flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">
+                                    {importForm.processing ? 'Uploading...' : 'Upload Records'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Batch Action Modal */}
+            {batchModal.isOpen && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-900">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">
+                                Kumpirmahin ang Batch Action
+                            </h3>
+                        </div>
+                        <p className="text-sm font-medium text-slate-600">
+                            Mayroong <strong className="text-slate-900">{batchModal.specificIds.length}</strong> eligible request(s). Sigurado ka bang gusto mong i-update ang status nila papuntang <strong className="uppercase text-slate-900">{batchModal.nextStatus.replace('_', ' ')}</strong>?
+                        </p>
+                        <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                            <button
+                                onClick={() => setBatchModal({ isOpen: false, nextStatus: '', specificIds: [] })}
+                                className="rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
+                            >
+                                Kanselahin
+                            </button>
+                            <button
+                                onClick={confirmBatchAction}
+                                className="rounded-lg bg-slate-900 px-6 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                            >
+                                Oo, I-proseso
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Document Management Modal */}
             {docModal.isOpen && (

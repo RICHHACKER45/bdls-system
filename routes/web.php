@@ -120,6 +120,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/documents', [AdminDashboardController::class, 'storeDocument'])->name('documents.store');
             Route::post('/documents/{documentType}/update', [AdminDashboardController::class, 'updateDocument'])->name('documents.update');
             Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
+
+            // CENSUS MANAGEMENT ROUTES
+            Route::post('/census', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'storeCensus'])->name('census.store');
+            Route::post('/census/{id}/update', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateCensus'])->name('census.update');
+            Route::delete('/census/{id}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'deleteCensus'])->name('census.destroy');
+            Route::post('/census/import', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'importCensus'])->name('census.import');
+            Route::get('/census/template', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'downloadCensusTemplate'])->name('census.template');
         });
 
     // ==========================================

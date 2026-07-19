@@ -136,6 +136,19 @@ class AdminDashboardController extends Controller
             'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
         ];
 
+        // CENSUS / RESIDENT MASTERLIST LOGIC
+        $residentSearch = $request->get('resident_search', '');
+        $censusQuery = \Illuminate\Support\Facades\DB::table('census_records')->orderBy('last_name', 'asc');
+
+        if (!empty($residentSearch)) {
+            $censusQuery->where(function ($q) use ($residentSearch) {
+                $q->where('first_name', 'like', "%{$residentSearch}%")
+                  ->orWhere('last_name', 'like', "%{$residentSearch}%")
+                  ->orWhere('address', 'like', "%{$residentSearch}%");
+            });
+        }
+        $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
             'activeQueue' => $activeQueue,
@@ -143,6 +156,7 @@ class AdminDashboardController extends Controller
             'documents' => $documents,
             'auditLogs' => $auditLogs,
             'analyticsSummary' => $analyticsSummary,
+            'censusRecords' => $censusRecords,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -151,6 +165,7 @@ class AdminDashboardController extends Controller
                 'queue_doc' => $queueDoc,
                 'queue_sort' => $queueSort,
                 'queue_search' => $queueSearch,
+                'resident_search' => $residentSearch,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
@@ -643,5 +658,121 @@ class AdminDashboardController extends Controller
             'active_tab' => 'queue',
             'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests.",
         ]);
+    }
+
+    public function storeCensus(\Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
+        ]);
+        $validated['is_alive'] = 1;
+        $validated['created_at'] = now();
+        $validated['updated_at'] = now();
+        
+        \Illuminate\Support\Facades\DB::table('census_records')->insert($validated);
+        event(new \App\Events\AdminDashboardUpdated());
+        
+        return back()->with(['success_message' => 'Bagong residente ay matagumpay na naidagdag.', 'active_tab' => 'residents']);
+    }
+
+    public function updateCensus(\Illuminate\Http\Request $request, $id) {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
+        ]);
+        $validated['updated_at'] = now();
+        
+        \Illuminate\Support\Facades\DB::table('census_records')->where('id', $id)->update($validated);
+        event(new \App\Events\AdminDashboardUpdated());
+        
+        return back()->with(['success_message' => 'Impormasyon ng residente ay nai-update.', 'active_tab' => 'residents']);
+    }
+
+    public function deleteCensus($id) {
+        \Illuminate\Support\Facades\DB::table('census_records')->where('id', $id)->delete();
+        event(new \App\Events\AdminDashboardUpdated());
+        
+        return back()->with(['success_message' => 'Residente ay tinanggal sa masterlist.', 'active_tab' => 'residents']);
+    }
+
+    public function importCensus(\Illuminate\Http\Request $request) {
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('import_file');
+        $handle = fopen($file->getPathname(), 'r');
+        fgetcsv($handle); // Skip header row
+
+        $importedCount = 0;
+        $updatedCount = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 7) continue;
+
+            $firstName = trim($row[0]);
+            $lastName = trim($row[1]);
+            $dob = trim($row[2]);
+
+            if (empty($firstName) || empty($lastName) || empty($dob)) continue;
+
+            $matchData = [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'date_of_birth' => date('Y-m-d', strtotime($dob)),
+            ];
+
+            $updateData = [
+                'middle_name' => trim($row[3]),
+                'suffix' => trim($row[4]),
+                'sex' => ucfirst(trim($row[5])),
+                'address' => trim($row[6]),
+                'is_alive' => 1,
+                'updated_at' => now(),
+            ];
+
+            $existing = \Illuminate\Support\Facades\DB::table('census_records')->where($matchData)->first();
+
+            if ($existing) {
+                \Illuminate\Support\Facades\DB::table('census_records')->where('id', $existing->id)->update($updateData);
+                $updatedCount++;
+            } else {
+                $updateData['created_at'] = now();
+                \Illuminate\Support\Facades\DB::table('census_records')->insert(array_merge($matchData, $updateData));
+                $importedCount++;
+            }
+        }
+        fclose($handle);
+        event(new \App\Events\AdminDashboardUpdated());
+
+        return back()->with(['success_message' => "Import tapos na! Nag-add ng {$importedCount} bago at nag-update ng {$updatedCount} records.", 'active_tab' => 'residents']);
+    }
+
+    public function downloadCensusTemplate() {
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=BDLS_Census_Template.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+        $columns = ['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'date_of_birth', 'address'];
+        $callback = function() use($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            fputcsv($file, ['Juan', 'Reyes', 'Dela Cruz', 'Jr.', 'Male', '1990-05-15', '123 Purok 1, Brgy. Dona Lucia']);
+            fclose($file);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 }
