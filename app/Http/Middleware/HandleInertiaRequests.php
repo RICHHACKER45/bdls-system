@@ -29,6 +29,7 @@ class HandleInertiaRequests extends Middleware
                 'walkin_searched' => fn () => $request->session()->get('walkin_searched'),
                 'walkin_search_number' => fn () => $request->session()->get('walkin_search_number'),
                 'walkin_user' => fn () => $request->session()->get('walkin_user'),
+                'active_tab' => fn () => $request->session()->get('active_tab'),
             ],
         ];
     }
