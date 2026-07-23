@@ -134,6 +134,8 @@ class AdminDashboardController extends Controller
             'processing' => (clone $analyticsQuery)->whereIn('status', ['processing', 'for_interview'])->count(),
             'released' => (clone $analyticsQuery)->whereIn('status', ['released', 'received'])->count(),
             'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
+            'total_registered' => User::where('role', 'resident')->count(),
+            'total_census' => \Illuminate\Support\Facades\DB::table('census_records')->count(),
         ];
 
         // CENSUS / RESIDENT MASTERLIST LOGIC
@@ -149,6 +151,19 @@ class AdminDashboardController extends Controller
         }
         $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
 
+        // REGISTERED ACCOUNTS LOGIC (For Analytics Sub-tab)
+        $accountSearch = $request->get('account_search', '');
+        $registeredQuery = User::where('role', 'resident')->orderBy('created_at', 'desc');
+
+        if (!empty($accountSearch)) {
+            $registeredQuery->where(function ($q) use ($accountSearch) {
+                $q->where('first_name', 'like', "%{$accountSearch}%")
+                  ->orWhere('last_name', 'like', "%{$accountSearch}%")
+                  ->orWhere('email', 'like', "%{$accountSearch}%");
+            });
+        }
+        $registeredAccounts = $registeredQuery->paginate(15, ['*'], 'accounts_page')->withQueryString();
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
             'activeQueue' => $activeQueue,
@@ -157,6 +172,7 @@ class AdminDashboardController extends Controller
             'auditLogs' => $auditLogs,
             'analyticsSummary' => $analyticsSummary,
             'censusRecords' => $censusRecords,
+            'registeredAccounts' => $registeredAccounts,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -166,6 +182,7 @@ class AdminDashboardController extends Controller
                 'queue_sort' => $queueSort,
                 'queue_search' => $queueSearch,
                 'resident_search' => $residentSearch,
+                'account_search' => $accountSearch,
             ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
@@ -517,6 +534,34 @@ class AdminDashboardController extends Controller
         $filename = 'BDLS_Release_Logbook_'.now()->format('Y_m_d').'.pdf';
 
         // 4. THE FIX: Check kung In-App View ba o Force Download
+        if ($request->has('download') && $request->download == '1') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * MODULE: Print Registered Accounts (Live Analytics -> User Accounts Tab)
+     */
+    public function printRegisteredAccountsPDF(Request $request)
+    {
+        // 1. Fetch all registered residents (sorted by created_at)
+        $registeredAccounts = User::where('role', 'resident')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // 2. LOG THE ACTION
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'PRINT_ACCOUNTS_LOG',
+            'description' => 'Nag-generate ng PDF para sa Registered User Accounts.',
+        ]);
+
+        // 3. GENERATE PDF
+        $pdf = Pdf::loadView('admin.pdf.registered_accounts', compact('registeredAccounts'));
+        $filename = 'BDLS_Registered_Accounts_'.now()->format('Y_m_d').'.pdf';
+
         if ($request->has('download') && $request->download == '1') {
             return $pdf->download($filename);
         }

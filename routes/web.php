@@ -110,6 +110,11 @@ Route::middleware(['auth'])->group(function () {
                 'generateReport',
             ])->name('reports.generate');
 
+            Route::get('/analytics/accounts/print', [
+                AdminDashboardController::class,
+                'printRegisteredAccountsPDF',
+            ])->name('analytics.print_accounts');
+
             // LOGBOOK ROUTE (Maintain Release Logbook Use Case)
             Route::get('/queue/logbook/print', [
                 AdminDashboardController::class,
