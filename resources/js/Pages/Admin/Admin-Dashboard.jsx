@@ -75,7 +75,14 @@ export default function AdminDashboard() {
         errors = {},
     } = usePage().props;
 
-    const [activeTab, setActiveTab] = useState('queue');
+    const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
+
+    useEffect(() => {
+        if (flash?.active_tab) {
+            setActiveTab(flash.active_tab);
+        }
+    }, [flash?.active_tab]);
+
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
     const [residentSearch, setResidentSearch] = useState('');
     const [residentModalOpen, setResidentModalOpen] = useState(false);
@@ -1809,7 +1816,7 @@ export default function AdminDashboard() {
                                     className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
                                 >
                                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                                    + Add Resident
+                                    Add Resident
                                 </button>
                             </div>
                         </div>
