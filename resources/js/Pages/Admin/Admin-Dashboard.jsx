@@ -29,6 +29,7 @@ const Pagination = ({ links }) => {
                         key={i}
                         href={link.url || '#'}
                         preserveScroll
+                        preserveState
                         className={`flex min-w-[32px] items-center justify-center rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
                             link.active
                                 ? 'border-slate-900 bg-slate-900 text-white shadow-md'
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
         auditLogs = { data: [], links: [] },
         analyticsSummary = {},
         censusRecords = { data: [], links: [] },
+        registeredAccounts = { data: [], links: [] },
         filters = {},
         auth,
         flash = {},
@@ -84,7 +86,9 @@ export default function AdminDashboard() {
     }, [flash?.active_tab]);
 
     const [queueSubTab, setQueueSubTab] = useState('queue-active');
+    const [analyticsSubTab, setAnalyticsSubTab] = useState('requests');
     const [residentSearch, setResidentSearch] = useState('');
+    const [accountSearch, setAccountSearch] = useState('');
     const [residentModalOpen, setResidentModalOpen] = useState(false);
     const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -1403,7 +1407,24 @@ export default function AdminDashboard() {
                             </form>
                         </div>
 
-                        <div className="p-6">
+                        {/* SUB-TABS NAVIGATION */}
+                        <div className="flex gap-2 border-b border-slate-200 bg-white px-6 py-3">
+                            <button
+                                onClick={() => setAnalyticsSubTab('requests')}
+                                className={`rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all ${analyticsSubTab === 'requests' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Service Requests
+                            </button>
+                            <button
+                                onClick={() => setAnalyticsSubTab('accounts')}
+                                className={`rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all ${analyticsSubTab === 'accounts' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Accounts & Population
+                            </button>
+                        </div>
+
+                        {analyticsSubTab === 'requests' && (
+                            <div className="p-6">
                             {/* LIVE FILTERS */}
                             <div className="mb-8 flex flex-col items-end gap-4 rounded-xl border border-slate-100 bg-slate-50 p-5 sm:flex-row">
                                 <div className="w-full sm:w-1/3">
@@ -1689,7 +1710,142 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                            </div>
+                        )}
+
+                        {analyticsSubTab === 'accounts' && (
+                            <div className="p-6 animate-in fade-in duration-300">
+                                {/* ACCOUNTS METRICS */}
+                                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-blue-600 uppercase">
+                                            Total Registered Accounts
+                                        </p>
+                                        <div className="mt-2 flex items-baseline gap-2">
+                                            <p className="text-4xl font-black text-blue-700">
+                                                {analyticsSummary?.total_registered || 0}
+                                            </p>
+                                            <p className="text-xs font-bold text-blue-500">active users</p>
+                                        </div>
+                                        <p className="mt-2 text-xs font-medium text-blue-600/80">
+                                            Mga residenteng may online account sa platform.
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                                        <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+                                            Total Resident Masterlist
+                                        </p>
+                                        <div className="mt-2 flex items-baseline gap-2">
+                                            <p className="text-4xl font-black text-slate-900">
+                                                {analyticsSummary?.total_census || 0}
+                                            </p>
+                                            <p className="text-xs font-bold text-slate-500">total population</p>
+                                        </div>
+                                        <p className="mt-2 text-xs font-medium text-slate-500">
+                                            Kabuuang bilang ng mga nakarehistro sa barangay masterlist.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* ACCOUNTS TABLE HEADER & SEARCH */}
+                                <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                                    <div className="w-full sm:w-1/2">
+                                        <input
+                                            type="text"
+                                            placeholder="I-search ang pangalan o email ng account..."
+                                            value={accountSearch}
+                                            onChange={(e) => setAccountSearch(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    router.get(
+                                                        route('admin.dashboard'),
+                                                        { active_tab: 'analytics', account_search: accountSearch },
+                                                        { preserveState: true, preserveScroll: true, only: ['registeredAccounts', 'filters'] }
+                                                    );
+                                                }
+                                            }}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                                        />
+                                    </div>
+                                    <div className="flex shrink-0 gap-2">
+                                        <a
+                                            href={route('admin.analytics.print_accounts')}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 rounded-xl bg-slate-100 px-5 py-2.5 text-[10px] font-black tracking-widest text-slate-600 uppercase transition-all hover:bg-slate-200 active:scale-95"
+                                        >
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                            View PDF
+                                        </a>
+                                        <a
+                                            href={route('admin.analytics.print_accounts') + '?download=1'}
+                                            className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                        >
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                            Download
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* ACCOUNTS TABLE */}
+                                <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                                    <table className="w-full text-left text-sm text-slate-600">
+                                        <thead className="bg-slate-50 text-[10px] font-black tracking-wider text-slate-500 uppercase">
+                                            <tr>
+                                                <th className="p-4">Pangalan</th>
+                                                <th className="p-4">Contact Info</th>
+                                                <th className="p-4">Status</th>
+                                                <th className="p-4">Date Registered</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {registeredAccounts.data.length > 0 ? (
+                                                registeredAccounts.data.map((acc) => (
+                                                    <tr key={acc.id} className="transition-all hover:bg-slate-50">
+                                                        <td className="p-4 font-bold text-slate-900">
+                                                            {acc.first_name} {acc.last_name} {acc.suffix}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="text-xs font-bold">{acc.contact_number}</span>
+                                                                <span className="text-[10px] font-medium text-slate-500">{acc.email}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            {acc.is_verified ? (
+                                                                <span className="rounded-md border border-green-200 bg-green-100 px-2 py-1 text-[10px] font-black tracking-widest text-green-700 uppercase shadow-sm">
+                                                                    Verified
+                                                                </span>
+                                                            ) : (
+                                                                <span className="rounded-md border border-orange-200 bg-orange-100 px-2 py-1 text-[10px] font-black tracking-widest text-orange-700 uppercase shadow-sm">
+                                                                    Unverified
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-4 text-xs font-medium text-slate-500">
+                                                            {new Date(acc.created_at).toLocaleDateString('en-US', {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric'
+                                                            })}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" className="p-8 text-center font-bold text-slate-400 italic">
+                                                        Walang nakitang account.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4">
+                                    <Pagination links={registeredAccounts.links} />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -1882,8 +2038,9 @@ export default function AdminDashboard() {
                                 </tbody>
                             </table>
                         </div>
-                        <Pagination links={censusRecords.links} />
-                        
+                        <div className="mt-6 flex justify-center pb-8">
+                            <Pagination links={censusRecords.links} />
+                        </div>
                     </div>
                 </div>
             )}
