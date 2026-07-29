@@ -98,11 +98,11 @@ class SmsService
                 $fullMessage = Str::limit($fullMessage, 150, ''); // Puputulin pilit para tipid credit
                 Log::warning("SMS Truncated to 150 chars for {$recipientContact} para iwas double-charge.");
             }
-            $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
+            $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver, $isOtp);
         } else {
             // ANNOUNCEMENTS (Concatenation Logic - Multi-part SMS)
             if (Str::length($fullMessage) <= 150) {
-                $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver);
+                $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver, $isOtp);
             } else {
                 // Hahatiin natin sa 144 characters + 6 chars para sa "(1/10)" = 150 max payload per credit
                 $chunks = str_split($fullMessage, 144);
@@ -111,7 +111,7 @@ class SmsService
                 foreach ($chunks as $index => $chunk) {
                     $partNum = $index + 1;
                     $segmentMessage = $chunk." ({$partNum}/{$totalChunks})";
-                    $this->executeSend($userId, $recipientContact, $segmentMessage, $serviceRequestId, $driver);
+                    $this->executeSend($userId, $recipientContact, $segmentMessage, $serviceRequestId, $driver, $isOtp);
                 }
             }
         }
@@ -128,6 +128,7 @@ class SmsService
         $messageContent,
         $serviceRequestId,
         $driver,
+        $isOtp = false // THE FIX: Ipasa ang flag para malaman kung OTP ito
     ) {
         $status = 'Pending';
         $providerResponse = null;
@@ -185,6 +186,12 @@ class SmsService
                     "SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: ".
                         $e->getMessage(),
                 );
+
+                // THE FIX: Kapag OTP ito at nag-fail ang API, mag-throw tayo ng Exception
+                // para marinig ng DB::transaction() sa AuthController at i-rollback ang registration!
+                if ($isOtp) {
+                    throw new Exception("Bigo ang SMS Gateway na ipadala ang OTP. Na-rollback ang rehistrasyon.");
+                }
             }
         }
 
