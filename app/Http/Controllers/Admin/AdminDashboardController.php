@@ -757,8 +757,7 @@ class AdminDashboardController extends Controller
         $handle = fopen($file->getPathname(), 'r');
         fgetcsv($handle); // Skip header row
 
-        $importedCount = 0;
-        $updatedCount = 0;
+        $bulkData = [];
 
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) < 7) {
@@ -773,36 +772,33 @@ class AdminDashboardController extends Controller
                 continue;
             }
 
-            $matchData = [
+            // THE FIX: Prepare bulk array for UPSERT
+            $bulkData[] = [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'date_of_birth' => date('Y-m-d', strtotime($dob)),
-            ];
-
-            $updateData = [
                 'middle_name' => trim($row[3]),
                 'suffix' => trim($row[4]),
                 'sex' => ucfirst(trim($row[5])),
                 'address' => trim($row[6]),
                 'is_alive' => 1,
+                'created_at' => now(),
                 'updated_at' => now(),
             ];
-
-            $existing = DB::table('census_records')->where($matchData)->first();
-
-            if ($existing) {
-                DB::table('census_records')->where('id', $existing->id)->update($updateData);
-                $updatedCount++;
-            } else {
-                $updateData['created_at'] = now();
-                DB::table('census_records')->insert(array_merge($matchData, $updateData));
-                $importedCount++;
-            }
         }
         fclose($handle);
+
+        // Chunking para hindi sumabog ang RAM/Query limit sa napakalaking CSV
+        foreach (array_chunk($bulkData, 500) as $chunk) {
+            DB::table('census_records')->upsert(
+                $chunk,
+                ['first_name', 'last_name', 'date_of_birth'], // Unique columns
+                ['middle_name', 'suffix', 'sex', 'address', 'is_alive', 'updated_at'] // Update columns
+            );
+        }
         event(new AdminDashboardUpdated);
 
-        return back()->with(['success_message' => "Import tapos na! Nag-add ng {$importedCount} bago at nag-update ng {$updatedCount} records.", 'active_tab' => 'residents']);
+        return back()->with(['success_message' => "Import tapos na! Na-proseso ang ".count($bulkData)." census records gamit ang bulk Upsert.", 'active_tab' => 'residents']);
     }
 
     public function suspendAccount($id)
