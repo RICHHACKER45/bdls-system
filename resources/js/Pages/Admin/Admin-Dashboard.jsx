@@ -48,7 +48,8 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (window.Echo) {
             // Makikinig ang Admin Portal sa public channel
-            window.Echo.channel('admin.updates').listen('AdminDashboardUpdated', (e) => {
+            // THE FIX: Secure Private Channel
+            window.Echo.private('admin-dashboard').listen('AdminDashboardUpdated', (e) => {
                 // SILENT REFRESH: Kukuha ng bagong data ang Inertia nang walang screen refresh o loading UI!
                 router.reload({
                     only: ['activeQueue', 'receivedQueue', 'auditLogs', 'notificationLogs'],
@@ -60,7 +61,7 @@ export default function AdminDashboard() {
 
         // Cleanup para hindi magdoble ang listener kapag umalis sa page
         return () => {
-            if (window.Echo) window.Echo.leaveChannel('admin.updates');
+            if (window.Echo) window.Echo.leaveChannel('admin-dashboard');
         };
     }, []);
     const {

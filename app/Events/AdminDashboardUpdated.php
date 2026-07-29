@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -20,9 +20,9 @@ class AdminDashboardUpdated implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        // Pakinggan ito sa public channel na 'admin.updates'
+        // Pakinggan ito sa private channel na 'admin-dashboard' (THE FIX)
         return [
-            new Channel('admin.updates'),
+            new PrivateChannel('admin-dashboard'),
         ];
     }
 }
