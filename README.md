@@ -12,7 +12,7 @@ A modern, highly optimized Single Page Application (SPA) developed for **Baranga
 - **Shadow Profiles for Walk-ins:** Instantly registers walk-in residents with a prefix queue number (e.g., `W-001`) without requiring an email or complex password setup.
 - **Zero-Retention OCR Engine:** Valid IDs and user selfies are sent directly to the Google Cloud Vision API for AI text extraction, instantly verified against the Census database, and immediately purged from memory to prevent data breaches.
 - **NTC-Compliant SMS Engine:** Integrates a robust SMS notification system featuring a 160-character limit optimizer, Background Queue Jobs, and Night Curfew filters to protect residents from late-night spam.
-- **"Human-in-the-Loop" Workflow:** Tracks the lifecycle of documents (e.g., *For Interview*, *Processing*, *Ready for Release*) to accommodate required physical appearances and signatures.
+- **"Human-in-the-Loop" Workflow:** Tracks the lifecycle of documents (e.g., _For Interview_, _Processing_, _Ready for Release_) to accommodate required physical appearances and signatures.
 - **Hybrid Payment System:** Allows residents to pay via GCash (Online) or Cash (Walk-in), uploading verification receipts for frictionless processing.
 
 ---
@@ -133,7 +133,8 @@ Because we are using Vite, Tailwind v4, Background Queues, and WebSockets (Rever
 npm start
 ```
 
-*What `npm start` does behind the scenes:*
+_What `npm start` does behind the scenes:_
+
 1. Starts the PHP Artisan Server (`localhost:8000`)
 2. Starts the Vite Frontend Bundler (`bun run dev`)
 3. Starts the Background Job Worker (`php artisan queue:work`)

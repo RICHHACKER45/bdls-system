@@ -29,25 +29,19 @@ class AdminDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. The Laravel Way: Base Query (Filtered at DB level)
-        $query = User::where('role', 'resident');
+        // 1. THE LARAVEL WAY: Account Management (Resident Accounts)
+        $accountSearch = $request->get('account_search', '');
+        $accountsQuery = User::where('role', 'resident')->latest();
 
-        // 2. Search Logic
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('contact_number', 'like', "%{$search}%");
+        if (! empty($accountSearch)) {
+            $accountsQuery->where(function ($q) use ($accountSearch) {
+                $q->where('first_name', 'like', "%{$accountSearch}%")
+                    ->orWhere('last_name', 'like', "%{$accountSearch}%")
+                    ->orWhere('contact_number', 'like', "%{$accountSearch}%")
+                    ->orWhere('email', 'like', "%{$accountSearch}%");
             });
         }
-
-        // 3. Sorting Logic
-        if ($request->get('sort') == 'oldest') {
-            $query->oldest();
-        } else {
-            $query->latest();
-        }
+        $residentAccounts = $accountsQuery->paginate(15, ['*'], 'accounts_page')->withQueryString();
 
         // 5. QUEUE LOGIC WITH FILTERS & SORTING
         $queueStatus = $request->get('queue_status', 'all');
@@ -135,34 +129,21 @@ class AdminDashboardController extends Controller
             'released' => (clone $analyticsQuery)->whereIn('status', ['released', 'received'])->count(),
             'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
             'total_registered' => User::where('role', 'resident')->count(),
-            'total_census' => \Illuminate\Support\Facades\DB::table('census_records')->count(),
+            'total_census' => DB::table('census_records')->count(),
         ];
 
         // CENSUS / RESIDENT MASTERLIST LOGIC
         $residentSearch = $request->get('resident_search', '');
-        $censusQuery = \Illuminate\Support\Facades\DB::table('census_records')->orderBy('last_name', 'asc');
+        $censusQuery = DB::table('census_records')->orderBy('last_name', 'asc');
 
-        if (!empty($residentSearch)) {
+        if (! empty($residentSearch)) {
             $censusQuery->where(function ($q) use ($residentSearch) {
                 $q->where('first_name', 'like', "%{$residentSearch}%")
-                  ->orWhere('last_name', 'like', "%{$residentSearch}%")
-                  ->orWhere('address', 'like', "%{$residentSearch}%");
+                    ->orWhere('last_name', 'like', "%{$residentSearch}%")
+                    ->orWhere('address', 'like', "%{$residentSearch}%");
             });
         }
         $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
-
-        // REGISTERED ACCOUNTS LOGIC (For Analytics Sub-tab)
-        $accountSearch = $request->get('account_search', '');
-        $registeredQuery = User::where('role', 'resident')->orderBy('created_at', 'desc');
-
-        if (!empty($accountSearch)) {
-            $registeredQuery->where(function ($q) use ($accountSearch) {
-                $q->where('first_name', 'like', "%{$accountSearch}%")
-                  ->orWhere('last_name', 'like', "%{$accountSearch}%")
-                  ->orWhere('email', 'like', "%{$accountSearch}%");
-            });
-        }
-        $registeredAccounts = $registeredQuery->paginate(15, ['*'], 'accounts_page')->withQueryString();
 
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
@@ -172,7 +153,7 @@ class AdminDashboardController extends Controller
             'auditLogs' => $auditLogs,
             'analyticsSummary' => $analyticsSummary,
             'censusRecords' => $censusRecords,
-            'registeredAccounts' => $registeredAccounts,
+            'residentAccounts' => $residentAccounts,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -272,7 +253,7 @@ class AdminDashboardController extends Controller
     public function checkWalkinNumber($number)
     {
         // Hanapin ang resident record
-        $user = \App\Models\User::where('contact_number', $number)
+        $user = User::where('contact_number', $number)
             ->where('role', 'resident')
             ->first();
 
@@ -285,7 +266,7 @@ class AdminDashboardController extends Controller
                     'sex' => $user->sex,
                     'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '',
                     'address' => $user->address,
-                ]
+                ],
             ]);
         }
 
@@ -323,7 +304,7 @@ class AdminDashboardController extends Controller
             // A. Hahanapin kung may existing resident record na gamit ang number, kung wala, gagawa ng bago.
             $user = User::where('contact_number', $request->contact_number)->first();
 
-            if (!$user) {
+            if (! $user) {
                 $user = User::create([
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
@@ -331,7 +312,7 @@ class AdminDashboardController extends Controller
                     'date_of_birth' => $request->date_of_birth,
                     'address' => $request->address, // THE FIX: Isang address field na lang
                     'contact_number' => $request->contact_number,
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'password' => Hash::make(Str::random(12)),
                     'role' => 'resident',
                     'contact_verified_at' => now(),
                     'is_verified' => true, // Auto-verified kasi kaharap ng Admin
@@ -355,7 +336,7 @@ class AdminDashboardController extends Controller
             ]);
 
             // D. I-record sa System Audit Log
-            \App\Models\AuditLog::create([
+            AuditLog::create([
                 'admin_id' => Auth::id(),
                 'action' => 'WALKIN_ENCODED',
                 'description' => "Nag-encode ng walk-in request ({$queueNumber}) para kay {$user->first_name} {$user->last_name}.",
@@ -371,11 +352,11 @@ class AdminDashboardController extends Controller
                     $serviceRequest->id,
                 );
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
+                Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
             }
         });
 
-        event(new \App\Events\AdminDashboardUpdated);
+        event(new AdminDashboardUpdated);
 
         return redirect()
             ->route('admin.dashboard')
@@ -705,7 +686,8 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function storeCensus(\Illuminate\Http\Request $request) {
+    public function storeCensus(Request $request)
+    {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
@@ -718,14 +700,15 @@ class AdminDashboardController extends Controller
         $validated['is_alive'] = 1;
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
-        
-        \Illuminate\Support\Facades\DB::table('census_records')->insert($validated);
-        event(new \App\Events\AdminDashboardUpdated());
-        
+
+        DB::table('census_records')->insert($validated);
+        event(new AdminDashboardUpdated);
+
         return back()->with(['success_message' => 'Bagong residente ay matagumpay na naidagdag.', 'active_tab' => 'residents']);
     }
 
-    public function updateCensus(\Illuminate\Http\Request $request, $id) {
+    public function updateCensus(Request $request, $id)
+    {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
@@ -736,21 +719,36 @@ class AdminDashboardController extends Controller
             'address' => 'required|string|max:255',
         ]);
         $validated['updated_at'] = now();
-        
-        \Illuminate\Support\Facades\DB::table('census_records')->where('id', $id)->update($validated);
-        event(new \App\Events\AdminDashboardUpdated());
-        
+
+        DB::table('census_records')->where('id', $id)->update($validated);
+        event(new AdminDashboardUpdated);
+
         return back()->with(['success_message' => 'Impormasyon ng residente ay nai-update.', 'active_tab' => 'residents']);
     }
 
-    public function deleteCensus($id) {
-        \Illuminate\Support\Facades\DB::table('census_records')->where('id', $id)->delete();
-        event(new \App\Events\AdminDashboardUpdated());
-        
+    public function deleteCensus($id)
+    {
+        DB::table('census_records')->where('id', $id)->delete();
+        event(new AdminDashboardUpdated);
+
         return back()->with(['success_message' => 'Residente ay tinanggal sa masterlist.', 'active_tab' => 'residents']);
     }
 
-    public function importCensus(\Illuminate\Http\Request $request) {
+    public function deleteCensusBatch(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        DB::table('census_records')->whereIn('id', $request->ids)->delete();
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => count($request->ids).' residente ay sabay-sabay na tinanggal sa masterlist.', 'active_tab' => 'residents']);
+    }
+
+    public function importCensus(Request $request)
+    {
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt|max:5120',
         ]);
@@ -763,13 +761,17 @@ class AdminDashboardController extends Controller
         $updatedCount = 0;
 
         while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 7) continue;
+            if (count($row) < 7) {
+                continue;
+            }
 
             $firstName = trim($row[0]);
             $lastName = trim($row[1]);
             $dob = trim($row[2]);
 
-            if (empty($firstName) || empty($lastName) || empty($dob)) continue;
+            if (empty($firstName) || empty($lastName) || empty($dob)) {
+                continue;
+            }
 
             $matchData = [
                 'first_name' => $firstName,
@@ -786,38 +788,59 @@ class AdminDashboardController extends Controller
                 'updated_at' => now(),
             ];
 
-            $existing = \Illuminate\Support\Facades\DB::table('census_records')->where($matchData)->first();
+            $existing = DB::table('census_records')->where($matchData)->first();
 
             if ($existing) {
-                \Illuminate\Support\Facades\DB::table('census_records')->where('id', $existing->id)->update($updateData);
+                DB::table('census_records')->where('id', $existing->id)->update($updateData);
                 $updatedCount++;
             } else {
                 $updateData['created_at'] = now();
-                \Illuminate\Support\Facades\DB::table('census_records')->insert(array_merge($matchData, $updateData));
+                DB::table('census_records')->insert(array_merge($matchData, $updateData));
                 $importedCount++;
             }
         }
         fclose($handle);
-        event(new \App\Events\AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         return back()->with(['success_message' => "Import tapos na! Nag-add ng {$importedCount} bago at nag-update ng {$updatedCount} records.", 'active_tab' => 'residents']);
     }
 
-    public function downloadCensusTemplate() {
+    public function suspendAccount($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['locked_until' => now()->addDays(7)]);
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang account ni {$user->first_name} ay sinuspinde ng 7 araw.", 'active_tab' => 'accounts']);
+    }
+
+    public function deleteAccount($id)
+    {
+        $user = User::findOrFail($id);
+        $name = $user->first_name.' '.$user->last_name;
+        $user->delete();
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang account ni {$name} ay permanenteng nabura.", 'active_tab' => 'accounts']);
+    }
+
+    public function downloadCensusTemplate()
+    {
         $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=BDLS_Census_Template.csv",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=BDLS_Census_Template.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
         $columns = ['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'date_of_birth', 'address'];
-        $callback = function() use($columns) {
+        $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
             fputcsv($file, ['Juan', 'Reyes', 'Dela Cruz', 'Jr.', 'Male', '1990-05-15', '123 Purok 1, Brgy. Dona Lucia']);
             fclose($file);
         };
+
         return response()->stream($callback, 200, $headers);
     }
 }

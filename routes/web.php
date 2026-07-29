@@ -127,11 +127,16 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
 
             // CENSUS MANAGEMENT ROUTES
-            Route::post('/census', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'storeCensus'])->name('census.store');
-            Route::post('/census/{id}/update', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'updateCensus'])->name('census.update');
-            Route::delete('/census/{id}', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'deleteCensus'])->name('census.destroy');
-            Route::post('/census/import', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'importCensus'])->name('census.import');
-            Route::get('/census/template', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'downloadCensusTemplate'])->name('census.template');
+            Route::post('/census', [AdminDashboardController::class, 'storeCensus'])->name('census.store');
+            Route::post('/census/{id}/update', [AdminDashboardController::class, 'updateCensus'])->name('census.update');
+            Route::delete('/census/{id}', [AdminDashboardController::class, 'deleteCensus'])->name('census.destroy');
+            Route::post('/census/batch-delete', [AdminDashboardController::class, 'deleteCensusBatch'])->name('census.batch_destroy');
+            Route::post('/census/import', [AdminDashboardController::class, 'importCensus'])->name('census.import');
+            Route::get('/census/template', [AdminDashboardController::class, 'downloadCensusTemplate'])->name('census.template');
+
+            // MANAGE ACCOUNTS ROUTES
+            Route::post('/accounts/{id}/suspend', [AdminDashboardController::class, 'suspendAccount'])->name('accounts.suspend');
+            Route::delete('/accounts/{id}', [AdminDashboardController::class, 'deleteAccount'])->name('accounts.destroy');
         });
 
     // ==========================================

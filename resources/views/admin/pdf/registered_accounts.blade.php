@@ -66,9 +66,7 @@
         <tbody>
             @forelse ($registeredAccounts as $acc)
                 <tr>
-                    <td style="font-weight: bold; text-transform: uppercase; color: #0f172a;">
-                        {{ $acc->last_name }}, {{ $acc->first_name }} {{ $acc->suffix }}
-                    </td>
+                    <td style="font-weight: bold; text-transform: uppercase; color: #0f172a">{{ $acc->last_name }}, {{ $acc->first_name }} {{ $acc->suffix }}</td>
                     <td>{{ $acc->contact_number }}</td>
                     <td>{{ $acc->email }}</td>
                     <td>{{ $acc->is_verified ? 'Verified' : 'Unverified' }}</td>
