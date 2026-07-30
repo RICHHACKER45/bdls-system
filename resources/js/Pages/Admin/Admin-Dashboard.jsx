@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import {
     BarChart,
@@ -41,6 +41,15 @@ const Pagination = ({ links }) => {
             })}
         </div>
     );
+};
+
+// THE FIX: Exact Age Computation Helper (React-side) para maiwasan ang maling math (e.g. leap years, exact month/day precision)
+const calculateAge = (dobString) => {
+    if (!dobString) return 0;
+    const dob = new Date(dobString);
+    const diff_ms = Date.now() - dob.getTime();
+    const age_dt = new Date(diff_ms);
+    return Math.abs(age_dt.getUTCFullYear() - 1970);
 };
 
 export default function AdminDashboard() {
@@ -584,6 +593,69 @@ export default function AdminDashboard() {
     const searchParam = urlParams.get('search') || '';
     const sortParam = urlParams.get('sort') || 'latest';
 
+    // THE FIX: Memoize ang mabigat na Census Masterlist rendering para hindi mag-lag ang buong page kapag nagta-type sa Walk-in forms
+    const renderedMasterlist = useMemo(() => {
+        if (!censusRecords?.data || censusRecords.data.length === 0) {
+            return (
+                <tr>
+                    <td
+                        colSpan="5"
+                        className="p-12 text-center font-bold text-slate-400 italic"
+                    >
+                        Walang nahanap na residente.
+                    </td>
+                </tr>
+            );
+        }
+
+        return censusRecords.data.map((resident) => (
+            <tr
+                key={resident.id}
+                className="transition-colors hover:bg-slate-50"
+            >
+                <td className="p-4 text-center">
+                    <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                        checked={selectedResidents.includes(resident.id)}
+                        onChange={() => handleResidentSelect(resident.id)}
+                    />
+                </td>
+                <td className="p-4">
+                    <p className="text-sm font-bold text-slate-900 uppercase">
+                        {resident.last_name}, {resident.first_name}{' '}
+                        {resident.middle_name ? resident.middle_name.charAt(0) + '.' : ''}{' '}
+                        {resident.suffix || ''}
+                    </p>
+                </td>
+                <td className="p-4">
+                    <p className="text-xs font-bold text-slate-700">
+                        {resident.sex} | {calculateAge(resident.date_of_birth)} yrs old
+                    </p>
+                </td>
+                <td className="p-4">
+                    <p className="text-xs font-medium text-slate-600">
+                        {resident.address}
+                    </p>
+                </td>
+                <td className="flex justify-end gap-2 p-4 text-right">
+                    <button
+                        onClick={() => openResidentModal('edit', resident)}
+                        className="rounded-lg bg-blue-50 px-3 py-1.5 text-[10px] font-black text-blue-600 uppercase transition-all hover:bg-blue-100 active:scale-95"
+                    >
+                        Edit
+                    </button>
+                    <button
+                        onClick={() => openDeleteCensusModal(resident.id)}
+                        className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-black text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95"
+                    >
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        ));
+    }, [censusRecords.data, selectedResidents]);
+
     return (
         <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Head title="Admin Dashboard - BDLS" />
@@ -1089,7 +1161,27 @@ export default function AdminDashboard() {
                                         type="text"
                                         value={walkinStoreForm.data.contact_number}
                                         onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            // THE FIX: Support pasted '+63' numbers
+                                            let rawVal = e.target.value;
+                                            if (rawVal.startsWith('+63')) {
+                                                rawVal = '0' + rawVal.substring(3);
+                                            }
+                                            const val = rawVal.replace(/[^0-9]/g, '');
+
+                                            // THE FIX: Auto-reset kung binura ang number (poka-yoke)
+                                            if (val.length < 11 && walkinStoreForm.data.first_name !== '') {
+                                                walkinStoreForm.setData((data) => ({
+                                                    ...data,
+                                                    contact_number: val,
+                                                    first_name: '',
+                                                    last_name: '',
+                                                    sex: 'Male',
+                                                    date_of_birth: '',
+                                                    address: '',
+                                                }));
+                                                return;
+                                            }
+
                                             walkinStoreForm.setData('contact_number', val);
 
                                             // THE FIX: Event-Driven Silent Background Check (No polling!)
@@ -2259,78 +2351,7 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {censusRecords.data && censusRecords.data.length > 0 ? (
-                                        censusRecords.data.map((resident) => (
-                                            <tr
-                                                key={resident.id}
-                                                className="transition-colors hover:bg-slate-50"
-                                            >
-                                                <td className="p-4 text-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                                                        checked={selectedResidents.includes(
-                                                            resident.id
-                                                        )}
-                                                        onChange={() =>
-                                                            handleResidentSelect(resident.id)
-                                                        }
-                                                    />
-                                                </td>
-                                                <td className="p-4">
-                                                    <p className="text-sm font-bold text-slate-900 uppercase">
-                                                        {resident.last_name}, {resident.first_name}{' '}
-                                                        {resident.middle_name
-                                                            ? resident.middle_name.charAt(0) + '.'
-                                                            : ''}{' '}
-                                                        {resident.suffix || ''}
-                                                    </p>
-                                                </td>
-                                                <td className="p-4">
-                                                    <p className="text-xs font-bold text-slate-700">
-                                                        {resident.sex} |{' '}
-                                                        {new Date().getFullYear() -
-                                                            new Date(
-                                                                resident.date_of_birth
-                                                            ).getFullYear()}{' '}
-                                                        yrs old
-                                                    </p>
-                                                </td>
-                                                <td className="p-4">
-                                                    <p className="text-xs font-medium text-slate-600">
-                                                        {resident.address}
-                                                    </p>
-                                                </td>
-                                                <td className="flex justify-end gap-2 p-4 text-right">
-                                                    <button
-                                                        onClick={() =>
-                                                            openResidentModal('edit', resident)
-                                                        }
-                                                        className="rounded-lg bg-blue-50 px-3 py-1.5 text-[10px] font-black text-blue-600 uppercase transition-all hover:bg-blue-100 active:scale-95"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            openDeleteCensusModal(resident.id)
-                                                        }
-                                                        className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-black text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colSpan="5"
-                                                className="p-12 text-center font-bold text-slate-400 italic"
-                                            >
-                                                Walang nahanap na residente.
-                                            </td>
-                                        </tr>
-                                    )}
+                                    {renderedMasterlist}
                                 </tbody>
                             </table>
                         </div>
