@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('address');
             $table->boolean('is_alive')->default(true); // Para alam kung active resident pa
             $table->timestamps();
+
+            // THE FIX: Added unique constraint to support modern Laravel upsert() bulk insertion
+            $table->unique(['first_name', 'last_name', 'date_of_birth'], 'census_records_unique_index');
         });
     }
 

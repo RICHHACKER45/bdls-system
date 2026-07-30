@@ -1,63 +1,69 @@
-# Web-Based Service Request Queuing and Notification System for Local Communities Using SMS Technology [1]
+# Web-Based Service Request Queuing and Notification System for Local Communities Using SMS Technology
 
-A Capstone Project developed for **Barangay Doña Lucia, Quezon, Nueva Ecija** [2]. This system modernizes the traditional barangay service request process by providing a unified digital queue, real-time request tracking, and automated SMS notifications compliant with Philippine NTC regulations [2-5].
+A modern, highly optimized Single Page Application (SPA) developed for **Barangay Doña Lucia, Quezon, Nueva Ecija**. This system modernizes the traditional barangay service request process by providing a unified digital queue, real-time request tracking, and automated SMS notifications compliant with Philippine NTC regulations.
 
 ---
 
 ## 🚀 Core Features
 
-- **Unified Digital Queuing:** Seamlessly manages both Walk-in and Online service requests in a single, fair queuing dashboard [3, 4].
-- **Shadow Profiles for Walk-ins:** Utilizes Single Table Inheritance (STI) to instantly register walk-in residents with a prefix queue number (e.g., `W-001`) without requiring an email or complex password setup [6].
-- **NTC-Compliant SMS Engine:** Integrates a robust SMS notification system featuring a 160-character limit optimizer, Unicode (Emoji) trap filtering, Link Blocker, and a Night Curfew (9 PM to 7 AM) safeguard to prevent spam [5, 7-9].
-- **13 Supported Document Types:** Strictly follows the Citizen's Charter ("Ang Barangay Requests"), supporting documents like Barangay Clearance, Certificate of Indigency, and First Time Jobseekers (FTJ) [10-14].
-- **"Human-in-the-Loop" Workflow:** Includes functional status markers like `For Interview` and `Ready for Release` to accommodate required physical appearances and physical signatures as mandated by the barangay [15-17].
-- **F-Pattern & 60/30/10 UI/UX:** Built with a strict Tailwind v4 design system to ensure a clean, accessible, and fast-loading interface on both mobile and desktop devices [18-20].
+- **Real-Time Live Dashboard:** Powered by Laravel Reverb and React. The active queue, announcements, and document processing statuses update in real-time across all resident and admin screens without refreshing the page.
+- **Unified Digital Queuing:** Seamlessly manages both Walk-in and Online service requests in a single, fair queuing dashboard.
+- **Advanced Batch Processing:** Administrators can group multiple requests, apply batch actions, and dispatch real-time SMS updates in one click using a persistent Floating Action Button (FAB).
+- **Shadow Profiles for Walk-ins:** Instantly registers walk-in residents with a prefix queue number (e.g., `W-001`) without requiring an email or complex password setup.
+- **Zero-Retention OCR Engine:** Valid IDs and user selfies are sent directly to the Google Cloud Vision API for AI text extraction, instantly verified against the Census database, and immediately purged from memory to prevent data breaches.
+- **NTC-Compliant SMS Engine:** Integrates a robust SMS notification system featuring a 160-character limit optimizer, Background Queue Jobs, and Night Curfew filters to protect residents from late-night spam.
+- **"Human-in-the-Loop" Workflow:** Tracks the lifecycle of documents (e.g., _For Interview_, _Processing_, _Ready for Release_) to accommodate required physical appearances and signatures.
+- **Hybrid Payment System:** Allows residents to pay via GCash (Online) or Cash (Walk-in), uploading verification receipts for frictionless processing.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Backend:** Laravel 12 (PHP 8.2) [21]
-- **Frontend:** Blade Templates, Tailwind CSS v4, Vanilla JavaScript (Separated Logic) [21-23]
-- **Database:** MySQL [24]
-- **SMS Provider:** 3rd Party API (Fortmed/Custom) [25]
+This system has completely migrated from legacy Blade/Vanilla JS to a robust **React SPA architecture**.
+
+- **Backend:** Laravel 12 (PHP 8.2)
+- **Frontend SPA Framework:** React 19 + Inertia.js v3
+- **Styling:** Tailwind CSS v4 (Strict component-based atomic design)
+- **Real-time WebSockets:** Laravel Reverb + Laravel Echo
+- **Job Queues:** Laravel Horizon / Database Queue (for async SMS & Notifications)
+- **Database:** MySQL
 
 ---
 
-## 🗄️ Database Architecture (ERD Summary)
+## 🗄️ Database Architecture
 
-The system uses a highly optimized relational database structure [24, 26]:
+The system uses a highly optimized relational database structure:
 
-1.  `users`: The core table using Single Table Inheritance for Admins, Online Residents, and Walk-in Residents [6]. Includes soft-locking and rejection tracking [27].
-2.  `document_types`: Seeded with the 13 official barangay request types and their descriptions [28].
-3.  `service_requests`: The central transaction table linking `user_id` and `document_type_id` [29, 30].
-4.  `attachments`: Stores extra uploaded requirements via a 1:N relationship [31, 32].
-5.  `audit_logs`: Tracks administrative actions (Approvals, Rejections, Deletions) [33].
-6.  `notification_logs`: A fail-safe database log of every SMS/Email sent, including delivery status [34, 35].
+1. `users`: The core table using Single Table Inheritance for Admins, Online Residents, and Walk-in Residents.
+2. `document_types`: Seeded with the 13 official barangay request types, fees, and requirements.
+3. `service_requests`: The central transaction table linking `user_id` and `document_type_id`.
+4. `attachments`: Stores extra uploaded requirements via a 1:N relationship.
+5. `jobs` / `failed_jobs`: Handles the Background Queues for dispatching SMS notifications asynchronously.
+6. `notification_logs`: A fail-safe database log of every SMS/Email sent, including delivery status.
 
 ---
 
 ## 🛡️ Security & Enterprise Architecture
 
-This system has passed a strict Laravel 12 Architecture and Security Audit [36]:
+This system has passed strict Laravel 12 Architecture & Security Audits:
 
-- **Centralized Authorization:** Uses a custom `AdminMiddleware` registered in `bootstrap/app.php` to protect administrative routes from unauthorized access [37-40].
-- **Memory Protection:** Implements Eloquent Query Scopes (`scopePending`, `scopeApproved`) in the `User` model to filter records at the database level, preventing Memory Exhaustion (OOM) [41, 42].
-- **Atomic Database Transactions:** Critical operations (like creating a request and sending an SMS) are wrapped in `DB::transaction()`. If the SMS API fails, the database rolls back to maintain data integrity [22, 43, 44].
-- **Rate Limiting & Cooldowns:** Protects the SMS API budget by rate-limiting OTP resends and applying IP-based temporary blocks for spam attempts [45, 46].
-- **Form Requests:** Extracts complex validation logic into dedicated classes like `RegisterRequest` [47, 48].
+- **Zero-Retention Identity Verification:** Ensures that user-uploaded sensitive IDs are never stored on disk.
+- **Memory Protection:** Bypasses heavy ORM calculations in dashboards, favoring indexed raw DB queries and `DocumentType` baseline metrics.
+- **Strict Password Enforcement:** User accounts require a minimum of 8 characters, with at least 1 uppercase, 1 lowercase, 1 number, and 1 symbol.
+- **Atomic Database Transactions:** Critical operations (like creating a request and sending an SMS) are wrapped in `DB::transaction()`. If the SMS API fails, the database rolls back to maintain data integrity.
+- **Rate Limiting & Cooldowns:** Protects the SMS API budget by rate-limiting OTP resends and applying IP-based blocks.
 
 ---
 
 ## 💻 Installation & Setup Guide
 
-Follow these steps to clone, install, and run the BDLS project on your local machine.
+Follow these simple steps to clone, configure, and launch the BDLS project locally.
 
 ### Prerequisites
 
-- PHP 8.2 or higher [21]
+- PHP 8.2 or higher
 - Composer
-- Node.js & npm
+- Node.js & npm (or Bun)
 - MySQL Database
 
 ### 1. Clone the Repository
@@ -67,30 +73,39 @@ git clone https://github.com/RICHHACKER45/bdls-system.git
 cd bdls-system
 ```
 
-2. Install Backend & Frontend Dependencies
+### 2. Install Backend & Frontend Dependencies
 
 ```bash
 composer install
 npm install
 ```
 
-3. Environment Configuration
-   Copy the example environment file and generate your application key.
+### 3. Environment Configuration
 
-```
+Copy the example environment file and generate your application key:
+
+```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-Open your .env file and configure your Database and SMS API credentials:
+Open your `.env` file and configure your Database, Reverb, and SMS API credentials:
 
-```
+```ini
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=bdls_db
 DB_USERNAME=root
 DB_PASSWORD=
+
+# WebSocket Setup (Laravel Reverb)
+REVERB_APP_ID=123456
+REVERB_APP_KEY=your_reverb_key
+REVERB_APP_SECRET=your_reverb_secret
+REVERB_HOST="localhost"
+REVERB_PORT=8080
+REVERB_SCHEME=http
 
 # SMS API Configuration
 SMS_DRIVER=api
@@ -101,21 +116,28 @@ SMS_FROM_NUMBER=your_number
 SMS_PREFIX="Brgy Dona Lucia: "
 ```
 
-4. Run Migrations & Seeders
-   This will build the database tables and populate them with the 13 Document Types and default test accounts
+### 4. Run Migrations & Seeders
 
+Build the database tables and populate them with the 13 Document Types and default test accounts.
+
+```bash
+npm run dbreset
+# Which executes: php artisan migrate:fresh --seed
 ```
-php artisan migrate:fresh --seed
-```
 
-5. Compile Assets & Run the Server
-   Because we are using Vite and Tailwind v4, you must compile the frontend assets before running the PHP server
+### 5. Launch the Application (Concurrently)
 
-RUN:
+Because we are using Vite, Tailwind v4, Background Queues, and WebSockets (Reverb), you need to run all services concurrently. We have built a simple command to do this automatically:
 
-```
+```bash
 npm start
 ```
 
-to start the php artisan engine & npm dev concurrently
-Access the application at: http://localhost:8000
+_What `npm start` does behind the scenes:_
+
+1. Starts the PHP Artisan Server (`localhost:8000`)
+2. Starts the Vite Frontend Bundler (`bun run dev`)
+3. Starts the Background Job Worker (`php artisan queue:work`)
+4. Starts the WebSocket Server (`php artisan reverb:start`)
+
+**You're all set!** Access the application at: `http://localhost:8000`

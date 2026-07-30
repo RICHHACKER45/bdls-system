@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
@@ -66,6 +67,11 @@ Route::middleware(['auth'])->group(function () {
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // SERVE SECURE FILES ROUTE (Para sa resibo ng GCash)
+    Route::get('/file/serve/{filepath}', [FileController::class, 'serveSecureFile'])
+        ->name('file.serve')
+        ->where('filepath', '.*');
+
     // ==========================================
     // ADMIN DASHBOARD GROUP (Protected by Middleware)
     // ==========================================
@@ -82,12 +88,18 @@ Route::middleware(['auth'])->group(function () {
                 'updateRequestStatus',
             ])->name('request.update_status');
 
-            // // WALK-IN MODULE ROUTES
-            Route::post('/walkin/search', [
+            // BATCH PROCESSING ROUTE
+            Route::post('/request/batch-update', [
                 AdminDashboardController::class,
-                'searchWalkinAccount',
-            ])->name('walkin.search');
-            // IDAGDAG ITO PARA SA PHASE 2:
+                'batchUpdateStatus',
+            ])->name('request.batch_update');
+
+            // // WALK-IN MODULE ROUTES
+            Route::get('/walkin/check-number/{number}', [
+                AdminDashboardController::class,
+                'checkWalkinNumber',
+            ])->name('walkin.check_number');
+
             Route::post('/walkin/store', [
                 AdminDashboardController::class,
                 'storeWalkinRequest',
@@ -104,11 +116,34 @@ Route::middleware(['auth'])->group(function () {
                 'generateReport',
             ])->name('reports.generate');
 
+            Route::get('/analytics/accounts/print', [
+                AdminDashboardController::class,
+                'printRegisteredAccountsPDF',
+            ])->name('analytics.print_accounts');
+
             // LOGBOOK ROUTE (Maintain Release Logbook Use Case)
             Route::get('/queue/logbook/print', [
                 AdminDashboardController::class,
                 'printReleaseLogbook',
             ])->name('queue.print_logbook');
+
+            // DOCUMENT MANAGEMENT ROUTES
+            Route::post('/documents', [AdminDashboardController::class, 'storeDocument'])->name('documents.store');
+            Route::post('/documents/{documentType}/update', [AdminDashboardController::class, 'updateDocument'])->name('documents.update');
+            Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
+
+            // CENSUS MANAGEMENT ROUTES
+            Route::post('/census', [AdminDashboardController::class, 'storeCensus'])->name('census.store');
+            Route::post('/census/{id}/update', [AdminDashboardController::class, 'updateCensus'])->name('census.update');
+            Route::delete('/census/{id}', [AdminDashboardController::class, 'deleteCensus'])->name('census.destroy');
+            Route::post('/census/batch-delete', [AdminDashboardController::class, 'deleteCensusBatch'])->name('census.batch_destroy');
+            Route::post('/census/import', [AdminDashboardController::class, 'importCensus'])->name('census.import');
+            Route::get('/census/template', [AdminDashboardController::class, 'downloadCensusTemplate'])->name('census.template');
+
+            // MANAGE ACCOUNTS ROUTES
+            Route::post('/accounts/{id}/suspend', [AdminDashboardController::class, 'suspendAccount'])->name('accounts.suspend');
+            Route::delete('/accounts/{id}', [AdminDashboardController::class, 'deleteAccount'])->name('accounts.destroy');
+            Route::post('/accounts/{id}/manual-verify', [AdminDashboardController::class, 'manualVerifyAccount'])->name('accounts.manual_verify');
         });
 
     // ==========================================

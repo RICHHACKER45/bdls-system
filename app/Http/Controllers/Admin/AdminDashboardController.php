@@ -6,6 +6,7 @@ use App\Events\AdminDashboardUpdated;
 use App\Events\ResidentRequestUpdated;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessAnnouncementSms;
+use App\Jobs\ProcessRequestUpdate;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\DocumentType;
@@ -28,52 +29,142 @@ class AdminDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. The Laravel Way: Base Query (Filtered at DB level)
-        $query = User::where('role', 'resident');
+        // 1. THE LARAVEL WAY: Account Management (Resident Accounts)
+        $accountSearch = $request->get('account_search', '');
+        $accountsQuery = User::where('role', 'resident')->latest();
 
-        // 2. Search Logic
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('contact_number', 'like', "%{$search}%");
+        if (! empty($accountSearch)) {
+            $accountsQuery->where(function ($q) use ($accountSearch) {
+                $q->where('first_name', 'like', "%{$accountSearch}%")
+                    ->orWhere('last_name', 'like', "%{$accountSearch}%")
+                    ->orWhere('contact_number', 'like', "%{$accountSearch}%")
+                    ->orWhere('email', 'like', "%{$accountSearch}%");
+            });
+        }
+        $residentAccounts = $accountsQuery->paginate(15, ['*'], 'accounts_page')->withQueryString();
+
+        // 5. QUEUE LOGIC WITH FILTERS & SORTING
+        $queueStatus = $request->get('queue_status', 'all');
+        $queueDoc = $request->get('queue_doc', 'all');
+        $queueSort = $request->get('queue_sort', 'oldest');
+        $queueSearch = $request->get('queue_search', '');
+
+        $queueBase = ServiceRequest::with(['user', 'documentType']);
+
+        // THE FIX: Universal Search across relationships
+        if (! empty($queueSearch)) {
+            $queueBase->where(function ($q) use ($queueSearch) {
+                $q->where('queue_number', 'like', "%{$queueSearch}%")
+                    ->orWhereHas('user', function ($userQ) use ($queueSearch) {
+                        $userQ->where('first_name', 'like', "%{$queueSearch}%")
+                            ->orWhere('last_name', 'like', "%{$queueSearch}%");
+                    })
+                    ->orWhereHas('documentType', function ($docQ) use ($queueSearch) {
+                        $docQ->where('name', 'like', "%{$queueSearch}%");
+                    });
             });
         }
 
-        // 3. Sorting Logic
-        if ($request->get('sort') == 'oldest') {
-            $query->oldest();
+        if ($queueSort === 'newest') {
+            $queueBase->latest();
         } else {
-            $query->latest();
+            $queueBase->oldest(); // Ascending queue
         }
 
-        // 5. QUEUE LOGIC: Separate Active Queue from Received History
-        $queueBase = ServiceRequest::with(['user', 'documentType'])->orderBy('created_at', 'asc');
+        $activeQuery = (clone $queueBase)->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
 
-        $activeQueue = (clone $queueBase)
-            ->whereIn('status', ['pending', 'processing', 'for_interview', 'released'])
-            ->paginate(15, ['*'], 'active_page');
+        if ($queueStatus !== 'all') {
+            $activeQuery->where('status', $queueStatus);
+        }
+        if ($queueDoc !== 'all') {
+            $activeQuery->where('document_type_id', $queueDoc);
+        }
+
+        $activeQueue = $activeQuery->paginate(15, ['*'], 'active_page')->withQueryString();
 
         // THE FIX: Isinama ang rejected at canceled sa History
         $receivedQueue = (clone $queueBase)
             ->whereIn('status', ['received', 'rejected', 'canceled'])
             ->paginate(15, ['*'], 'history_page');
 
-        $documents = DocumentType::where('is_active', 1)->get();
+        // THE FIX: Kunin lahat ng dokumento para sa Management Table
+        $documents = DocumentType::all();
 
-        // 6. SYSTEM AUDIT LOGS (Process 6.0)
-        $auditLogs = AuditLog::with('admin')->latest()->paginate(20, ['*'], 'audit_page');
-        $notificationLogs = NotificationLog::with('user')->latest()->paginate(20, ['*'], 'notifs_page');
+        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
+        $auditSearch = $request->get('audit_search', '');
+        $auditQuery = AuditLog::with('admin')->latest();
+
+        if ($auditSearch) {
+            $auditQuery->where(function ($q) use ($auditSearch) {
+                $q->where('action', 'like', "%{$auditSearch}%")
+                    ->orWhere('description', 'like', "%{$auditSearch}%")
+                    ->orWhereHas('admin', function ($adminQ) use ($auditSearch) {
+                        $adminQ->where('first_name', 'like', "%{$auditSearch}%")
+                            ->orWhere('last_name', 'like', "%{$auditSearch}%");
+                    });
+            });
+        }
+        $auditLogs = $auditQuery->paginate(20, ['*'], 'audit_page')->withQueryString();
+
+        // ==========================================
+        // 7. LIVE ANALYTICS WITH FILTERING (Sir Philip's Request)
+        // ==========================================
+        $analyticsYear = $request->get('analytics_year', date('Y'));
+        $analyticsMonth = $request->get('analytics_month', 'all');
+
+        $analyticsQuery = ServiceRequest::query();
+        if ($analyticsMonth !== 'all') {
+            $analyticsQuery->whereYear('created_at', $analyticsYear)
+                ->whereMonth('created_at', $analyticsMonth);
+        } else {
+            $analyticsQuery->whereYear('created_at', $analyticsYear);
+        }
+
+        $analyticsSummary = [
+            'total' => (clone $analyticsQuery)->count(),
+            'walkin' => (clone $analyticsQuery)->where('request_channel', 'Walk-in')->count(),
+            'online' => (clone $analyticsQuery)->where('request_channel', 'Online')->count(),
+            'pending' => (clone $analyticsQuery)->where('status', 'pending')->count(),
+            'processing' => (clone $analyticsQuery)->whereIn('status', ['processing', 'for_interview'])->count(),
+            'released' => (clone $analyticsQuery)->whereIn('status', ['released', 'received'])->count(),
+            'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
+            'total_registered' => User::where('role', 'resident')->count(),
+            'total_census' => DB::table('census_records')->count(),
+        ];
+
+        // CENSUS / RESIDENT MASTERLIST LOGIC
+        $residentSearch = $request->get('resident_search', '');
+        $censusQuery = DB::table('census_records')->orderBy('last_name', 'asc');
+
+        if (! empty($residentSearch)) {
+            $censusQuery->where(function ($q) use ($residentSearch) {
+                $q->where('first_name', 'like', "%{$residentSearch}%")
+                    ->orWhere('last_name', 'like', "%{$residentSearch}%")
+                    ->orWhere('address', 'like', "%{$residentSearch}%");
+            });
+        }
+        $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
 
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
-
             'activeQueue' => $activeQueue,
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
             'auditLogs' => $auditLogs,
-            'notificationLogs' => $notificationLogs,
+            'analyticsSummary' => $analyticsSummary,
+            'censusRecords' => $censusRecords,
+            'residentAccounts' => $residentAccounts,
+            'filters' => [
+                'analytics_month' => $analyticsMonth,
+                'analytics_year' => $analyticsYear,
+                'audit_search' => $auditSearch,
+                'queue_status' => $queueStatus,
+                'queue_doc' => $queueDoc,
+                'queue_sort' => $queueSort,
+                'queue_search' => $queueSearch,
+                'resident_search' => $residentSearch,
+                'account_search' => $accountSearch,
+            ],
             'auth' => ['user' => Auth::user()], // Ito ang pipigil sa WSoD!
         ]);
     }
@@ -93,17 +184,15 @@ class AdminDashboardController extends Controller
         $message = '';
 
         if ($newStatus === 'processing') {
-            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay kasalukuyang pino-proseso.";
+            $message = "Queue {$serviceRequest->queue_number} ay kasalukuyang pino-proseso na.";
         } elseif ($newStatus === 'for_interview') {
-            // Ito ay magte-text lang kapag naging "For Interview" ang papel
-            $message = "Brgy Dona Lucia: Ang request ({$serviceRequest->queue_number}) ay nangangailangan ng panayam. Pumunta sa hall.";
+            $message = "Queue {$serviceRequest->queue_number}: Kailangan ng panayam (interview). Mangyaring pumunta sa hall.";
         } elseif ($newStatus === 'released') {
             $serviceRequest->released_at = now();
             $serviceRequest->released_by_admin_id = Auth::id();
-            $message = "Brgy Dona Lucia: Ang dokumento para sa ({$serviceRequest->queue_number}) ay ready for release na. Maaari nang kunin.";
+            $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
         } elseif ($newStatus === 'rejected') {
-            // THE FIX: Admin Reject Logic
-            $message = "Brgy Dona Lucia: Ang iyong request ({$serviceRequest->queue_number}) ay nai-reject dahil sa hindi sapat na detalye o requirements. Maaaring mag-request muli.";
+            $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
         }
 
         $serviceRequest->save();
@@ -158,47 +247,50 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * PHASE 1: Walk-In Search-First Logic
+     * MODULE: Silent Background Number Checker
+     * Used by React Axios to auto-fill the form if the resident already exists.
      */
-    public function searchWalkinAccount(Request $request)
+    public function checkWalkinNumber($number)
     {
-        $request->validate([
-            'contact_number' => 'required|string|max:20',
-        ]);
+        // Hanapin ang resident record
+        $user = User::where('contact_number', $number)
+            ->where('role', 'resident')
+            ->first();
 
-        // Hanapin ang user gamit ang unique contact number
-        $walkinUser = User::where('contact_number', $request->contact_number)->first();
+        if ($user) {
+            return response()->json([
+                'found' => true,
+                'user' => [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'sex' => $user->sex,
+                    'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '',
+                    'address' => $user->address,
+                ],
+            ]);
+        }
 
-        // Ibalik sa Walk-in Tab kasama ang resulta
-        return back()->with([
-            'active_tab' => 'walkin',
-            'walkin_searched' => true,
-            'walkin_search_number' => $request->contact_number,
-            'walkin_user' => $walkinUser,
-        ]);
+        return response()->json(['found' => false]);
     }
 
     /**
-     * PHASE 2: Walk-in Shadow Profile & Request Creation
+     * MODULE: Direct Unified Walk-in Encoding
      */
     public function storeWalkinRequest(Request $request, SmsService $smsService)
     {
-        // 1. Validation (Pinagsamang Resident Data at Request Data)
+        // 1. Unified Validation (Isang bagsakang validation)
         $request->validate([
             'contact_number' => 'required|string|max:20',
-            'is_new_user' => 'required|boolean',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
             'document_type_id' => 'required|exists:document_types,id',
             'purpose' => 'required|string|max:255',
-
-            // Required lang kung gagawa ng Shadow Profile:
-            'first_name' => 'required_if:is_new_user,1|string|max:255',
-            'last_name' => 'required_if:is_new_user,1|string|max:255',
-            'sex' => 'required_if:is_new_user,1|string|in:Male,Female',
-            'date_of_birth' => 'required_if:is_new_user,1|date',
-            'address' => $validatedData['address'],
         ]);
 
-        // THE FIX: Harangin kung ang number na nai-search ay pagmamay-ari ng Admin
+        // 2. Harangin kung ang number ay pagmamay-ari ng Admin
         $isAdmin = User::where('contact_number', $request->contact_number)->where('role', 'admin')->exists();
 
         if ($isAdmin) {
@@ -207,32 +299,29 @@ class AdminDashboardController extends Controller
             ])->with('active_tab', 'walkin');
         }
 
-        // 2. I-wrap sa Transaction para ligtas ang pera sa SMS
+        // 3. Ligtas na Database Transaction
         DB::transaction(function () use ($request, $smsService) {
-            // A. Hanapin o Gumawa ng Shadow Profile
-            if ($request->is_new_user) {
+            // A. Hahanapin kung may existing resident record na gamit ang number, kung wala, gagawa ng bago.
+            $user = User::where('contact_number', $request->contact_number)->first();
+
+            if (! $user) {
                 $user = User::create([
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
                     'sex' => $request->sex,
                     'date_of_birth' => $request->date_of_birth,
-                    'house_number' => $request->house_number,
-                    'purok_street' => $request->purok_street,
+                    'address' => $request->address, // THE FIX: Isang address field na lang
                     'contact_number' => $request->contact_number,
                     'password' => Hash::make(Str::random(12)),
                     'role' => 'resident',
                     'contact_verified_at' => now(),
-                    'is_verified' => true, // Walk-ins are physically verified by Admin
+                    'is_verified' => true, // Auto-verified kasi kaharap ng Admin
                     'terms_accepted_at' => now(),
                 ]);
-            } else {
-                $user = User::where('contact_number', $request->contact_number)->firstOrFail();
             }
 
-            // B. Gumawa ng W-XXX Queue Number (W para sa Walk-in)
-            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')
-                ->latest('id')
-                ->first();
+            // B. Gumawa ng W-XXX Queue Number
+            $latestRequest = ServiceRequest::where('request_channel', 'Walk-in')->latest('id')->first();
             $nextNumber = $latestRequest ? intval(substr($latestRequest->queue_number, 2)) + 1 : 1;
             $queueNumber = 'W-'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
@@ -246,20 +335,16 @@ class AdminDashboardController extends Controller
                 'status' => 'pending',
             ]);
 
-            // ========================================================
-            // THE FIX: AUDIT LOG AT TRY-CATCH NA NASA LOOB NG TRANSACTION
-            // ========================================================
-
-            // 1. THE LARAVEL WAY: I-record agad sa Audit Log ang ginawa ni Admin
+            // D. I-record sa System Audit Log
             AuditLog::create([
                 'admin_id' => Auth::id(),
                 'action' => 'WALKIN_ENCODED',
                 'description' => "Nag-encode ng walk-in request ({$queueNumber}) para kay {$user->first_name} {$user->last_name}.",
             ]);
 
-            // 2. DEFENSIVE SECURITY: I-wrap ang SMS sa Try-Catch para hindi mag-rollback ang DB kapag Curfew
+            // E. Magpadala ng SMS Payload (Decluttered & Optimized)
             try {
-                $message = "Brgy Dona Lucia: Ang iyong walk-in request ay naipasa na. Queue No: {$queueNumber}. Maghintay tawagin o maka-receive ng text update.";
+                $message = "Walk-in Queue: {$queueNumber}. Naipasa na ang request. Maghintay tawagin o ng text update.";
                 $smsService->sendSms(
                     $user->id,
                     $user->contact_number,
@@ -267,16 +352,12 @@ class AdminDashboardController extends Controller
                     $serviceRequest->id,
                 );
             } catch (\Exception $e) {
-                // I-log lang ang error para makita mo, pero HINDI magka-crash ang system. Ligtas ang data sa taas.
                 Log::error("Walk-in SMS Failed (Queue: {$queueNumber}): ".$e->getMessage());
             }
-
-            // ========================================================
-        }); // <-- Dito nagtatapos ang DB::transaction()
+        });
 
         event(new AdminDashboardUpdated);
 
-        // 3. I-redirect pabalik sa Queue Tab para makita agad ni Admin ang bagong pila
         return redirect()
             ->route('admin.dashboard')
             ->with('active_tab', 'queue')
@@ -320,13 +401,15 @@ class AdminDashboardController extends Controller
             'message_body' => $request->message_body,
         ]);
 
-        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang (Exclude Admins)
-        $verifiedResidents = User::approved()->where('role', 'resident')->get();
+        // 3. THE FIX: Kunin LAHAT ng Verified na "Residente" lamang gamit ang bagong KYC flag
+        $verifiedResidents = User::where('is_verified', 1)->where('role', 'resident')->get();
         $sentCount = 0;
 
-        // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs para hindi mag-hang ang system!
+        // 4. THE LARAVEL WAY: Mag-dispatch ng Background Jobs na may DELAY para hindi ma-spam ang API
         foreach ($verifiedResidents as $resident) {
-            ProcessAnnouncementSms::dispatch($resident, $request->message_body);
+            // THE FIX: Magdadagdag ng 2 segundo na delay bawat residente
+            ProcessAnnouncementSms::dispatch($resident, $request->message_body)
+                ->delay(now()->addSeconds($sentCount * 2));
             $sentCount++;
         }
 
@@ -437,5 +520,355 @@ class AdminDashboardController extends Controller
         }
 
         return $pdf->stream($filename);
+    }
+
+    /**
+     * MODULE: Print Registered Accounts (Live Analytics -> User Accounts Tab)
+     */
+    public function printRegisteredAccountsPDF(Request $request)
+    {
+        // 1. Fetch all registered residents (sorted by created_at)
+        $registeredAccounts = User::where('role', 'resident')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // 2. LOG THE ACTION
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'PRINT_ACCOUNTS_LOG',
+            'description' => 'Nag-generate ng PDF para sa Registered User Accounts.',
+        ]);
+
+        // 3. GENERATE PDF
+        $pdf = Pdf::loadView('admin.pdf.registered_accounts', compact('registeredAccounts'));
+        $filename = 'BDLS_Registered_Accounts_'.now()->format('Y_m_d').'.pdf';
+
+        if ($request->has('download') && $request->download == '1') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * MODULE: Document Management - Store New Document
+     */
+    public function storeDocument(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        DocumentType::create([
+            'name' => $request->name,
+            'requirements_description' => $request->requirements_description,
+            'processing_fee' => $request->processing_fee,
+            'processing_time_minutes' => $request->processing_time_minutes,
+            'is_active' => 1,
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Bagong dokumento ay matagumpay na naidagdag.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Update Existing Document
+     */
+    public function updateDocument(Request $request, DocumentType $documentType)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'requirements_description' => 'required|string',
+            'processing_fee' => 'required|numeric|min:0',
+            'processing_time_minutes' => 'required|integer|min:1',
+        ]);
+
+        $documentType->update($request->only(
+            'name', 'requirements_description', 'processing_fee', 'processing_time_minutes'
+        ));
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => 'Impormasyon ng dokumento ay nai-update.',
+        ]);
+    }
+
+    /**
+     * MODULE: Document Management - Toggle Active Status
+     */
+    public function toggleDocumentStatus(DocumentType $documentType)
+    {
+        $documentType->is_active = ! $documentType->is_active;
+        $documentType->save();
+
+        event(new AdminDashboardUpdated);
+
+        $statusStr = $documentType->is_active ? 'Na-activate' : 'Na-deactivate';
+
+        return back()->with([
+            'active_tab' => 'documents',
+            'success_message' => "Ang dokumento ay {$statusStr}.",
+        ]);
+    }
+
+    /**
+     * MODULE: Batch Processing (Process Multiple Requests)
+     */
+    public function batchUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'request_ids' => 'required|array',
+            'request_ids.*' => 'exists:service_requests,id',
+            'status' => 'required|string',
+        ]);
+
+        $newStatus = strtolower($request->status);
+        $requests = ServiceRequest::with('user')->whereIn('id', $request->request_ids)->get();
+        $adminId = Auth::id();
+        $processedCount = 0;
+
+        foreach ($requests as $serviceRequest) {
+            $serviceRequest->status = $newStatus;
+            $message = '';
+
+            if ($newStatus === 'processing') {
+                $message = "Queue {$serviceRequest->queue_number} ay kasalukuyang pino-proseso na.";
+            } elseif ($newStatus === 'for_interview') {
+                $message = "Queue {$serviceRequest->queue_number}: Kailangan ng panayam (interview). Mangyaring pumunta sa hall.";
+            } elseif ($newStatus === 'released') {
+                $serviceRequest->released_at = now();
+                $serviceRequest->released_by_admin_id = $adminId;
+                $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
+            } elseif ($newStatus === 'rejected') {
+                $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
+            }
+
+            $serviceRequest->save();
+
+            if ($message !== '' && $newStatus !== 'received') {
+                // THE FIX: Magdadagdag ng 2 segundo na delay bawat request para iwas spam block
+                ProcessRequestUpdate::dispatch($serviceRequest, $message)
+                    ->delay(now()->addSeconds($processedCount * 2));
+            }
+
+            // Real-time Push via WebSockets
+            event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
+
+            // Soft Delete kung rejected
+            if ($newStatus === 'rejected') {
+                $serviceRequest->delete();
+            }
+
+            $processedCount++;
+        }
+
+        // SYSTEM AUDIT LOG RECORDER
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'BATCH_UPDATE',
+            'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'active_tab' => 'queue',
+            'success_message' => "Matagumpay na nai-proseso ang {$processedCount} requests.",
+        ]);
+    }
+
+    public function storeCensus(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
+        ]);
+        $validated['is_alive'] = 1;
+        $validated['created_at'] = now();
+        $validated['updated_at'] = now();
+
+        DB::table('census_records')->insert($validated);
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => 'Bagong residente ay matagumpay na naidagdag.', 'active_tab' => 'residents']);
+    }
+
+    public function updateCensus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
+            'sex' => 'required|string|in:Male,Female',
+            'date_of_birth' => 'required|date',
+            'address' => 'required|string|max:255',
+        ]);
+        $validated['updated_at'] = now();
+
+        DB::table('census_records')->where('id', $id)->update($validated);
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => 'Impormasyon ng residente ay nai-update.', 'active_tab' => 'residents']);
+    }
+
+    public function deleteCensus($id)
+    {
+        DB::table('census_records')->where('id', $id)->delete();
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => 'Residente ay tinanggal sa masterlist.', 'active_tab' => 'residents']);
+    }
+
+    public function deleteCensusBatch(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        DB::table('census_records')->whereIn('id', $request->ids)->delete();
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => count($request->ids).' residente ay sabay-sabay na tinanggal sa masterlist.', 'active_tab' => 'residents']);
+    }
+
+    public function importCensus(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('import_file');
+        $handle = fopen($file->getPathname(), 'r');
+        fgetcsv($handle); // Skip header row
+
+        $bulkData = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 7) {
+                continue;
+            }
+
+            $firstName = trim($row[0]);
+            $lastName = trim($row[1]);
+            $dob = trim($row[2]);
+
+            if (empty($firstName) || empty($lastName) || empty($dob)) {
+                continue;
+            }
+
+            // THE FIX: Prepare bulk array for UPSERT
+            $bulkData[] = [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'date_of_birth' => date('Y-m-d', strtotime($dob)),
+                'middle_name' => trim($row[3]),
+                'suffix' => trim($row[4]),
+                'sex' => ucfirst(trim($row[5])),
+                'address' => trim($row[6]),
+                'is_alive' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        fclose($handle);
+
+        // Chunking para hindi sumabog ang RAM/Query limit sa napakalaking CSV
+        foreach (array_chunk($bulkData, 500) as $chunk) {
+            DB::table('census_records')->upsert(
+                $chunk,
+                ['first_name', 'last_name', 'date_of_birth'], // Unique columns
+                ['middle_name', 'suffix', 'sex', 'address', 'is_alive', 'updated_at'] // Update columns
+            );
+        }
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => 'Import tapos na! Na-proseso ang '.count($bulkData).' census records gamit ang bulk Upsert.', 'active_tab' => 'residents']);
+    }
+
+    public function suspendAccount($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['locked_until' => now()->addDays(7)]);
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang account ni {$user->first_name} ay sinuspinde ng 7 araw.", 'active_tab' => 'accounts']);
+    }
+
+    public function deleteAccount($id)
+    {
+        $user = User::findOrFail($id);
+        $name = $user->first_name.' '.$user->last_name;
+        $user->delete();
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang account ni {$name} ay permanenteng nabura.", 'active_tab' => 'accounts']);
+    }
+
+    /**
+     * MODULE: Manual KYC Verification Override
+     * Binabago nito ang KYC verification status ng isang resident account bilang Verified,
+     * nire-reset ang OCR attempts, at nire-record sa System Audit Log.
+     */
+    public function manualVerifyAccount($id)
+    {
+        $user = User::findOrFail($id);
+
+        // Update user KYC verification status
+        $user->update([
+            'is_verified' => true,
+            'ocr_attempts' => 0,
+            'ocr_locked_until' => null,
+        ]);
+
+        // Process 6.0: System Audit Log Recorder
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'MANUAL_VERIFY',
+            'description' => "Manwal na binago ang KYC verification status ng account ni {$user->first_name} {$user->last_name} bilang Verified.",
+        ]);
+
+        // Trigger real-time UI synchronizer event (ShouldBroadcastNow)
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'success_message' => "Ang account ni {$user->first_name} {$user->last_name} ay manu-manong na-verify.",
+            'active_tab' => 'accounts',
+        ]);
+    }
+
+    public function downloadCensusTemplate()
+    {
+        $headers = [
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=BDLS_Census_Template.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+        $columns = ['first_name', 'middle_name', 'last_name', 'suffix', 'sex', 'date_of_birth', 'address'];
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            fputcsv($file, ['Juan', 'Reyes', 'Dela Cruz', 'Jr.', 'Male', '1990-05-15', '123 Purok 1, Brgy. Dona Lucia']);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
