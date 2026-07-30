@@ -66,6 +66,11 @@ Route::middleware(['auth'])->group(function () {
     // LOGOUT (Dapat naka-login bago makapag-logout)
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // SERVE SECURE FILES ROUTE (Para sa resibo ng GCash)
+    Route::get('/file/serve/{filepath}', [\App\Http\Controllers\FileController::class, 'serveSecureFile'])
+        ->name('file.serve')
+        ->where('filepath', '.*');
+
     // ==========================================
     // ADMIN DASHBOARD GROUP (Protected by Middleware)
     // ==========================================
@@ -137,6 +142,7 @@ Route::middleware(['auth'])->group(function () {
             // MANAGE ACCOUNTS ROUTES
             Route::post('/accounts/{id}/suspend', [AdminDashboardController::class, 'suspendAccount'])->name('accounts.suspend');
             Route::delete('/accounts/{id}', [AdminDashboardController::class, 'deleteAccount'])->name('accounts.destroy');
+            Route::post('/accounts/{id}/manual-verify', [AdminDashboardController::class, 'manualVerifyAccount'])->name('accounts.manual_verify');
         });
 
     // ==========================================

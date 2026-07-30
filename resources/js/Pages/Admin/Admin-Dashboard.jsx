@@ -106,6 +106,28 @@ export default function AdminDashboard() {
     const [residentModalOpen, setResidentModalOpen] = useState(false);
     const [importModalOpen, setImportModalOpen] = useState(false);
 
+    // ADD STATE MANAGERS
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [selectedReceiptPath, setSelectedReceiptPath] = useState('');
+    const [manualVerifyConfirmOpen, setManualVerifyConfirmOpen] = useState(false);
+
+    // ADD ACTION HANDLERS
+    const triggerManualVerify = (account) => {
+        setSelectedAccount(account);
+        setManualVerifyConfirmOpen(true);
+    };
+
+    const submitManualVerify = () => {
+        if (!selectedAccount) return;
+        router.post(route('admin.accounts.manual_verify', selectedAccount.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setManualVerifyConfirmOpen(false);
+                setSelectedAccount(null);
+            }
+        });
+    };
+
     const submitSuspend = () => {
         if (!selectedAccount) return;
         router.post(
@@ -836,6 +858,18 @@ export default function AdminDashboard() {
                                                             </td>
                                                             <td className="p-4 text-xs font-bold text-slate-700 uppercase">
                                                                 {queue.document_type?.name ?? 'N/A'}
+                                                                {queue.payment_method === 'GCash' && queue.payment_receipt_path && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setSelectedReceiptPath(queue.payment_receipt_path);
+                                                                            setReceiptModalOpen(true);
+                                                                        }}
+                                                                        className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1 text-[9px] font-black tracking-widest text-blue-700 uppercase border border-blue-200 shadow-sm transition-all hover:bg-blue-100"
+                                                                    >
+                                                                        View Receipt 📄
+                                                                    </button>
+                                                                )}
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
@@ -1604,6 +1638,15 @@ export default function AdminDashboard() {
                                                                 )}
                                                             </td>
                                                             <td className="flex justify-end gap-2 p-4 text-right">
+                                                                {!account.is_verified && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => triggerManualVerify(account)}
+                                                                        className="rounded border border-green-200 bg-green-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
+                                                                    >
+                                                                        Verify
+                                                                    </button>
+                                                                )}
                                                                 <button
                                                                     onClick={() => {
                                                                         setSelectedAccount(account);
@@ -3399,6 +3442,81 @@ export default function AdminDashboard() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* GCASH RECEIPT VIEWER LIGHTBOX */}
+            {receiptModalOpen && selectedReceiptPath && (
+                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
+                            <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">GCash Proof of Payment</h3>
+                            <button 
+                                type="button" 
+                                onClick={() => { setReceiptModalOpen(false); setSelectedReceiptPath(''); }} 
+                                className="text-2xl font-bold text-slate-400 hover:text-red-500"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="max-h-[50vh] flex justify-center overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <img 
+                                src={route('file.serve', { filepath: selectedReceiptPath })} 
+                                alt="GCash Receipt" 
+                                className="max-w-full rounded-lg object-contain shadow-md"
+                                onError={(e) => {
+                                    e.currentTarget.outerHTML = '<div class="p-8 text-center text-xs font-bold text-red-500 italic">Hindi ma-load ang resibo sa system. Siguraduhing may access ang Admin.</div>';
+                                }}
+                            />
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                            <button 
+                                type="button" 
+                                onClick={() => { setReceiptModalOpen(false); setSelectedReceiptPath(''); }} 
+                                className="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800"
+                            >
+                                Isara ang Viewer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MANUAL KYC OVERRIDE CONFIRMATION MODAL */}
+            {manualVerifyConfirmOpen && selectedAccount && (
+                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+                                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">Manual Verify Resident?</h3>
+                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
+                                Sigurado ka bang gusto mong manu-manong i-verify at i-approve si <strong className="text-slate-900">{selectedAccount.first_name} {selectedAccount.last_name}</strong>?
+                            </p>
+                            <p className="mt-2 text-xs text-slate-400 italic">
+                                Ito ay bypass sa automated Google Vision scanner kung nagpakita na sila ng valid ID sa hall.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button 
+                                type="button" 
+                                onClick={() => { setManualVerifyConfirmOpen(false); setSelectedAccount(null); }} 
+                                className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={submitManualVerify} 
+                                className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
+                            >
+                                Approve and Verify
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -820,6 +820,38 @@ class AdminDashboardController extends Controller
         return back()->with(['success_message' => "Ang account ni {$name} ay permanenteng nabura.", 'active_tab' => 'accounts']);
     }
 
+    /**
+     * MODULE: Manual KYC Verification Override
+     * Binabago nito ang KYC verification status ng isang resident account bilang Verified,
+     * nire-reset ang OCR attempts, at nire-record sa System Audit Log.
+     */
+    public function manualVerifyAccount($id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        
+        // Update user KYC verification status
+        $user->update([
+            'is_verified' => true,
+            'ocr_attempts' => 0,
+            'ocr_locked_until' => null,
+        ]);
+
+        // Process 6.0: System Audit Log Recorder
+        \App\Models\AuditLog::create([
+            'admin_id' => \Illuminate\Support\Facades\Auth::id(),
+            'action' => 'MANUAL_VERIFY',
+            'description' => "Manwal na binago ang KYC verification status ng account ni {$user->first_name} {$user->last_name} bilang Verified.",
+        ]);
+
+        // Trigger real-time UI synchronizer event (ShouldBroadcastNow)
+        event(new \App\Events\AdminDashboardUpdated());
+
+        return back()->with([
+            'success_message' => "Ang account ni {$user->first_name} {$user->last_name} ay manu-manong na-verify.",
+            'active_tab' => 'accounts'
+        ]);
+    }
+
     public function downloadCensusTemplate()
     {
         $headers = [
