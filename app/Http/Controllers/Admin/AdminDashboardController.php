@@ -798,7 +798,7 @@ class AdminDashboardController extends Controller
         }
         event(new AdminDashboardUpdated);
 
-        return back()->with(['success_message' => "Import tapos na! Na-proseso ang ".count($bulkData)." census records gamit ang bulk Upsert.", 'active_tab' => 'residents']);
+        return back()->with(['success_message' => 'Import tapos na! Na-proseso ang '.count($bulkData).' census records gamit ang bulk Upsert.', 'active_tab' => 'residents']);
     }
 
     public function suspendAccount($id)
@@ -827,8 +827,8 @@ class AdminDashboardController extends Controller
      */
     public function manualVerifyAccount($id)
     {
-        $user = \App\Models\User::findOrFail($id);
-        
+        $user = User::findOrFail($id);
+
         // Update user KYC verification status
         $user->update([
             'is_verified' => true,
@@ -837,18 +837,18 @@ class AdminDashboardController extends Controller
         ]);
 
         // Process 6.0: System Audit Log Recorder
-        \App\Models\AuditLog::create([
-            'admin_id' => \Illuminate\Support\Facades\Auth::id(),
+        AuditLog::create([
+            'admin_id' => Auth::id(),
             'action' => 'MANUAL_VERIFY',
             'description' => "Manwal na binago ang KYC verification status ng account ni {$user->first_name} {$user->last_name} bilang Verified.",
         ]);
 
         // Trigger real-time UI synchronizer event (ShouldBroadcastNow)
-        event(new \App\Events\AdminDashboardUpdated());
+        event(new AdminDashboardUpdated);
 
         return back()->with([
             'success_message' => "Ang account ni {$user->first_name} {$user->last_name} ay manu-manong na-verify.",
-            'active_tab' => 'accounts'
+            'active_tab' => 'accounts',
         ]);
     }
 

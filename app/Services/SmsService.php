@@ -190,7 +190,7 @@ class SmsService
                 // THE FIX: Kapag OTP ito at nag-fail ang API, mag-throw tayo ng Exception
                 // para marinig ng DB::transaction() sa AuthController at i-rollback ang registration!
                 if ($isOtp) {
-                    throw new Exception("Bigo ang SMS Gateway na ipadala ang OTP. Na-rollback ang rehistrasyon.");
+                    throw new Exception('Bigo ang SMS Gateway na ipadala ang OTP. Na-rollback ang rehistrasyon.');
                 }
             }
         }

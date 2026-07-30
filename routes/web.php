@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceRequestController;
@@ -67,7 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // SERVE SECURE FILES ROUTE (Para sa resibo ng GCash)
-    Route::get('/file/serve/{filepath}', [\App\Http\Controllers\FileController::class, 'serveSecureFile'])
+    Route::get('/file/serve/{filepath}', [FileController::class, 'serveSecureFile'])
         ->name('file.serve')
         ->where('filepath', '.*');
 

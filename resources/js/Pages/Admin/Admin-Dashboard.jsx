@@ -119,13 +119,17 @@ export default function AdminDashboard() {
 
     const submitManualVerify = () => {
         if (!selectedAccount) return;
-        router.post(route('admin.accounts.manual_verify', selectedAccount.id), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setManualVerifyConfirmOpen(false);
-                setSelectedAccount(null);
+        router.post(
+            route('admin.accounts.manual_verify', selectedAccount.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setManualVerifyConfirmOpen(false);
+                    setSelectedAccount(null);
+                },
             }
-        });
+        );
     };
 
     const submitSuspend = () => {
@@ -620,10 +624,7 @@ export default function AdminDashboard() {
         if (!censusRecords?.data || censusRecords.data.length === 0) {
             return (
                 <tr>
-                    <td
-                        colSpan="5"
-                        className="p-12 text-center font-bold text-slate-400 italic"
-                    >
+                    <td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">
                         Walang nahanap na residente.
                     </td>
                 </tr>
@@ -631,10 +632,7 @@ export default function AdminDashboard() {
         }
 
         return censusRecords.data.map((resident) => (
-            <tr
-                key={resident.id}
-                className="transition-colors hover:bg-slate-50"
-            >
+            <tr key={resident.id} className="transition-colors hover:bg-slate-50">
                 <td className="p-4 text-center">
                     <input
                         type="checkbox"
@@ -656,9 +654,7 @@ export default function AdminDashboard() {
                     </p>
                 </td>
                 <td className="p-4">
-                    <p className="text-xs font-medium text-slate-600">
-                        {resident.address}
-                    </p>
+                    <p className="text-xs font-medium text-slate-600">{resident.address}</p>
                 </td>
                 <td className="flex justify-end gap-2 p-4 text-right">
                     <button
@@ -858,18 +854,23 @@ export default function AdminDashboard() {
                                                             </td>
                                                             <td className="p-4 text-xs font-bold text-slate-700 uppercase">
                                                                 {queue.document_type?.name ?? 'N/A'}
-                                                                {queue.payment_method === 'GCash' && queue.payment_receipt_path && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setSelectedReceiptPath(queue.payment_receipt_path);
-                                                                            setReceiptModalOpen(true);
-                                                                        }}
-                                                                        className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1 text-[9px] font-black tracking-widest text-blue-700 uppercase border border-blue-200 shadow-sm transition-all hover:bg-blue-100"
-                                                                    >
-                                                                        View Receipt 📄
-                                                                    </button>
-                                                                )}
+                                                                {queue.payment_method === 'GCash' &&
+                                                                    queue.payment_receipt_path && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setSelectedReceiptPath(
+                                                                                    queue.payment_receipt_path
+                                                                                );
+                                                                                setReceiptModalOpen(
+                                                                                    true
+                                                                                );
+                                                                            }}
+                                                                            className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100"
+                                                                        >
+                                                                            View Receipt 📄
+                                                                        </button>
+                                                                    )}
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
@@ -1203,7 +1204,10 @@ export default function AdminDashboard() {
                                             const val = rawVal.replace(/[^0-9]/g, '');
 
                                             // THE FIX: Auto-reset kung binura ang number (poka-yoke)
-                                            if (val.length < 11 && walkinStoreForm.data.first_name !== '') {
+                                            if (
+                                                val.length < 11 &&
+                                                walkinStoreForm.data.first_name !== ''
+                                            ) {
                                                 walkinStoreForm.setData((data) => ({
                                                     ...data,
                                                     contact_number: val,
@@ -1641,7 +1645,11 @@ export default function AdminDashboard() {
                                                                 {!account.is_verified && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => triggerManualVerify(account)}
+                                                                        onClick={() =>
+                                                                            triggerManualVerify(
+                                                                                account
+                                                                            )
+                                                                        }
                                                                         className="rounded border border-green-200 bg-green-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
                                                                     >
                                                                         Verify
@@ -3451,29 +3459,38 @@ export default function AdminDashboard() {
                 <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
-                            <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">GCash Proof of Payment</h3>
-                            <button 
-                                type="button" 
-                                onClick={() => { setReceiptModalOpen(false); setSelectedReceiptPath(''); }} 
+                            <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">
+                                GCash Proof of Payment
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setReceiptModalOpen(false);
+                                    setSelectedReceiptPath('');
+                                }}
                                 className="text-2xl font-bold text-slate-400 hover:text-red-500"
                             >
                                 &times;
                             </button>
                         </div>
-                        <div className="max-h-[50vh] flex justify-center overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <img 
-                                src={route('file.serve', { filepath: selectedReceiptPath })} 
-                                alt="GCash Receipt" 
+                        <div className="flex max-h-[50vh] justify-center overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <img
+                                src={route('file.serve', { filepath: selectedReceiptPath })}
+                                alt="GCash Receipt"
                                 className="max-w-full rounded-lg object-contain shadow-md"
                                 onError={(e) => {
-                                    e.currentTarget.outerHTML = '<div class="p-8 text-center text-xs font-bold text-red-500 italic">Hindi ma-load ang resibo sa system. Siguraduhing may access ang Admin.</div>';
+                                    e.currentTarget.outerHTML =
+                                        '<div class="p-8 text-center text-xs font-bold text-red-500 italic">Hindi ma-load ang resibo sa system. Siguraduhing may access ang Admin.</div>';
                                 }}
                             />
                         </div>
                         <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
-                            <button 
-                                type="button" 
-                                onClick={() => { setReceiptModalOpen(false); setSelectedReceiptPath(''); }} 
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setReceiptModalOpen(false);
+                                    setSelectedReceiptPath('');
+                                }}
                                 className="w-full rounded-xl bg-slate-900 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800"
                             >
                                 Isara ang Viewer
@@ -3489,29 +3506,49 @@ export default function AdminDashboard() {
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">Manual Verify Resident?</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Manual Verify Resident?
+                            </h3>
                             <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Sigurado ka bang gusto mong manu-manong i-verify at i-approve si <strong className="text-slate-900">{selectedAccount.first_name} {selectedAccount.last_name}</strong>?
+                                Sigurado ka bang gusto mong manu-manong i-verify at i-approve si{' '}
+                                <strong className="text-slate-900">
+                                    {selectedAccount.first_name} {selectedAccount.last_name}
+                                </strong>
+                                ?
                             </p>
                             <p className="mt-2 text-xs text-slate-400 italic">
-                                Ito ay bypass sa automated Google Vision scanner kung nagpakita na sila ng valid ID sa hall.
+                                Ito ay bypass sa automated Google Vision scanner kung nagpakita na
+                                sila ng valid ID sa hall.
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <button 
-                                type="button" 
-                                onClick={() => { setManualVerifyConfirmOpen(false); setSelectedAccount(null); }} 
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setManualVerifyConfirmOpen(false);
+                                    setSelectedAccount(null);
+                                }}
                                 className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
                             >
                                 Cancel
                             </button>
-                            <button 
-                                type="button" 
-                                onClick={submitManualVerify} 
+                            <button
+                                type="button"
+                                onClick={submitManualVerify}
                                 className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
                             >
                                 Approve and Verify
