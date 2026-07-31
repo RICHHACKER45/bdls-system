@@ -297,7 +297,7 @@ class AuthController extends Controller
                 'otp_code' => null, // Burahin ang ginamit na code para sa security
             ]);
 
-            // NOTE: The SMS "ACCOUNT UNDER REVIEW" (Workflow Step 5) was removed 
+            // NOTE: The SMS "ACCOUNT UNDER REVIEW" (Workflow Step 5) was removed
             // since we switched to the automated ID scanner (Zero-Retention Policy).
             // Nakakatipid din tayo ng SMS credits sa pagtanggal nito.
         });
