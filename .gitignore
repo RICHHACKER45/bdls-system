@@ -28,3 +28,5 @@ _ide_helper_models.php
 .phpstorm.meta.php
 codesnap.php
 /storage/app/private/google-credentials.json
+/storage/app/payment_receipts/
+/storage/app/service_requirements/
