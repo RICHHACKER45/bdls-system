@@ -2321,7 +2321,7 @@ export default function AdminDashboard() {
                                 </h2>
                                 <p className="text-sm text-slate-500">
                                     Pamahalaan ang opisyal na listahan ng mga residente para sa
-                                    Automated KYC scanner.
+                                    Automated ID scanner.
                                 </p>
                             </div>
                             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
