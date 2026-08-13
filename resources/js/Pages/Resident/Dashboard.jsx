@@ -450,6 +450,96 @@ export default function Dashboard(props) {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [activeSubTab, setActiveSubTab] = useState('track-pending');
 
+    // Filter and Pagination States for Tracking Tab
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [documentFilter, setDocumentFilter] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const itemsPerPage = 5;
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeSubTab, searchQuery, statusFilter, documentFilter, sortOrder]);
+
+    const getProcessedRequests = (baseStatus) => {
+        let filtered = [...(myRequests || [])];
+
+        // 1. Base Status Filter (from sub-tab logic)
+        if (baseStatus === 'pending') {
+            filtered = filtered.filter((r) => r.status === 'pending');
+        } else if (baseStatus === 'status') {
+            filtered = filtered.filter((r) => ['processing', 'for_interview', 'released'].includes(r.status));
+        } else if (baseStatus === 'history') {
+            filtered = filtered.filter((r) => r.status === 'received');
+        } else if (baseStatus === 'rejected') {
+            filtered = filtered.filter((r) => ['rejected', 'canceled'].includes(r.status));
+        }
+
+        // 2. Global Search
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter((r) => 
+                r.queue_number?.toLowerCase().includes(query) ||
+                r.document_type?.name?.toLowerCase().includes(query) ||
+                r.purpose?.toLowerCase().includes(query) ||
+                r.status?.toLowerCase().includes(query)
+            );
+        }
+
+        // 3. Sub-tab specific filters (track-status)
+        if (baseStatus === 'status') {
+            if (statusFilter) {
+                filtered = filtered.filter((r) => r.status === statusFilter);
+            }
+            if (documentFilter) {
+                filtered = filtered.filter((r) => r.document_type_id?.toString() === documentFilter.toString());
+            }
+            
+            // Sort
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.created_at).getTime();
+                const dateB = new Date(b.created_at).getTime();
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            });
+        }
+
+        return filtered;
+    };
+
+    const getPaginatedData = (data) => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return data.slice(startIndex, startIndex + itemsPerPage);
+    };
+
+    const FrontendPagination = ({ totalItems }) => {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (totalPages <= 1) return null;
+
+        return (
+            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50 disabled:opacity-50"
+                >
+                    Previous
+                </button>
+                <span className="text-sm font-bold text-slate-500">
+                    Page {currentPage} of {totalPages}
+                </span>
+                <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50 disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        );
+    };
+
     // FAQ State
     const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
@@ -1081,32 +1171,44 @@ export default function Dashboard(props) {
             {/* --- TAB 2: TRACKING --- */}
             {activeTab === 'tracking' && (
                 <div className="animate-in fade-in duration-500">
-                    <h1 className="mb-6 text-2xl font-bold text-slate-900">Track My Requests</h1>
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <h1 className="text-2xl font-bold text-slate-900">Track My Requests</h1>
+                        {/* Global Search Bar */}
+                        <div className="relative w-full sm:max-w-xs">
+                            <svg className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search requests..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                            />
+                        </div>
+                    </div>
+                    
                     <div className="mb-6 flex gap-2 overflow-x-auto border-b border-slate-100 pb-2">
                         {[
                             {
                                 id: 'track-pending',
                                 label: 'Pending',
-                                count: myRequests.filter((r) => r.status === 'pending').length,
+                                count: getProcessedRequests('pending').length,
                             },
                             {
                                 id: 'track-status',
                                 label: 'Status',
-                                count: myRequests.filter((r) =>
-                                    ['processing', 'for_interview', 'released'].includes(r.status)
-                                ).length,
+                                count: getProcessedRequests('status').length,
                             },
                             {
                                 id: 'track-history',
                                 label: 'Received',
-                                count: myRequests.filter((r) => r.status === 'received').length,
+                                count: getProcessedRequests('history').length,
                             },
                             {
                                 id: 'track-rejected',
                                 label: 'Rejected / Canceled',
-                                count: myRequests.filter((r) =>
-                                    ['rejected', 'canceled'].includes(r.status)
-                                ).length,
+                                count: getProcessedRequests('rejected').length,
                             },
                         ].map((sub) => (
                             <button
@@ -1119,211 +1221,264 @@ export default function Dashboard(props) {
                         ))}
                     </div>
 
+                    {/* Filter and Sort UI for track-status */}
+                    {activeSubTab === 'track-status' && (
+                        <div className="mb-6 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <select
+                                value={documentFilter}
+                                onChange={(e) => setDocumentFilter(e.target.value)}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-slate-900"
+                            >
+                                <option value="">All Documents</option>
+                                {documents.map((doc) => (
+                                    <option key={doc.id} value={doc.id}>{doc.name}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-slate-900"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="processing">Processing</option>
+                                <option value="for_interview">For Interview</option>
+                                <option value="released">Released</option>
+                            </select>
+
+                            <select
+                                value={sortOrder}
+                                onChange={(e) => setSortOrder(e.target.value)}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-slate-900"
+                            >
+                                <option value="desc">Newest First</option>
+                                <option value="asc">Oldest First</option>
+                            </select>
+                        </div>
+                    )}
+
                     <div className="space-y-4">
-                        {activeSubTab === 'track-pending' &&
-                            (myRequests.filter((r) => r.status === 'pending').length > 0 ? (
-                                myRequests
-                                    .filter((r) => r.status === 'pending')
-                                    .map((req) => (
-                                        <div
-                                            key={req.id}
-                                            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
-                                                    <div className="mb-2 flex items-center gap-3">
-                                                        <span className="text-lg font-black tracking-tighter text-slate-900 uppercase">
-                                                            {req.queue_number}
-                                                        </span>
-                                                        <span className="rounded-md border border-yellow-200 bg-yellow-100 px-2 py-1 text-[10px] font-black tracking-widest text-yellow-700 uppercase shadow-sm">
-                                                            {' '}
-                                                            {req.status.replace('_', ' ')}{' '}
-                                                        </span>
+                        {activeSubTab === 'track-pending' && (() => {
+                            const processedData = getProcessedRequests('pending');
+                            const paginatedData = getPaginatedData(processedData);
+                            return (
+                                <>
+                                    {paginatedData.length > 0 ? (
+                                        paginatedData.map((req) => (
+                                            <div
+                                                key={req.id}
+                                                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                                            >
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-3">
+                                                            <span className="text-lg font-black tracking-tighter text-slate-900 uppercase">
+                                                                {req.queue_number}
+                                                            </span>
+                                                            <span className="rounded-md border border-yellow-200 bg-yellow-100 px-2 py-1 text-[10px] font-black tracking-widest text-yellow-700 uppercase shadow-sm">
+                                                                {' '}
+                                                                {req.status.replace('_', ' ')}{' '}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-slate-800">
+                                                            {req.document_type?.name ?? 'Dokumento'}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            <span className="font-semibold">
+                                                                Layunin:
+                                                            </span>{' '}
+                                                            {req.purpose}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500">
+                                                            <span className="font-semibold">
+                                                                Petsa:
+                                                            </span>{' '}
+                                                            {new Date(req.created_at).toLocaleString()}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-slate-800">
-                                                        {req.document_type?.name ?? 'Dokumento'}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        <span className="font-semibold">
-                                                            Layunin:
-                                                        </span>{' '}
-                                                        {req.purpose}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">
-                                                        <span className="font-semibold">
-                                                            Petsa:
-                                                        </span>{' '}
-                                                        {new Date(req.created_at).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <Link
-                                                    href={route('resident.request.cancel', req.id)}
-                                                    method="post"
-                                                    as="button"
-                                                    onBefore={() =>
-                                                        confirm(
-                                                            'Sigurado kang gusto mong i-cancel ang request na ito?'
-                                                        )
-                                                    }
-                                                    className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                >
-                                                    <svg
-                                                        className="h-4 w-4"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
+                                                    <Link
+                                                        href={route('resident.request.cancel', req.id)}
+                                                        method="post"
+                                                        as="button"
+                                                        onBefore={() =>
+                                                            confirm(
+                                                                'Sigurado kang gusto mong i-cancel ang request na ito?'
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-6 py-3 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
                                                     >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M6 18L18 6M6 6l12 12"
-                                                        ></path>
-                                                    </svg>
-                                                    Cancel Request
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
-                                    Wala kang pending na request.
-                                </p>
-                            ))}
-                        {activeSubTab === 'track-status' &&
-                            (myRequests.filter((r) =>
-                                ['processing', 'for_interview', 'released'].includes(r.status)
-                            ).length > 0 ? (
-                                myRequests
-                                    .filter((r) =>
-                                        ['processing', 'for_interview', 'released'].includes(
-                                            r.status
-                                        )
-                                    )
-                                    .map((req) => (
-                                        <div
-                                            key={req.id}
-                                            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
-                                                    <div className="mb-2 flex items-center gap-3">
-                                                        <span className="text-lg font-black tracking-tighter text-slate-900 uppercase">
-                                                            {req.queue_number}
-                                                        </span>
-                                                        <span
-                                                            className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm ${req.status === 'processing' ? 'border border-blue-200 bg-blue-100 text-blue-700' : ''} ${req.status === 'for_interview' ? 'border border-purple-200 bg-purple-100 text-purple-700' : ''} ${req.status === 'released' ? 'border border-orange-200 bg-orange-100 text-orange-700' : ''}`}
+                                                        <svg
+                                                            className="h-4 w-4"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
                                                         >
-                                                            {req.status.replace('_', ' ')}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm font-bold text-slate-800">
-                                                        {req.document_type?.name ?? 'Dokumento'}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        <span className="font-semibold">
-                                                            Layunin:
-                                                        </span>{' '}
-                                                        {req.purpose}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">
-                                                        <span className="font-semibold">
-                                                            Petsa:
-                                                        </span>{' '}
-                                                        {new Date(req.created_at).toLocaleString()}
-                                                    </p>
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M6 18L18 6M6 6l12 12"
+                                                            ></path>
+                                                        </svg>
+                                                        Cancel Request
+                                                    </Link>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
-                                    Walang request na pinoproseso sa ngayon.
-                                </p>
-                            ))}
-                        {activeSubTab === 'track-history' &&
-                            (myRequests.filter((r) => r.status === 'received').length > 0 ? (
-                                myRequests
-                                    .filter((r) => r.status === 'received')
-                                    .map((req) => (
-                                        <div
-                                            key={req.id}
-                                            className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 transition-all hover:opacity-100"
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
-                                                    <div className="mb-2 flex items-center gap-3">
-                                                        <span className="text-lg font-black tracking-tighter text-slate-600 uppercase">
-                                                            {req.queue_number}
-                                                        </span>
-                                                        <span className="rounded-md border border-green-200 bg-green-100 px-2 py-1 text-[10px] font-black tracking-widest text-green-700 uppercase shadow-sm">
-                                                            {' '}
-                                                            {req.status}{' '}
-                                                        </span>
+                                        ))
+                                    ) : (
+                                        <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
+                                            Wala kang pending na request.
+                                        </p>
+                                    )}
+                                    <FrontendPagination totalItems={processedData.length} />
+                                </>
+                            );
+                        })()}
+                        {activeSubTab === 'track-status' && (() => {
+                            const processedData = getProcessedRequests('status');
+                            const paginatedData = getPaginatedData(processedData);
+                            return (
+                                <>
+                                    {paginatedData.length > 0 ? (
+                                        paginatedData.map((req) => (
+                                            <div
+                                                key={req.id}
+                                                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                                            >
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-3">
+                                                            <span className="text-lg font-black tracking-tighter text-slate-900 uppercase">
+                                                                {req.queue_number}
+                                                            </span>
+                                                            <span
+                                                                className={`rounded-md px-2 py-1 text-[10px] font-black tracking-widest uppercase shadow-sm ${req.status === 'processing' ? 'border border-blue-200 bg-blue-100 text-blue-700' : ''} ${req.status === 'for_interview' ? 'border border-purple-200 bg-purple-100 text-purple-700' : ''} ${req.status === 'released' ? 'border border-orange-200 bg-orange-100 text-orange-700' : ''}`}
+                                                            >
+                                                                {req.status.replace('_', ' ')}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-slate-800">
+                                                            {req.document_type?.name ?? 'Dokumento'}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            <span className="font-semibold">
+                                                                Layunin:
+                                                            </span>{' '}
+                                                            {req.purpose}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500">
+                                                            <span className="font-semibold">
+                                                                Petsa:
+                                                            </span>{' '}
+                                                            {new Date(req.created_at).toLocaleString()}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-slate-700">
-                                                        {req.document_type?.name ?? 'Dokumento'}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        <span className="font-semibold">
-                                                            Petsa:
-                                                        </span>{' '}
-                                                        {new Date(req.created_at).toLocaleString()}
-                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
-                                    Wala kang nakaraang transaksyon.
-                                </p>
-                            ))}
-                        {activeSubTab === 'track-rejected' &&
-                            (myRequests.filter((r) => ['rejected', 'canceled'].includes(r.status))
-                                .length > 0 ? (
-                                myRequests
-                                    .filter((r) => ['rejected', 'canceled'].includes(r.status))
-                                    .map((req) => (
-                                        <div
-                                            key={req.id}
-                                            className="rounded-xl border border-red-200 bg-red-50 p-5 transition-all"
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
-                                                    <div className="mb-2 flex items-center gap-3">
-                                                        <span className="text-lg font-black tracking-tighter text-slate-600 uppercase">
-                                                            {req.queue_number}
-                                                        </span>
-                                                        <span className="rounded-md border border-red-300 bg-red-100 px-2 py-1 text-[10px] font-black tracking-widest text-red-700 uppercase shadow-sm">
-                                                            {' '}
-                                                            {req.status}{' '}
-                                                        </span>
+                                        ))
+                                    ) : (
+                                        <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
+                                            Walang request na pinoproseso sa ngayon.
+                                        </p>
+                                    )}
+                                    <FrontendPagination totalItems={processedData.length} />
+                                </>
+                            );
+                        })()}
+                        {activeSubTab === 'track-history' && (() => {
+                            const processedData = getProcessedRequests('history');
+                            const paginatedData = getPaginatedData(processedData);
+                            return (
+                                <>
+                                    {paginatedData.length > 0 ? (
+                                        paginatedData.map((req) => (
+                                            <div
+                                                key={req.id}
+                                                className="rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-80 transition-all hover:opacity-100"
+                                            >
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-3">
+                                                            <span className="text-lg font-black tracking-tighter text-slate-600 uppercase">
+                                                                {req.queue_number}
+                                                            </span>
+                                                            <span className="rounded-md border border-green-200 bg-green-100 px-2 py-1 text-[10px] font-black tracking-widest text-green-700 uppercase shadow-sm">
+                                                                {' '}
+                                                                {req.status}{' '}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-slate-700">
+                                                            {req.document_type?.name ?? 'Dokumento'}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            <span className="font-semibold">
+                                                                Petsa:
+                                                            </span>{' '}
+                                                            {new Date(req.created_at).toLocaleString()}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-red-900">
-                                                        {req.document_type?.name ?? 'Dokumento'}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-red-700">
-                                                        <span className="font-semibold">
-                                                            Layunin:
-                                                        </span>{' '}
-                                                        {req.purpose}
-                                                    </p>
-                                                    <p className="text-xs text-red-700">
-                                                        <span className="font-semibold">
-                                                            Petsa:
-                                                        </span>{' '}
-                                                        {new Date(req.created_at).toLocaleString()}
-                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
-                                    Wala kang rejected o canceled na request.
-                                </p>
-                            ))}
+                                        ))
+                                    ) : (
+                                        <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
+                                            Wala kang nakaraang transaksyon.
+                                        </p>
+                                    )}
+                                    <FrontendPagination totalItems={processedData.length} />
+                                </>
+                            );
+                        })()}
+                        {activeSubTab === 'track-rejected' && (() => {
+                            const processedData = getProcessedRequests('rejected');
+                            const paginatedData = getPaginatedData(processedData);
+                            return (
+                                <>
+                                    {paginatedData.length > 0 ? (
+                                        paginatedData.map((req) => (
+                                            <div
+                                                key={req.id}
+                                                className="rounded-xl border border-red-200 bg-red-50 p-5 transition-all"
+                                            >
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-3">
+                                                            <span className="text-lg font-black tracking-tighter text-slate-600 uppercase">
+                                                                {req.queue_number}
+                                                            </span>
+                                                            <span className="rounded-md border border-red-300 bg-red-100 px-2 py-1 text-[10px] font-black tracking-widest text-red-700 uppercase shadow-sm">
+                                                                {' '}
+                                                                {req.status}{' '}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-red-900">
+                                                            {req.document_type?.name ?? 'Dokumento'}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-red-700">
+                                                            <span className="font-semibold">
+                                                                Layunin:
+                                                            </span>{' '}
+                                                            {req.purpose}
+                                                        </p>
+                                                        <p className="text-xs text-red-700">
+                                                            <span className="font-semibold">
+                                                                Petsa:
+                                                            </span>{' '}
+                                                            {new Date(req.created_at).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="rounded-xl bg-slate-50 py-10 text-center font-bold text-slate-500 italic">
+                                            Wala kang rejected o canceled na request.
+                                        </p>
+                                    )}
+                                    <FrontendPagination totalItems={processedData.length} />
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
