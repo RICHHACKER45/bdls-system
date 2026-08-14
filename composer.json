@@ -11,6 +11,7 @@
   "require": {
     "php": "^8.2",
     "barryvdh/laravel-dompdf": "^3.1",
+    "ext-pcntl": "*",
     "google/cloud-vision": "^2.2",
     "inertiajs/inertia-laravel": "^3.1",
     "laravel/framework": "^12.0",
