@@ -30,3 +30,9 @@ codesnap.php
 /storage/app/private/google-credentials.json
 /storage/app/payment_receipts/
 /storage/app/service_requirements/
+/bootstrap/cache/*
+public/build
+clear-all.bat
+dbreset.bat
+format.bat
+serve.bat

@@ -1,0 +1,20 @@
+# nixpacks.toml - Production Build & CI/CD Pipeline Blueprint for BDLS
+
+[phases.setup]
+nixPkgs = ["php83", "nodejs", "bun"] # Tinitiyak na kasama ang Bun runtime at PHP engines sa workspace
+
+[phases.build]
+cmds = [
+    "composer install --no-dev --optimize-autoloader",
+    "bun install",
+    "bun run build", # Kinokompile ang React/Inertia assets patungo sa public/build [LPDS]
+    "php artisan config:cache",
+    "php artisan route:cache",
+    "php artisan view:cache"
+]
+
+# THE RELEASE GATE (Kritikal sa CI/CD)
+# Tatakbo ito pagkatapos ng build pero BAGO mag-live ang bagong code.
+# Kung pumalya ang migration (may syntax error), haharangin ng Railway ang deploy (Zero-Downtime Guarantee!)
+[phases.release]
+cmds = ["php artisan migrate --force"]
