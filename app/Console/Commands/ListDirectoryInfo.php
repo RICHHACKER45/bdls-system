@@ -4,20 +4,24 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 class ListDirectoryInfo extends Command
 {
-    // The command name and optional path argument
+    /**
+     * The name and signature of the console command.
+     */
     protected $signature = 'dir:info {path?}';
 
-    // The description for php artisan list
-    protected $description = 'List all files/folders recursively, respecting gitignore and manual excludes';
+    /**
+     * The console command description.
+     */
+    protected $description = 'List structural project directories and files based on custom inclusion rules';
 
-    public function handle()
+    public function handle(): int
     {
-        // 1. Setup path and Finder
         $targetPath = $this->argument('path') ?: base_path();
-        $finder = new Finder;
+        $finder = new Finder();
 
         if (! is_dir($targetPath)) {
             $this->error("The path [{$targetPath}] does not exist.");
@@ -25,22 +29,18 @@ class ListDirectoryInfo extends Command
             return 1;
         }
 
-        $this->info("Scanning: $targetPath");
+        $this->info("Scanning directory: {$targetPath}");
 
-        // 2. Apply Filters
+        // Scan the target directory
         $finder->in($targetPath)
-            ->ignoreVCSIgnored(true) // Automatically ignores everything in your .gitignore
-            ->exclude([
-                'node_modules', 'vendor', 'public/build', 'storage/pail',
-                '.fleet', '.idea', '.vscode', '.zed',
-            ])
-            ->notName([
-                '*.log', '.DS_Store', '.env*', '.phpactor.json',
-                'auth.json', 'Thumbs.db', 'envkey.txt',
-            ])
-            ->notPath('storage/*.key');
+            ->depth('< 10') // Prevents potential infinite recursion loops
+            ->filter(function (SplFileInfo $file) use ($targetPath): bool {
+                // Get path relative to base directory (standardized separators)
+                $relativePath = str_replace('\\', '/', $file->getRelativePathname());
 
-        // 3. Build Table Data
+                return $this->shouldIncludePath($relativePath);
+            });
+
         $headers = ['Relative Path', 'Type', 'Size', 'Last Modified'];
         $data = [];
 
@@ -53,27 +53,76 @@ class ListDirectoryInfo extends Command
             ];
         }
 
-        // 4. Output Results
         if (empty($data)) {
-            $this->warn('No files found matching the criteria.');
-        } else {
-            $this->table($headers, $data);
-            $this->info("\nTotal items found: ".count($data));
+            $this->warn('No files or directories found matching the specified scope.');
+
+            return 0;
         }
+
+        $this->table($headers, $data);
+        $this->info("\nTotal items listed: ".count($data));
+
+        return 0;
     }
 
     /**
-     * Helper to make file sizes human-readable
+     * Evaluate strict inclusion rules based on requirements.
      */
-    private function formatBytes($bytes, $precision = 2)
+    private function shouldIncludePath(string $path): bool
+    {
+        // 1. Root level main folders allowed
+        $allowedRootFolders = [
+            'app', 
+            'bootstrap', 
+            'config', 
+            'database', 
+            'public', 
+            'resources', 
+            'routes', 
+            'storage'
+        ];
+
+        $segments = explode('/', $path);
+        $rootFolder = $segments[0];
+
+        // Reject any root items not in our explicitly allowed list (e.g., node_modules, vendor, tests)
+        if (! in_array($rootFolder, $allowedRootFolders, true)) {
+            return false;
+        }
+
+        // 2. Specific folder rules:
+        
+        // bootstrap: exclude 'cache' folder and its contents
+        if ($rootFolder === 'bootstrap') {
+            if ($path === 'bootstrap/cache' || str_starts_with($path, 'bootstrap/cache/')) {
+                return false;
+            }
+        }
+
+        // storage: include 'storage/app' ONLY. Exclude 'framework', 'logs', or root storage files
+        if ($rootFolder === 'storage') {
+            if ($path !== 'storage/app' && ! str_starts_with($path, 'storage/app/')) {
+                return false;
+            }
+        }
+
+        // All other allowed roots (app, config, database, public, resources, routes) pass recursively
+        return true;
+    }
+
+    /**
+     * Format bytes into human-readable strings.
+     */
+    private function formatBytes(int $bytes, int $precision = 2): string
     {
         if ($bytes <= 0) {
             return '0 B';
         }
+
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $pow = floor(log($bytes) / log(1024));
+        $pow = (int) floor(log($bytes) / log(1024));
         $pow = min($pow, count($units) - 1);
-        $bytes /= pow(1024, $pow);
+        $bytes /= (1024 ** $pow);
 
         return round($bytes, $precision).' '.$units[$pow];
     }
