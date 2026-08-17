@@ -1,41 +1,58 @@
+### 🚀 MASTER TASK: UPDATE CUSTOM DEVELOPMENT GUIDELINES (GEMINI ARCHITECTURE)
+
+Hey Antigravity Dev Agent! We are developing **Barangay Doña Lucia Services (BDLS)**, a low-latency SPA monolith using **Laravel 12**, **React 19**, and **Inertia.js v3**. 
+
+This system's master architecture and core logic are designed and verified by **Gemini Notebook**. To leverage our `laravel/boost` compilation workflow, we need to update our custom guidelines file located at `.ai/BDLS_DEVELOPMENT_GUIDELINES`. This file is consumed by the autoconfigure compiler to generate our root `AGENTS.md` file.
+
+Please overwrite or create the file strictly at `.ai/BDLS_DEVELOPMENT_GUIDELINES` with the clean, production-ready specifications below as instructed by **Gemini**.
+
+---
+
+### 📝 WRITE THIS CONTENT INTO `.ai/BDLS_DEVELOPMENT_GUIDELINES`
+
 # BDLS Development Guidelines (React + Inertia.js Architecture)
 
 **AI INSTRUCTION / LANGUAGE CONTEXT:** STRICTLY ENGLISH. All code comments, AI-generated code, and system modifications must adhere to these English guidelines to prevent multi-language confusion in the codebase.
 
-This document serves as the primary master guideline for all system modifications, AI prompts, and code integration within the Barangay Doña Lucia Services (BDLS) platform. 
-
-The system has fully migrated to a Single Page Application (SPA) architecture. The use of deprecated technologies, such as Vanilla JS in `public/js/` or traditional Laravel Blade views (except for the master root file), is strictly prohibited.
+This document serves as the primary master guideline for all system modifications, AI prompts, and code integration within the Barangay Doña Lucia Services (BDLS) platform.
 
 ---
 
-## 1. Frontend Architecture (React 18 + Inertia.js)
-The entire user interface is powered by React. No full-page reloads should occur when navigating between pages.
-
-*   **File Locations:** All UI components must be written inside `resources/js/Pages/` (for actual views) and `resources/js/Layouts/` (for layout wrappers).
-*   **Routing and Links:** Instead of standard HTML `<a>` tags, strictly use the `<Link>` component from `@inertiajs/react` to preserve state and ensure seamless transitions. Use `ziggy-js` to call Laravel routes directly inside React.
-*   **Form Management:** Avoid manual `fetch` or `axios` for standard form submissions. Use the `useForm` hook from Inertia.js (`const { data, setData, post, processing, errors } = useForm({...})`) as it automatically catches and binds backend validation errors to the frontend.
-*   **Styling (Tailwind CSS):** The entire design system is built on Tailwind CSS. Because we are using React, always use `className=` instead of `class=`.
+## 1. Frontend Architecture (React 19 + Inertia.js v3)
+- **File Locations:** All UI components must be written inside `resources/js/Pages/` (for actual views) and `resources/js/Layouts/` (for layout wrappers).
+- **SPA Routing:** Instead of standard HTML `<a>` tags, strictly use the `<Link>` component from `@inertiajs/react` to preserve state. Use `route()` from Ziggy-js to call Laravel routes directly inside React.
+- **Form Management:** Avoid manual `fetch` or `axios` for standard form submissions. Use the `useForm` hook from Inertia.js (`const { data, setData, post, processing, errors } = useForm({...})`) as it automatically catches and binds backend validation errors to the frontend.
+- **Styling (Tailwind CSS):** Use Tailwind CSS v4 utility classes. Because we are using React, always use `className=` instead of `class=`.
 
 ---
 
-## 2. Backend and Security Policies (The Laravel Way)
-The backend is powered by Laravel 11. All security protocols must be strictly followed to protect resident data privacy.
-
-*   **Zero-Retention Policy (Automated ID Verification):** The system no longer saves Valid ID or Selfie image files to the local server or database to prevent data breaches. Images are temporarily held in memory, passed to the Google Cloud Vision API for OCR text extraction, matched against the `census_records` table, and immediately discarded.
-*   **Strict Password Policy:** Simple passwords are not allowed. All passwords (during registration or updates) must contain a minimum of 8 characters, including at least one uppercase letter, one lowercase letter, one number, and **one symbol** (e.g., `Juan!1234`).
-*   **SMS & OTP Rate Limiting:** All OTP requests and SMS broadcast actions are protected by a Rate Limiter (e.g., a 60-second cooldown timer and a 3-strike IP block) to prevent spamming and conserve API credits.
-*   **Live Updates (Websockets):** For real-time queue or dashboard updates, the system utilizes Laravel Reverb and React `window.Echo` listeners. Any state change on the dashboard must be refreshed via silent polling using `router.reload({ only: [...], preserveScroll: true, preserveState: true })` to prevent disrupting the user's current screen activity.
+## 2. Backend & Security Policies (The Laravel Way)
+- **Zero-Retention Policy (Automated ID Verification):** Resident signups capture a Valid ID. Google Cloud Vision OCR API is used to extract the name and match it against the Census Masterlist (`census_records`). Selfie/ID photos must be processed IN-MEMORY only and immediately discarded—NEVER store ID/selfie files in public directories or save file paths in the database.
+- **Cloudflare Turnstile CAPTCHA:** Mandatory shield on four (4) critical forms to prevent API credit exhaustion and spambots:
+  1. Resident Signup Form
+  2. User Login Form
+  3. Service Request Submission Form
+  4. Forgot Password Form
+- **Strict Password Policy:** Simple passwords are not allowed. All passwords (during registration or updates) must contain a minimum of 8 characters, including at least one uppercase letter, one lowercase letter, one number, and one symbol (e.g., `Juan!1234`).
+- **Secure File Storage:** Private document attachments (GCash receipts, clearance requirements) must be stored strictly in the private storage directory (`storage/app/private/`). Public access is blocked; files must be streamed securely through `FileController@serveSecureFile` with directory traversal protection and strict ownership/admin authorization checks.
 
 ---
 
-## 3. The Blueprint for Atomic Code Commits
-To maintain a clean and highly traceable Git history, the following rules must be strictly adhered to before committing any code:
+## 3. NTC Compliance & SMS Services (SmsService.php)
+- **Link Blocker Policy:** SMS messages must NEVER contain URLs/links. The system enforces this via regex checks (`not_regex:/(http|https|www\.)/i`) to prevent blocking of our shared API gateway.
+- **Night Curfew Restriction:** Mass SMS announcements/text blasts are strictly prohibited during curfew hours (9:00 PM to 7:00 AM).
+- **Unicode Sanitizer:** Automatically strip emojis and smart quotes before sending to prevent character set inflation (keeping standard messages under 160 characters).
+- **Unverified Block:** Prevent sending transactional updates to numbers that haven't verified their contact via OTP to save API credits.
 
-1.  **One Single Logical Task per Commit:** A commit must contain only the files modified for one specific feature, bug fix, or refactor. Do not bundle unrelated modifications together.
-2.  **Strict Code Staging:** Only stage (`git add <file>`) the exact files required for the target task. Do not use `git add .` if there are unrelated drafts or experiments in the workspace.
-3.  **Runnable Code Guarantee:** The system must successfully compile and run without errors before committing. Never commit broken code or syntax errors.
-4.  **Formal Commit Prefixes:** Always start the commit message with one of the following standard prefixes:
-    *   `feat:` For a new feature or backend logic addition (e.g., `feat: inject Laravel Echo listener to AdminDashboard`)
-    *   `fix:` For resolving a bug (e.g., `fix: enforce password symbol requirement in regex`)
-    *   `refactor:` For restructuring existing code without changing its external behavior
-    *   `style:` For UI changes, Tailwind CSS class modifications, or code formatting
+---
+
+## 4. The Blueprint for Atomic Code Commits
+To maintain a clean and highly traceable Git history, the following rules must be strictly adhered to:
+1. **One Single Logical Task per Commit:** A commit must contain only the files modified for one specific feature, bug fix, or refactor. Do not bundle unrelated modifications together.
+2. **Strict Code Staging:** Only stage (`git add <file>`) the exact files required for the target task. Do not use `git add .` if there are unrelated drafts or experiments in the workspace.
+3. **Runnable Code Guarantee:** The system must successfully compile and run without errors before committing. Never commit broken code or syntax errors.
+4. **Formal Commit Prefixes:** Always start the commit message with one of the following standard prefixes:
+   - `feat:` For a new feature or backend logic addition
+   - `fix:` For resolving a bug
+   - `refactor:` For restructuring existing code without behavior changes
+   - `style:` For UI changes, Tailwind CSS class modifications, or formatting
