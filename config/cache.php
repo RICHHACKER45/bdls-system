@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    'default' => env('CACHE_STORE', 'file'),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,6 +36,13 @@ return [
             'driver' => 'array',
             'serialize' => false,
         ],
+
+        //apcu for the optimization
+        'apcu' => [
+            'driver' => 'apcu',
+        ],
+        
+        
 
         'database' => [
             'driver' => 'database',
