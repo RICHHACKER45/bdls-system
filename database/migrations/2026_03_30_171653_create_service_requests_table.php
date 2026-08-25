@@ -25,6 +25,10 @@ return new class extends Migration
             // BINURA: $table->dateTime('preferred_pickup_time'); (Hindi na kailangan dahil real-time na ang text)
 
             $table->string('status', 20)->default('Pending'); // Pending, For Interview, Processing, Released
+            
+            // Added for rejection feature
+            $table->text('rejection_reason')->nullable();
+
             $table->timestamp('released_at')->nullable();
             $table
                 ->foreignId('released_by_admin_id')
