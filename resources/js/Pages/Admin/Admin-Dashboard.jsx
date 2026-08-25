@@ -528,7 +528,9 @@ export default function AdminDashboard() {
     const walkinStoreForm = useForm({
         contact_number: '',
         first_name: '',
+        middle_name: '',
         last_name: '',
+        suffix: '',
         sex: '',
         date_of_birth: '',
         address: '',
@@ -845,8 +847,9 @@ export default function AdminDashboard() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                    {queue.user?.last_name},{' '}
-                                                                    {queue.user?.first_name}
+                                                                    {queue.user?.last_name}, {queue.user?.first_name}{' '}
+                                                                    {queue.user?.middle_name ? queue.user.middle_name.charAt(0) + '.' : ''}{' '}
+                                                                    {queue.user?.suffix || ''}
                                                                 </p>
                                                                 <p className="font-mono text-[10px] tracking-tight text-slate-500">
                                                                     {queue.user?.contact_number}
@@ -1105,8 +1108,9 @@ export default function AdminDashboard() {
                                                         </td>
                                                         <td className="p-4 opacity-75">
                                                             <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                {queue.user?.last_name},{' '}
-                                                                {queue.user?.first_name}
+                                                                {queue.user?.last_name}, {queue.user?.first_name}{' '}
+                                                                {queue.user?.middle_name ? queue.user.middle_name.charAt(0) + '.' : ''}{' '}
+                                                                {queue.user?.suffix || ''}
                                                             </p>
                                                             <p className="font-mono text-[10px] text-slate-500">
                                                                 {queue.user?.contact_number}
@@ -1212,7 +1216,9 @@ export default function AdminDashboard() {
                                                     ...data,
                                                     contact_number: val,
                                                     first_name: '',
+                                                    middle_name: '',
                                                     last_name: '',
+                                                    suffix: '',
                                                     sex: 'Male',
                                                     date_of_birth: '',
                                                     address: '',
@@ -1234,7 +1240,9 @@ export default function AdminDashboard() {
                                                                 ...data,
                                                                 contact_number: val,
                                                                 first_name: u.first_name,
+                                                                middle_name: u.middle_name || '',
                                                                 last_name: u.last_name,
+                                                                suffix: u.suffix || '',
                                                                 sex: u.sex,
                                                                 date_of_birth: u.date_of_birth,
                                                                 address: u.address,
@@ -1269,6 +1277,20 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Middle Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.middle_name}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('middle_name', e.target.value)
+                                        }
+                                        placeholder="Gitnang Pangalan (Opsyonal)"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Last Name *
                                     </label>
                                     <input
@@ -1281,6 +1303,26 @@ export default function AdminDashboard() {
                                         placeholder="Apelyido"
                                         className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
                                     />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Suffix
+                                    </label>
+                                    <select
+                                        value={walkinStoreForm.data.suffix}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('suffix', e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    >
+                                        <option value="">Wala</option>
+                                        <option value="Jr.">Jr.</option>
+                                        <option value="Sr.">Sr.</option>
+                                        <option value="I">I</option>
+                                        <option value="II">II</option>
+                                        <option value="III">III</option>
+                                        <option value="IV">IV</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
@@ -1299,7 +1341,7 @@ export default function AdminDashboard() {
                                         <option value="Female">Babae</option>
                                     </select>
                                 </div>
-                                <div className="sm:col-span-1">
+                                <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Date of Birth *
                                     </label>
@@ -1313,7 +1355,7 @@ export default function AdminDashboard() {
                                         className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
                                     />
                                 </div>
-                                <div className="sm:col-span-2">
+                                <div className="sm:col-span-3">
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Address *
                                     </label>

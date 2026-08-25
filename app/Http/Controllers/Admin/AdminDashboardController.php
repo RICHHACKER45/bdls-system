@@ -262,7 +262,9 @@ class AdminDashboardController extends Controller
                 'found' => true,
                 'user' => [
                     'first_name' => $user->first_name,
+                    'middle_name' => $user->middle_name,
                     'last_name' => $user->last_name,
+                    'suffix' => $user->suffix,
                     'sex' => $user->sex,
                     'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '',
                     'address' => $user->address,
@@ -282,7 +284,9 @@ class AdminDashboardController extends Controller
         $request->validate([
             'contact_number' => 'required|string|max:20',
             'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
             'sex' => 'required|string|in:Male,Female',
             'date_of_birth' => 'required|date',
             'address' => 'required|string|max:255',
@@ -307,7 +311,9 @@ class AdminDashboardController extends Controller
             if (! $user) {
                 $user = User::create([
                     'first_name' => $request->first_name,
+                    'middle_name' => $request->middle_name,
                     'last_name' => $request->last_name,
+                    'suffix' => $request->suffix,
                     'sex' => $request->sex,
                     'date_of_birth' => $request->date_of_birth,
                     'address' => $request->address, // THE FIX: Isang address field na lang
