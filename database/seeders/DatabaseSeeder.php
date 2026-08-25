@@ -16,6 +16,6 @@ class DatabaseSeeder extends Seeder
     {
         // Tinatawag natin dito yung ginawa nating UserSeeder
         // commented out ServiceRequestTestSeeder::class,CensusSeeder::class
-        $this->call([UserSeeder::class, DocumentTypeSeeder::class, CensusSeeder::class, ServiceRequestTestSeeder::class]);
+        $this->call([UserSeeder::class, DocumentTypeSeeder::class, CensusSeeder::class, ServiceRequestTestSeeder::class, SystemSettingsSeeder::class]);
     }
 }
