@@ -81,6 +81,7 @@ export default function AdminDashboard() {
         analyticsSummary = {},
         censusRecords = { data: [], links: [] },
         residentAccounts = { data: [], links: [] },
+        pendingUsers = [],
         filters = {},
         auth,
         flash = {},
@@ -156,6 +157,18 @@ export default function AdminDashboard() {
                 setSelectedAccount(null);
             },
         });
+    };
+
+    const submitPendingManualVerify = (user) => {
+        if (window.confirm(`Sigurado ka bang gusto mong manu-manong i-verify ang registration ni ${user.first_name}?`)) {
+            router.post(route('admin.users.manual-verify', user.id), {}, { preserveScroll: true });
+        }
+    };
+
+    const confirmRejectRegistration = (user) => {
+        if (window.confirm(`Sigurado ka bang gusto mong i-reject at burahin ang registration ni ${user.first_name}?`)) {
+            router.post(route('admin.users.reject-registration', user.id), {}, { preserveScroll: true });
+        }
     };
 
     const [residentFormMode, setResidentFormMode] = useState('add'); // 'add' or 'edit'
@@ -1606,6 +1619,12 @@ export default function AdminDashboard() {
                             >
                                 Analytics & Reports
                             </button>
+                            <button
+                                onClick={() => setAccountsSubTab('pending')}
+                                className={`rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all ${accountsSubTab === 'pending' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Pending Registrations
+                            </button>
                         </div>
 
                         {accountsSubTab === 'list' && (
@@ -1833,6 +1852,77 @@ export default function AdminDashboard() {
                                             Download
                                         </a>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {accountsSubTab === 'pending' && (
+                            <div className="animate-in fade-in p-6 duration-300">
+                                <div className="mb-6">
+                                    <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">
+                                        Pending Registrations (Failed OCR)
+                                    </h3>
+                                    <p className="mt-1 text-xs text-slate-500">
+                                        Mga residenteng hindi nakapasa sa automated ID verification. Paki-review nang manu-mano.
+                                    </p>
+                                </div>
+                                
+                                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="w-full border-collapse text-left">
+                                        <thead>
+                                            <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                                <th className="p-4 font-black">Pangalan & OCR Status</th>
+                                                <th className="p-4 font-black">ID Verification Data</th>
+                                                <th className="p-4 text-right font-black">Aksyon</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {pendingUsers.length > 0 ? (
+                                                pendingUsers.map((user) => (
+                                                    <tr key={user.id} className="transition-colors hover:bg-slate-50">
+                                                        <td className="p-4">
+                                                            <p className="text-sm font-bold text-slate-900 uppercase">
+                                                                {user.last_name}, {user.first_name} {user.middle_name || ''} {user.suffix || ''}
+                                                            </p>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">
+                                                                    Failed OCR ({user.ocr_attempts} attempts)
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <p className="font-mono text-xs font-bold text-slate-800">
+                                                                DOB: {new Date(user.date_of_birth).toLocaleDateString()}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-500">
+                                                                Contact: {user.contact_number}
+                                                            </p>
+                                                        </td>
+                                                        <td className="flex justify-end gap-2 p-4 text-right">
+                                                            <button
+                                                                onClick={() => submitPendingManualVerify(user)}
+                                                                className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-[10px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
+                                                            >
+                                                                Manual Verify
+                                                            </button>
+                                                            <button
+                                                                onClick={() => confirmRejectRegistration(user)}
+                                                                className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
+                                                            >
+                                                                Reject & Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="3" className="p-12 text-center font-bold text-slate-400 italic">
+                                                        Walang pending registrations sa ngayon.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         )}
