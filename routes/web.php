@@ -144,6 +144,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/accounts/{id}/suspend', [AdminDashboardController::class, 'suspendAccount'])->name('accounts.suspend');
             Route::delete('/accounts/{id}', [AdminDashboardController::class, 'deleteAccount'])->name('accounts.destroy');
             Route::post('/accounts/{id}/manual-verify', [AdminDashboardController::class, 'manualVerifyAccount'])->name('accounts.manual_verify');
+
+            // PENDING REGISTRATIONS ROUTES
+            Route::post('/users/{user}/manual-verify', [AdminDashboardController::class, 'manualVerifyUser'])->name('users.manual-verify');
+            Route::post('/users/{user}/reject-registration', [AdminDashboardController::class, 'rejectRegistration'])->name('users.reject-registration');
         });
 
     // ==========================================
