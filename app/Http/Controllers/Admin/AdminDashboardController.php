@@ -145,6 +145,13 @@ class AdminDashboardController extends Controller
         }
         $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
 
+        // PHASE 2.2: PENDING REGISTRATIONS (Failed OCR)
+        $pendingUsers = User::where('role', 'resident')
+            ->where('is_verified', 0)
+            ->where('ocr_attempts', '>=', 5)
+            ->latest()
+            ->get();
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
             'activeQueue' => $activeQueue,
@@ -154,6 +161,7 @@ class AdminDashboardController extends Controller
             'analyticsSummary' => $analyticsSummary,
             'censusRecords' => $censusRecords,
             'residentAccounts' => $residentAccounts,
+            'pendingUsers' => $pendingUsers,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -856,6 +864,41 @@ class AdminDashboardController extends Controller
             'success_message' => "Ang account ni {$user->first_name} {$user->last_name} ay manu-manong na-verify.",
             'active_tab' => 'accounts',
         ]);
+    }
+
+    public function manualVerifyUser(User $user)
+    {
+        $user->update([
+            'is_verified' => 1,
+            'ocr_attempts' => 0,
+            'ocr_locked_until' => null,
+        ]);
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'MANUAL_VERIFY_PENDING',
+            'description' => "Manu-manong na-verify ang pending registration ni {$user->first_name} {$user->last_name}.",
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Matagumpay na na-verify ang registration ni {$user->first_name}.", 'active_tab' => 'pending']);
+    }
+
+    public function rejectRegistration(User $user)
+    {
+        $name = $user->first_name . ' ' . $user->last_name;
+        $user->delete();
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'REJECT_REGISTRATION',
+            'description' => "Nai-reject ang registration ni {$name}.",
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang registration ni {$name} ay nai-reject at inalis.", 'active_tab' => 'pending']);
     }
 
     public function downloadCensusTemplate()
