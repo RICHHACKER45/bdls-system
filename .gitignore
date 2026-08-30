@@ -37,3 +37,4 @@ dbreset.bat
 format.bat
 serve.bat
 app/Console/Commands/ListDirectoryInfo.php
+storage/framework/lsp-*.php
