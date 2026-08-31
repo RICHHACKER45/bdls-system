@@ -1,18 +1,3 @@
-<laravel-boost-guidelines>
-=== .ai/BDLS_DEVELOPMENT_GUIDELINES rules ===
-
-### 🚀 MASTER TASK: UPDATE CUSTOM DEVELOPMENT GUIDELINES (GEMINI ARCHITECTURE)
-
-Hey Antigravity Dev Agent! We are developing **Barangay Doña Lucia Services (BDLS)**, a low-latency SPA monolith using **Laravel 12**, **React 19**, and **Inertia.js v3**.
-
-This system's master architecture and core logic are designed and verified by **Gemini Notebook**. To leverage our `laravel/boost` compilation workflow, we need to update our custom guidelines file located at `.ai/BDLS_DEVELOPMENT_GUIDELINES`. This file is consumed by the autoconfigure compiler to generate our root `AGENTS.md` file.
-
-Please overwrite or create the file strictly at `.ai/BDLS_DEVELOPMENT_GUIDELINES` with the clean, production-ready specifications below as instructed by **Gemini**.
-
----
-
-### 📝 WRITE THIS CONTENT INTO `.ai/BDLS_DEVELOPMENT_GUIDELINES`
-
 # BDLS Development Guidelines (React + Inertia.js Architecture)
 
 **AI INSTRUCTION / LANGUAGE CONTEXT:** STRICTLY ENGLISH. All code comments, AI-generated code, and system modifications must adhere to these English guidelines to prevent multi-language confusion in the codebase.
