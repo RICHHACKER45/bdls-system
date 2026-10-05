@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\DocumentType;
 use App\Models\NotificationLog;
 use App\Models\ServiceRequest;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\EmailService;
 use App\Services\SmsService;
@@ -152,6 +153,13 @@ class AdminDashboardController extends Controller
             ->latest()
             ->get();
 
+        // PHASE 3.3: GCASH PAYMENT SETTINGS
+        $paymentSettings = [
+            'gcash_name' => SystemSetting::where('key', 'gcash_name')->value('value') ?? '',
+            'gcash_number' => SystemSetting::where('key', 'gcash_number')->value('value') ?? '',
+            'gcash_qr_path' => SystemSetting::where('key', 'gcash_qr_path')->value('value') ?? '',
+        ];
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
             'activeQueue' => $activeQueue,
@@ -162,6 +170,7 @@ class AdminDashboardController extends Controller
             'censusRecords' => $censusRecords,
             'residentAccounts' => $residentAccounts,
             'pendingUsers' => $pendingUsers,
+            'paymentSettings' => $paymentSettings,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -887,7 +896,7 @@ class AdminDashboardController extends Controller
 
     public function rejectRegistration(User $user)
     {
-        $name = $user->first_name . ' ' . $user->last_name;
+        $name = $user->first_name.' '.$user->last_name;
         $user->delete();
 
         AuditLog::create([
@@ -919,5 +928,48 @@ class AdminDashboardController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * MODULE: Update GCash Payment Configuration (Phase 3.3)
+     */
+    public function updatePaymentSettings(Request $request)
+    {
+        $request->validate([
+            'gcash_name' => 'required|string|max:100',
+            'gcash_number' => 'required|string|max:20',
+            'gcash_qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'gcash_name'],
+            ['value' => $request->gcash_name]
+        );
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'gcash_number'],
+            ['value' => $request->gcash_number]
+        );
+
+        if ($request->hasFile('gcash_qr_image')) {
+            $path = $request->file('gcash_qr_image')->store('qr_codes', 'public');
+            SystemSetting::updateOrCreate(
+                ['key' => 'gcash_qr_path'],
+                ['value' => $path]
+            );
+        }
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'UPDATE_PAYMENT_SETTINGS',
+            'description' => 'In-update ang GCash Payment Settings at QR Code.',
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'success_message' => 'GCash details updated successfully!',
+            'active_tab' => 'settings',
+        ]);
     }
 }
