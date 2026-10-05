@@ -34,6 +34,7 @@ const RequestModal = ({
     auth,
     activeQueueCount,
     currentBacklogMinutes,
+    paymentSettings = {},
 }) => {
     const [requirements, setRequirements] = useState('');
     const [fee, setFee] = useState(0);
@@ -249,65 +250,86 @@ const RequestModal = ({
                             <p className="mt-3 border-t border-emerald-200/60 pt-2 text-[10px] font-bold text-emerald-700 italic">
                                 {fee === 0
                                     ? '* Ang pagkuha ng mga dokumento sa Barangay Doña Lucia ay kasalukuyang walang bayad.'
-                                    : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall.'}
+                                    : '* Mangyaring ihanda ang eksaktong halaga pagpunta sa barangay hall kung Cash o magbayad via GCash.'}
                             </p>
                         </div>
 
-                        {/* HYBRID PAYMENT SYSTEM UI */}
-                        {fee > 0 && (
-                            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                <label className="mb-2 block text-sm font-bold text-slate-800">
-                                    Paraan ng Pagbabayad <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.payment_method}
-                                    onChange={(e) => setData('payment_method', e.target.value)}
-                                    className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
-                                >
-                                    <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
-                                    <option value="GCash">GCash (Online Payment)</option>
-                                </select>
+                        {/* HYBRID PAYMENT SYSTEM UI (Phase 3.3 Dynamic GCash) */}
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <label className="mb-2 block text-sm font-bold text-slate-800">
+                                Paraan ng Pagbabayad <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={data.payment_method}
+                                onChange={(e) => {
+                                    const newMethod = e.target.value;
+                                    setData((prev) => ({
+                                        ...prev,
+                                        payment_method: newMethod,
+                                        payment_receipt_path:
+                                            newMethod === 'Cash' ? null : prev.payment_receipt_path,
+                                    }));
+                                }}
+                                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 transition-all outline-none focus:ring-2 focus:ring-slate-900"
+                            >
+                                <option value="Cash">Cash (Mismong sa Barangay Hall)</option>
+                                <option value="GCash">GCash (Online Payment)</option>
+                            </select>
 
-                                {data.payment_method === 'GCash' && (
-                                    <div className="animate-in fade-in mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                        <p className="mb-3 text-center text-xs font-bold text-blue-900">
-                                            I-scan ang QR Code o i-send ang bayad sa: <br />
-                                            <span className="text-lg font-black tracking-widest text-slate-900">
-                                                0912 345 6789
-                                            </span>{' '}
-                                            <br />
-                                            <span className="text-[10px] text-blue-700 uppercase">
-                                                Juan Dela Cruz - Brgy. Treasurer
-                                            </span>
+                            {data.payment_method === 'GCash' && (
+                                <div className="animate-in fade-in mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                    <div className="mb-3 text-center">
+                                        <p className="text-xs font-bold text-blue-900">
+                                            I-scan ang QR Code o i-send ang bayad sa GCash:
                                         </p>
+                                        <p className="mt-1 text-lg font-black tracking-widest text-slate-900">
+                                            {paymentSettings?.gcash_number || 'Walang GCash Number'}
+                                        </p>
+                                        <p className="text-[11px] font-bold text-blue-700 uppercase">
+                                            {paymentSettings?.gcash_name || 'Barangay Doña Lucia'}
+                                        </p>
+                                    </div>
 
-                                        {/* Placeholder for QR Code */}
-                                        <div className="mx-auto mb-4 flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-white text-blue-400 shadow-sm">
-                                            <span className="text-xs font-bold">[ GCASH QR ]</span>
-                                        </div>
-
-                                        <label className="mb-2 block text-xs font-bold text-slate-800">
-                                            I-upload ang Screenshot ng Resibo{' '}
-                                            <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="image/png, image/jpeg, image/jpg"
-                                            onChange={(e) =>
-                                                setData('payment_receipt_path', e.target.files)
-                                            }
-                                            required={data.payment_method === 'GCash'}
-                                            className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
-                                        />
-                                        {errors.payment_receipt_path && (
-                                            <p className="mt-1 text-xs font-bold text-red-500">
-                                                {errors.payment_receipt_path}
-                                            </p>
+                                    {/* DYNAMIC GCASH QR CODE DISPLAY */}
+                                    <div className="mx-auto mb-4 flex max-w-[200px] justify-center overflow-hidden rounded-xl border border-blue-200 bg-white p-2 shadow-sm">
+                                        {paymentSettings?.gcash_qr_path ? (
+                                            <img
+                                                src={`/storage/${paymentSettings.gcash_qr_path}`}
+                                                alt="GCash QR Code"
+                                                className="max-h-48 w-auto rounded-lg object-contain"
+                                                onError={(e) => {
+                                                    e.currentTarget.outerHTML =
+                                                        '<div class="p-4 text-center text-xs font-bold text-slate-400">Hindi ma-load ang QR Code image</div>';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="flex h-32 w-32 items-center justify-center text-center text-xs font-bold text-slate-400">
+                                                Walang Naka-upload na QR Code
+                                            </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        )}
+
+                                    <label className="mb-2 block text-xs font-bold text-slate-800">
+                                        I-upload ang Screenshot ng Resibo{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/jpg"
+                                        onChange={(e) =>
+                                            setData('payment_receipt_path', e.target.files[0])
+                                        }
+                                        required={data.payment_method === 'GCash'}
+                                        className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200 ${errors.payment_receipt_path ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                    />
+                                    {errors.payment_receipt_path && (
+                                        <p className="mt-1 text-xs font-bold text-red-500">
+                                            {errors.payment_receipt_path}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         {/* DYNAMIC ESTIMATED WAITING TIME INDICATOR */}
                         {data.document_type_id && (
@@ -444,6 +466,7 @@ export default function Dashboard(props) {
         activeQueueCount = 0,
         currentBacklogMinutes = 0,
         notificationLogs = { data: [], links: [] },
+        paymentSettings = {},
     } = props;
 
     // Main Tabs State
@@ -2411,6 +2434,7 @@ export default function Dashboard(props) {
                 auth={auth}
                 activeQueueCount={activeQueueCount}
                 currentBacklogMinutes={currentBacklogMinutes}
+                paymentSettings={paymentSettings}
             />
             {isLiveKycModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
