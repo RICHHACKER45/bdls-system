@@ -1914,7 +1914,7 @@ export default function AdminDashboard() {
                                                     <tr key={user.id} className="transition-colors hover:bg-slate-50">
                                                         <td className="p-4">
                                                             <p className="text-sm font-bold text-slate-900 uppercase">
-                                                                {user.last_name}, {user.first_name} {user.middle_name || ''} {user.suffix || ''}
+                                                                {user.full_name}
                                                             </p>
                                                             <div className="mt-1 flex items-center gap-2">
                                                                 <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">
@@ -2726,7 +2726,7 @@ export default function AdminDashboard() {
                             <p className="mt-2 px-4 text-sm font-medium text-slate-500">
                                 Sigurado ka bang gusto mong patawan ng 7-araw na penalty si{' '}
                                 <strong className="text-slate-900">
-                                    {selectedAccount.first_name} {selectedAccount.last_name}
+                                    {selectedAccount.full_name}
                                 </strong>
                                 ?
                             </p>
@@ -2772,12 +2772,12 @@ export default function AdminDashboard() {
                             <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                 Delete Account?
                             </h3>
-                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Warning: Ang account ni{' '}
-                                <strong className="text-slate-900">
-                                    {selectedAccount.first_name} {selectedAccount.last_name}
-                                </strong>{' '}
-                                ay permanenteng mabubura.
+                            <p className="mb-6 text-sm text-slate-500">
+                                Sigurado ka bang gusto mong permanenteng burahin ang account ni{' '}
+                                <strong className="text-slate-900 uppercase">
+                                    {selectedAccount.full_name}
+                                </strong>
+                                ? Hindi na maibabalik ang impormasyong ito.
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
