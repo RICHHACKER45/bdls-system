@@ -870,9 +870,7 @@ export default function AdminDashboard() {
                                                             </td>
                                                             <td className="p-4">
                                                                 <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                    {queue.user?.last_name}, {queue.user?.first_name}{' '}
-                                                                    {queue.user?.middle_name ? queue.user.middle_name.charAt(0) + '.' : ''}{' '}
-                                                                    {queue.user?.suffix || ''}
+                                                                    {queue.user?.full_name || 'WALANG PANGALAN'}
                                                                 </p>
                                                                 <p className="font-mono text-[10px] tracking-tight text-slate-500">
                                                                     {queue.user?.contact_number}
@@ -1062,6 +1060,25 @@ export default function AdminDashboard() {
                                                                 </div>
                                                             </td>
                                                         </tr>
+                                                        {expandedRows.includes(queue.id) && (
+                                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                                <td colSpan="7" className="p-4 pl-12">
+                                                                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Layunin (Purpose)</p>
+                                                                                <p className="mt-1 text-xs font-bold text-slate-700">{queue.purpose}</p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Karagdagang Detalye</p>
+                                                                                <p className="mt-1 text-xs font-medium text-slate-600">{queue.additional_details ? queue.additional_details : 'Walang karagdagang detalye'}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                        </React.Fragment>
                                                     );
                                                 })
                                             ) : (
@@ -1125,15 +1142,14 @@ export default function AdminDashboard() {
                                         <tbody className="divide-y divide-slate-100">
                                             {receivedQueue.data && receivedQueue.data.length > 0 ? (
                                                 receivedQueue.data.map((queue) => (
-                                                    <tr key={queue.id} className="bg-slate-50/50">
+                                                    <React.Fragment key={queue.id}>
+                                                        <tr className="bg-slate-50/50">
                                                         <td className="p-4 text-xl font-black tracking-tighter text-slate-400">
                                                             {queue.queue_number}
                                                         </td>
                                                         <td className="p-4 opacity-75">
                                                             <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                {queue.user?.last_name}, {queue.user?.first_name}{' '}
-                                                                {queue.user?.middle_name ? queue.user.middle_name.charAt(0) + '.' : ''}{' '}
-                                                                {queue.user?.suffix || ''}
+                                                                {queue.user?.full_name || 'WALANG PANGALAN'}
                                                             </p>
                                                             <p className="font-mono text-[10px] text-slate-500">
                                                                 {queue.user?.contact_number}
@@ -1157,6 +1173,25 @@ export default function AdminDashboard() {
                                                             </span>
                                                         </td>
                                                     </tr>
+                                                    {expandedRows.includes(queue.id) && (
+                                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                                            <td colSpan="5" className="p-4 pl-12">
+                                                                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Layunin (Purpose)</p>
+                                                                            <p className="mt-1 text-xs font-bold text-slate-700">{queue.purpose}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Karagdagang Detalye</p>
+                                                                            <p className="mt-1 text-xs font-medium text-slate-600">{queue.additional_details ? queue.additional_details : 'Walang karagdagang detalye'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    </React.Fragment>
                                                 ))
                                             ) : (
                                                 <tr>
