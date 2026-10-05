@@ -848,9 +848,10 @@ export default function AdminDashboard() {
                                                             'bg-red-100 text-red-700 border border-red-200';
 
                                                     return (
+                                                        <React.Fragment key={queue.id}>
                                                         <tr
-                                                            key={queue.id}
-                                                            className={`transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
+                                                            onClick={(e) => toggleRow(queue.id, e)}
+                                                            className={`cursor-pointer transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
                                                         >
                                                             <td className="p-4 text-center">
                                                                 <input
