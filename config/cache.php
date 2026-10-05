@@ -37,12 +37,10 @@ return [
             'serialize' => false,
         ],
 
-        //apcu for the optimization
+        // apcu for the optimization
         'apcu' => [
             'driver' => 'apcu',
         ],
-        
-        
 
         'database' => [
             'driver' => 'database',

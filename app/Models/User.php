@@ -27,6 +27,7 @@ class User extends Authenticatable
     {
         $middle = $this->middle_name ? " {$this->middle_name}" : '';
         $suff = $this->suffix ? " {$this->suffix}" : '';
+
         return "{$this->last_name}, {$this->first_name}{$middle}{$suff}";
     }
 
