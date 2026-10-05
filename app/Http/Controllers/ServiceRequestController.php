@@ -8,6 +8,7 @@ use App\Models\Attachment;
 use App\Models\DocumentType;
 use App\Models\NotificationLog;
 use App\Models\ServiceRequest;
+use App\Models\SystemSetting;
 use App\Services\SmsService;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Illuminate\Http\Request;
@@ -62,6 +63,13 @@ class ServiceRequestController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'notifs_page');
 
+        // PHASE 3.3: GCASH PAYMENT SETTINGS
+        $paymentSettings = [
+            'gcash_name' => SystemSetting::where('key', 'gcash_name')->value('value') ?? '',
+            'gcash_number' => SystemSetting::where('key', 'gcash_number')->value('value') ?? '',
+            'gcash_qr_path' => SystemSetting::where('key', 'gcash_qr_path')->value('value') ?? '',
+        ];
+
         return Inertia::render('Resident/Dashboard', [
             'documents' => $documents,
             'myRequests' => $myRequests->values(),
@@ -73,6 +81,7 @@ class ServiceRequestController extends Controller
             'activeQueueCount' => $activeQueueCount,
             'currentBacklogMinutes' => $currentBacklogMinutes,
             'notificationLogs' => $notificationLogs,
+            'paymentSettings' => $paymentSettings,
         ]);
     }
 
