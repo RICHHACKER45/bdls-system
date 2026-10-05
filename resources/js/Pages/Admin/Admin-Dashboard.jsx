@@ -349,6 +349,15 @@ export default function AdminDashboard() {
         return () => clearTimeout(delayDebounceFn);
     }, [accountSearch]);
 
+    // --- EXPANDABLE ROW STATES ---
+    const [expandedRows, setExpandedRows] = useState([]);
+    const toggleRow = (id, e) => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        setExpandedRows((prev) =>
+            prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+        );
+    };
+
     // --- BATCH PROCESSING STATES ---
     const [selectedRequests, setSelectedRequests] = useState([]);
 
