@@ -1713,8 +1713,7 @@ export default function AdminDashboard() {
                                                         >
                                                             <td className="p-4">
                                                                 <p className="text-sm font-bold text-slate-900 uppercase">
-                                                                    {account.last_name},{' '}
-                                                                    {account.first_name}
+                                                                    {account.full_name}
                                                                 </p>
                                                                 <p className="text-[10px] font-medium text-slate-500">
                                                                     DOB:{' '}
@@ -1751,32 +1750,20 @@ export default function AdminDashboard() {
                                                                 {!account.is_verified && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() =>
-                                                                            triggerManualVerify(
-                                                                                account
-                                                                            )
-                                                                        }
+                                                                        onClick={(e) => { e.stopPropagation(); triggerManualVerify(account); }}
                                                                         className="rounded border border-green-200 bg-green-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
                                                                     >
                                                                         Verify
                                                                     </button>
                                                                 )}
                                                                 <button
-                                                                    onClick={() => {
-                                                                        setSelectedAccount(account);
-                                                                        setSuspendModalOpen(true);
-                                                                    }}
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectedAccount(account); setSuspendModalOpen(true); }}
                                                                     className="rounded border border-amber-200 bg-amber-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-amber-600 uppercase shadow-sm transition-all hover:bg-amber-100 active:scale-95"
                                                                 >
                                                                     Suspend
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => {
-                                                                        setSelectedAccount(account);
-                                                                        setDeleteAccountModalOpen(
-                                                                            true
-                                                                        );
-                                                                    }}
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectedAccount(account); setDeleteAccountModalOpen(true); }}
                                                                     className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
                                                                 >
                                                                     Delete
