@@ -148,6 +148,9 @@ Route::middleware(['auth'])->group(function () {
             // PENDING REGISTRATIONS ROUTES
             Route::post('/users/{user}/manual-verify', [AdminDashboardController::class, 'manualVerifyUser'])->name('users.manual-verify');
             Route::post('/users/{user}/reject-registration', [AdminDashboardController::class, 'rejectRegistration'])->name('users.reject-registration');
+
+            // PAYMENT SETTINGS ROUTE (Phase 3.3)
+            Route::post('/settings/payment', [AdminDashboardController::class, 'updatePaymentSettings'])->name('settings.payment');
         });
 
     // ==========================================
