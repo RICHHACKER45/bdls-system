@@ -86,6 +86,7 @@ export default function AdminDashboard() {
         auth,
         flash = {},
         errors = {},
+        paymentSettings = {},
     } = usePage().props;
 
     const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
@@ -580,6 +581,35 @@ export default function AdminDashboard() {
         });
     };
 
+    // --- GCASH PAYMENT CONFIGURATION (Phase 3.3) ---
+    const gcashForm = useForm({
+        gcash_name: paymentSettings?.gcash_name || '',
+        gcash_number: paymentSettings?.gcash_number || '',
+        gcash_qr_image: null,
+    });
+    const [qrPreview, setQrPreview] = useState(null);
+
+    useEffect(() => {
+        if (paymentSettings) {
+            gcashForm.setData({
+                gcash_name: paymentSettings.gcash_name || '',
+                gcash_number: paymentSettings.gcash_number || '',
+                gcash_qr_image: null,
+            });
+        }
+    }, [paymentSettings?.gcash_name, paymentSettings?.gcash_number, paymentSettings?.gcash_qr_path]);
+
+    const submitGcashSettings = (e) => {
+        e.preventDefault();
+        gcashForm.post(route('admin.settings.payment'), {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                setQrPreview(null);
+            },
+        });
+    };
+
     const [reportMonth, setReportMonth] = useState('all');
     const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
 
@@ -876,25 +906,59 @@ export default function AdminDashboard() {
                                                                     {queue.user?.contact_number}
                                                                 </p>
                                                             </td>
-                                                            <td className="p-4 text-xs font-bold text-slate-700 uppercase">
-                                                                {queue.document_type?.name ?? 'N/A'}
-                                                                {queue.payment_method === 'GCash' &&
-                                                                    queue.payment_receipt_path && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setSelectedReceiptPath(
-                                                                                    queue.payment_receipt_path
-                                                                                );
-                                                                                setReceiptModalOpen(
-                                                                                    true
-                                                                                );
-                                                                            }}
-                                                                            className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100"
-                                                                        >
-                                                                            View Receipt 📄
-                                                                        </button>
+                                                            <td className="p-4">
+                                                                <p className="text-xs font-bold text-slate-700 uppercase">
+                                                                    {queue.document_type?.name ?? 'N/A'}
+                                                                </p>
+                                                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                    {queue.payment_method === 'GCash' ? (
+                                                                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm">
+                                                                            GCash
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm">
+                                                                            Cash
+                                                                        </span>
                                                                     )}
+                                                                    {queue.payment_method === 'GCash' &&
+                                                                        queue.payment_receipt_path && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedReceiptPath(
+                                                                                        queue.payment_receipt_path
+                                                                                    );
+                                                                                    setReceiptModalOpen(
+                                                                                        true
+                                                                                    );
+                                                                                }}
+                                                                                className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                                                                title="View GCash Receipt"
+                                                                            >
+                                                                                <svg
+                                                                                    className="h-3 w-3"
+                                                                                    fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    viewBox="0 0 24 24"
+                                                                                >
+                                                                                    <path
+                                                                                        strokeLinecap="round"
+                                                                                        strokeLinejoin="round"
+                                                                                        strokeWidth="2"
+                                                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                                                    />
+                                                                                    <path
+                                                                                        strokeLinecap="round"
+                                                                                        strokeLinejoin="round"
+                                                                                        strokeWidth="2"
+                                                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                                                    />
+                                                                                </svg>
+                                                                                Receipt
+                                                                            </button>
+                                                                        )}
+                                                                </div>
                                                             </td>
                                                             <td className="p-4">
                                                                 <span
@@ -1155,8 +1219,59 @@ export default function AdminDashboard() {
                                                                 {queue.user?.contact_number}
                                                             </p>
                                                         </td>
-                                                        <td className="p-4 text-xs font-bold text-slate-600 uppercase">
-                                                            {queue.document_type?.name ?? 'N/A'}
+                                                        <td className="p-4">
+                                                            <p className="text-xs font-bold text-slate-600 uppercase">
+                                                                {queue.document_type?.name ?? 'N/A'}
+                                                            </p>
+                                                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                {queue.payment_method === 'GCash' ? (
+                                                                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm">
+                                                                        GCash
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm">
+                                                                        Cash
+                                                                    </span>
+                                                                )}
+                                                                {queue.payment_method === 'GCash' &&
+                                                                    queue.payment_receipt_path && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSelectedReceiptPath(
+                                                                                    queue.payment_receipt_path
+                                                                                );
+                                                                                setReceiptModalOpen(
+                                                                                    true
+                                                                                );
+                                                                            }}
+                                                                            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                                                            title="View GCash Receipt"
+                                                                        >
+                                                                            <svg
+                                                                                className="h-3 w-3"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    strokeWidth="2"
+                                                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                                                />
+                                                                                <path
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    strokeWidth="2"
+                                                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                                                />
+                                                                            </svg>
+                                                                            Receipt
+                                                                        </button>
+                                                                    )}
+                                                            </div>
                                                         </td>
                                                         <td className="p-4 text-xs font-bold text-slate-500">
                                                             {queue.released_at
@@ -2690,6 +2805,168 @@ export default function AdminDashboard() {
                                         {passwordForm.processing
                                             ? 'Sinasave...'
                                             : 'I-save ang Bagong Password'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* GCASH PAYMENT CONFIGURATION CARD (Phase 3.3) */}
+                        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                            <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">
+                                        GCash Payment Configuration
+                                    </h2>
+                                    <p className="text-xs font-semibold text-slate-400">
+                                        I-set up ang opisyal na GCash details at QR code para sa online transactions.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={submitGcashSettings} className="space-y-5">
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            GCash Account Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={gcashForm.data.gcash_name}
+                                            onChange={(e) =>
+                                                gcashForm.setData('gcash_name', e.target.value)
+                                            }
+                                            placeholder="Hal. Juan Dela Cruz (Brgy. Treasurer)"
+                                            required
+                                            className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none ${gcashForm.errors.gcash_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {gcashForm.errors.gcash_name && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {gcashForm.errors.gcash_name}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            GCash Mobile Number <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={gcashForm.data.gcash_number}
+                                            onChange={(e) =>
+                                                gcashForm.setData('gcash_number', e.target.value)
+                                            }
+                                            placeholder="Hal. 0912 345 6789"
+                                            required
+                                            className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none ${gcashForm.errors.gcash_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {gcashForm.errors.gcash_number && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {gcashForm.errors.gcash_number}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        GCash QR Code Image (PNG, JPG, JPEG - Max 2MB)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/jpg"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            gcashForm.setData('gcash_qr_image', file);
+                                            if (file) {
+                                                setQrPreview(URL.createObjectURL(file));
+                                            } else {
+                                                setQrPreview(null);
+                                            }
+                                        }}
+                                        className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200"
+                                    />
+                                    {gcashForm.errors.gcash_qr_image && (
+                                        <p className="mt-1 text-xs text-red-500">
+                                            {gcashForm.errors.gcash_qr_image}
+                                        </p>
+                                    )}
+
+                                    {/* QR Code Active / Preview Box */}
+                                    <div className="mt-4 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-inner">
+                                            {qrPreview ? (
+                                                <img
+                                                    src={qrPreview}
+                                                    alt="New QR Preview"
+                                                    className="h-full w-full object-contain"
+                                                />
+                                            ) : paymentSettings?.gcash_qr_path ? (
+                                                <img
+                                                    src={`/storage/${paymentSettings.gcash_qr_path}`}
+                                                    alt="Active GCash QR"
+                                                    className="h-full w-full object-contain"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="p-2 text-center text-[10px] font-bold text-slate-400">
+                                                    Walang QR Code
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800">
+                                                {qrPreview
+                                                    ? 'Bagong Piling QR Code (Handa nang i-save)'
+                                                    : paymentSettings?.gcash_qr_path
+                                                      ? 'Kasalukuyang Aktibong QR Code'
+                                                      : 'Wala pang naka-upload na GCash QR Code'}
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-slate-500">
+                                                Ito ang QR code na makikita ng mga residente sa kanilang dashboard kapag pumili ng GCash payment.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end border-t border-slate-100 pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={gcashForm.processing}
+                                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                                    >
+                                        <svg
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M5 13l4 4L19 7"
+                                            />
+                                        </svg>
+                                        {gcashForm.processing
+                                            ? 'Sinasave...'
+                                            : 'Save GCash Settings'}
                                     </button>
                                 </div>
                             </form>
