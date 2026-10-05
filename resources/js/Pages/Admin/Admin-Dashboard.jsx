@@ -160,13 +160,13 @@ export default function AdminDashboard() {
     };
 
     const submitPendingManualVerify = (user) => {
-        if (window.confirm(`Sigurado ka bang gusto mong manu-manong i-verify ang registration ni ${user.first_name}?`)) {
+        if (window.confirm(`Sigurado ka bang gusto mong manu-manong i-verify ang registration ni ${user.full_name}?`)) {
             router.post(route('admin.users.manual-verify', user.id), {}, { preserveScroll: true });
         }
     };
 
     const confirmRejectRegistration = (user) => {
-        if (window.confirm(`Sigurado ka bang gusto mong i-reject at burahin ang registration ni ${user.first_name}?`)) {
+        if (window.confirm(`Sigurado ka bang gusto mong i-reject at burahin ang registration ni ${user.full_name}?`)) {
             router.post(route('admin.users.reject-registration', user.id), {}, { preserveScroll: true });
         }
     };
