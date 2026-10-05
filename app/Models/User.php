@@ -23,6 +23,15 @@ class User extends Authenticatable
         return Attribute::make(get: fn () => Carbon::parse($this->date_of_birth)->age);
     }
 
+    public function getFullNameAttribute(): string
+    {
+        $middle = $this->middle_name ? " {$this->middle_name}" : '';
+        $suff = $this->suffix ? " {$this->suffix}" : '';
+        return "{$this->last_name}, {$this->first_name}{$middle}{$suff}";
+    }
+
+    protected $appends = ['full_name'];
+
     /**
      * The attributes that are mass assignable.
      */
