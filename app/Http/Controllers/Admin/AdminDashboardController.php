@@ -50,7 +50,11 @@ class AdminDashboardController extends Controller
         $queueSort = $request->get('queue_sort', 'oldest');
         $queueSearch = $request->get('queue_search', '');
 
-        $queueBase = ServiceRequest::withTrashed()->with(['user', 'documentType']);
+        // Sub-Task 4.1: Eliminate N+1 queries with strict eager loading & column projection
+        $queueBase = ServiceRequest::withTrashed()->with([
+            'user:id,first_name,last_name,middle_name,suffix,contact_number',
+            'documentType:id,name,processing_fee,processing_time_minutes',
+        ]);
 
         // THE FIX: Universal Search across relationships
         if (! empty($queueSearch)) {
@@ -83,17 +87,18 @@ class AdminDashboardController extends Controller
 
         $activeQueue = $activeQuery->paginate(15, ['*'], 'active_page')->withQueryString();
 
-        // THE FIX: Isinama ang rejected at canceled sa History
+        // THE FIX: Isinama ang rejected at canceled sa History (Sub-Task 4.1: Paginated with QueryString)
         $receivedQueue = (clone $queueBase)
             ->whereIn('status', ['received', 'rejected', 'canceled'])
-            ->paginate(15, ['*'], 'history_page');
+            ->paginate(15, ['*'], 'history_page')
+            ->withQueryString();
 
         // THE FIX: Kunin lahat ng dokumento para sa Management Table
         $documents = DocumentType::all();
 
-        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
+        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0 - Optimized with admin column projection)
         $auditSearch = $request->get('audit_search', '');
-        $auditQuery = AuditLog::with('admin')->latest();
+        $auditQuery = AuditLog::with('admin:id,first_name,last_name')->latest();
 
         if ($auditSearch) {
             $auditQuery->where(function ($q) use ($auditSearch) {
@@ -146,10 +151,11 @@ class AdminDashboardController extends Controller
         }
         $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
 
-        // PHASE 2.2: PENDING REGISTRATIONS (Failed OCR)
+        // PHASE 2.2: PENDING REGISTRATIONS (Failed OCR) - Sub-Task 4.1 Index-aware column projection
         $pendingUsers = User::where('role', 'resident')
             ->where('is_verified', 0)
             ->where('ocr_attempts', '>=', 5)
+            ->select(['id', 'first_name', 'last_name', 'middle_name', 'suffix', 'contact_number', 'date_of_birth', 'ocr_attempts', 'created_at'])
             ->latest()
             ->get();
 
