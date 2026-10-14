@@ -3932,8 +3932,13 @@ export default function AdminDashboard() {
                                     value={docForm.data.name}
                                     onChange={(e) => docForm.setData('name', e.target.value)}
                                     required
-                                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                    className={`w-full rounded-lg border px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 ${docForm.errors.name ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-slate-900'}`}
                                 />
+                                {docForm.errors.name && (
+                                    <p className="mt-1 text-xs font-bold text-red-600">
+                                        {docForm.errors.name}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
