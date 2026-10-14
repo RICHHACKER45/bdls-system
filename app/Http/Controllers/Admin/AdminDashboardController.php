@@ -50,7 +50,7 @@ class AdminDashboardController extends Controller
         $queueSort = $request->get('queue_sort', 'oldest');
         $queueSearch = $request->get('queue_search', '');
 
-        $queueBase = ServiceRequest::with(['user', 'documentType']);
+        $queueBase = ServiceRequest::withTrashed()->with(['user', 'documentType']);
 
         // THE FIX: Universal Search across relationships
         if (! empty($queueSearch)) {
@@ -72,7 +72,7 @@ class AdminDashboardController extends Controller
             $queueBase->oldest(); // Ascending queue
         }
 
-        $activeQuery = (clone $queueBase)->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
+        $activeQuery = (clone $queueBase)->whereNull('deleted_at')->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
 
         if ($queueStatus !== 'all') {
             $activeQuery->where('status', $queueStatus);
@@ -192,10 +192,37 @@ class AdminDashboardController extends Controller
         SmsService $smsService,
         EmailService $emailService,
     ) {
-        $request->validate(['status' => 'required|string']);
+        $newStatus = strtolower($request->status ?? '');
 
-        // THE LARAVEL WAY FIX: I-force sa lowercase bago i-save sa database
-        $newStatus = strtolower($request->status);
+        if ($newStatus === 'rejected') {
+            $request->validate([
+                'status' => 'required|string',
+                'rejection_reason' => 'required|string|max:500',
+            ]);
+
+            $serviceRequest->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+
+            AuditLog::create([
+                'admin_id' => Auth::id(),
+                'action' => 'REQUEST_REJECTED',
+                'description' => "Nai-reject ang request {$serviceRequest->queue_number}. Dahilan: {$request->rejection_reason}",
+            ]);
+
+            $reasonTruncated = Str::limit($request->rejection_reason, 40);
+            $message = "Ang iyong request (Queue #{$serviceRequest->queue_number}) ay na-reject. Dahilan: {$reasonTruncated}. Maaari kayong mag-pasa muli sa portal.";
+
+            ProcessRequestUpdate::dispatch($serviceRequest, $message);
+
+            event(new AdminDashboardUpdated);
+            event(new ResidentRequestUpdated($serviceRequest, $message));
+
+            return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at nai-record ang dahilan.');
+        }
+
+        $request->validate(['status' => 'required|string']);
 
         $serviceRequest->status = $newStatus;
         $message = '';
@@ -208,33 +235,12 @@ class AdminDashboardController extends Controller
             $serviceRequest->released_at = now();
             $serviceRequest->released_by_admin_id = Auth::id();
             $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
-        } elseif ($newStatus === 'rejected') {
-            $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
         }
 
         $serviceRequest->save();
 
-        // I-skip ang pag-text kung marked as received na para hindi masayang ang SMS API Budget
         if ($message !== '' && $newStatus !== 'received') {
-            $smsService->sendSms(
-                $serviceRequest->user_id,
-                $serviceRequest->user->contact_number,
-                $message,
-            );
-
-            // 2. Ipadala ang Email (Kung verified at naka-opt-in ang residente)
-            if (
-                $serviceRequest->user->email_verified_at &&
-                $serviceRequest->user->wants_email_notification
-            ) {
-                $emailService->sendEmail(
-                    $serviceRequest->user_id,
-                    $serviceRequest->user->email,
-                    'BDLS Request Update: '.strtoupper($newStatus),
-                    $message,
-                    $serviceRequest->id,
-                );
-            }
+            ProcessRequestUpdate::dispatch($serviceRequest, $message);
         }
 
         // SYSTEM AUDIT LOG RECORDER (Process 6.0)
@@ -247,18 +253,9 @@ class AdminDashboardController extends Controller
         ]);
 
         // Sabihan ang mismong residente na nag-iba na ang status niya in real-time
-        event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
+        event(new ResidentRequestUpdated($serviceRequest, $message));
         // Sabihan din ang sariling dashboard na mag-update ng listahan at counts
         event(new AdminDashboardUpdated);
-
-        // ==========================================
-        // THE FIX: Soft Delete for Rejected Requests
-        // ==========================================
-        if ($newStatus === 'rejected') {
-            $serviceRequest->delete(); // Ligtas na itatago ng Laravel ang request
-
-            return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at inalis sa listahan.');
-        }
 
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
@@ -648,19 +645,35 @@ class AdminDashboardController extends Controller
      */
     public function batchUpdateStatus(Request $request)
     {
-        $request->validate([
+        $newStatus = strtolower($request->status ?? '');
+
+        $rules = [
             'request_ids' => 'required|array',
             'request_ids.*' => 'exists:service_requests,id',
             'status' => 'required|string',
-        ]);
+        ];
 
-        $newStatus = strtolower($request->status);
+        if ($newStatus === 'rejected') {
+            $rules['rejection_reason'] = 'required|string|max:500';
+        }
+
+        $request->validate($rules);
+
         $requests = ServiceRequest::with('user')->whereIn('id', $request->request_ids)->get();
         $adminId = Auth::id();
         $processedCount = 0;
 
         foreach ($requests as $serviceRequest) {
-            $serviceRequest->status = $newStatus;
+            $updateData = ['status' => $newStatus];
+            if ($newStatus === 'rejected') {
+                $updateData['rejection_reason'] = $request->rejection_reason;
+            } elseif ($newStatus === 'released') {
+                $updateData['released_at'] = now();
+                $updateData['released_by_admin_id'] = $adminId;
+            }
+
+            $serviceRequest->update($updateData);
+
             $message = '';
 
             if ($newStatus === 'processing') {
@@ -668,14 +681,11 @@ class AdminDashboardController extends Controller
             } elseif ($newStatus === 'for_interview') {
                 $message = "Queue {$serviceRequest->queue_number}: Kailangan ng panayam (interview). Mangyaring pumunta sa hall.";
             } elseif ($newStatus === 'released') {
-                $serviceRequest->released_at = now();
-                $serviceRequest->released_by_admin_id = $adminId;
                 $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
             } elseif ($newStatus === 'rejected') {
-                $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
+                $reasonTruncated = Str::limit($request->rejection_reason, 40);
+                $message = "Ang iyong request (Queue #{$serviceRequest->queue_number}) ay na-reject. Dahilan: {$reasonTruncated}. Maaari kayong mag-pasa muli sa portal.";
             }
-
-            $serviceRequest->save();
 
             if ($message !== '' && $newStatus !== 'received') {
                 // THE FIX: Magdadagdag ng 2 segundo na delay bawat request para iwas spam block
@@ -684,21 +694,18 @@ class AdminDashboardController extends Controller
             }
 
             // Real-time Push via WebSockets
-            event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
-
-            // Soft Delete kung rejected
-            if ($newStatus === 'rejected') {
-                $serviceRequest->delete();
-            }
+            event(new ResidentRequestUpdated($serviceRequest, $message));
 
             $processedCount++;
         }
 
         // SYSTEM AUDIT LOG RECORDER
         AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'BATCH_UPDATE',
-            'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
+            'admin_id' => $adminId,
+            'action' => $newStatus === 'rejected' ? 'BATCH_REJECT' : 'BATCH_UPDATE',
+            'description' => $newStatus === 'rejected'
+                ? "Sabay-sabay na ini-reject ang {$processedCount} requests. Dahilan: {$request->rejection_reason}"
+                : "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
         ]);
 
         event(new AdminDashboardUpdated);

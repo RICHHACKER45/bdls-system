@@ -1426,6 +1426,37 @@ export default function Dashboard(props) {
                                                                     req.created_at
                                                                 ).toLocaleString()}
                                                             </p>
+                                                            {req.status === 'rejected' &&
+                                                                req.rejection_reason && (
+                                                                    <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 text-left shadow-sm">
+                                                                        <div className="flex items-start gap-2.5">
+                                                                            <svg
+                                                                                className="mt-0.5 h-4 w-4 shrink-0 text-rose-600"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    strokeWidth="2"
+                                                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                                                />
+                                                                            </svg>
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-wider text-rose-700 uppercase">
+                                                                                    Dahilan ng
+                                                                                    Pag-reject:
+                                                                                </p>
+                                                                                <p className="mt-1 text-xs font-semibold text-rose-950">
+                                                                                    {
+                                                                                        req.rejection_reason
+                                                                                    }
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1528,6 +1559,37 @@ export default function Dashboard(props) {
                                                                     req.created_at
                                                                 ).toLocaleString()}
                                                             </p>
+                                                            {req.status === 'rejected' &&
+                                                                req.rejection_reason && (
+                                                                    <div className="mt-3 rounded-xl border border-rose-200 bg-white p-3.5 text-left shadow-sm">
+                                                                        <div className="flex items-start gap-2.5">
+                                                                            <svg
+                                                                                className="mt-0.5 h-4 w-4 shrink-0 text-rose-600"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    strokeWidth="2"
+                                                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                                                />
+                                                                            </svg>
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-wider text-rose-700 uppercase">
+                                                                                    Dahilan ng
+                                                                                    Pag-reject:
+                                                                                </p>
+                                                                                <p className="mt-1 text-xs font-semibold text-rose-950">
+                                                                                    {
+                                                                                        req.rejection_reason
+                                                                                    }
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                         </div>
                                                     </div>
                                                 </div>
