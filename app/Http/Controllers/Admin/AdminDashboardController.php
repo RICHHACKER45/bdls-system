@@ -98,7 +98,37 @@ class AdminDashboardController extends Controller
 
         // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0 - Optimized with admin column projection)
         $auditSearch = $request->get('audit_search', '');
-        $auditQuery = AuditLog::with('admin:id,first_name,last_name')->latest();
+
+        // Sub-Task 4.2: Audit action category filter (all, request, kyc, settings, broadcast)
+        $auditActionFilter = $request->query('audit_action', 'all');
+
+        $auditQuery = AuditLog::with('admin:id,first_name,last_name')
+            ->when($auditActionFilter && $auditActionFilter !== 'all', function ($query) use ($auditActionFilter) {
+                match ($auditActionFilter) {
+                    'request' => $query->whereIn('action', [
+                        'STATUS_UPDATE',
+                        'REQUEST_REJECTED',
+                        'BATCH_UPDATE',
+                        'BATCH_REJECT',
+                        'WALKIN_ENCODED',
+                        'PRINT_LOGBOOK',
+                    ]),
+                    'kyc' => $query->whereIn('action', [
+                        'MANUAL_VERIFY',
+                        'MANUAL_VERIFY_PENDING',
+                        'REJECT_REGISTRATION',
+                        'PRINT_ACCOUNTS_LOG',
+                    ]),
+                    'settings' => $query->whereIn('action', [
+                        'UPDATE_PAYMENT_SETTINGS',
+                    ]),
+                    'broadcast' => $query->whereIn('action', [
+                        'BROADCAST_SMS',
+                    ]),
+                    default => $query->where('action', 'like', "%{$auditActionFilter}%"),
+                };
+            })
+            ->latest();
 
         if ($auditSearch) {
             $auditQuery->where(function ($q) use ($auditSearch) {
@@ -172,6 +202,7 @@ class AdminDashboardController extends Controller
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
             'auditLogs' => $auditLogs,
+            'auditFilter' => $auditActionFilter, // Sub-Task 4.2: active audit filter state
             'analyticsSummary' => $analyticsSummary,
             'censusRecords' => $censusRecords,
             'residentAccounts' => $residentAccounts,

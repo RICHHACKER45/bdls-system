@@ -52,6 +52,63 @@ const calculateAge = (dobString) => {
     return Math.abs(age_dt.getUTCFullYear() - 1970);
 };
 
+// Sub-Task 4.2: Maps an audit action string to its category badge styling (Request, KYC, Settings, Broadcast)
+const getAuditBadgeClass = (action) => {
+    if (
+        [
+            'STATUS_UPDATE',
+            'REQUEST_REJECTED',
+            'BATCH_UPDATE',
+            'BATCH_REJECT',
+            'WALKIN_ENCODED',
+            'PRINT_LOGBOOK',
+        ].includes(action)
+    ) {
+        return 'border border-blue-700 bg-blue-600 text-white';
+    }
+    if (
+        [
+            'MANUAL_VERIFY',
+            'MANUAL_VERIFY_PENDING',
+            'REJECT_REGISTRATION',
+            'PRINT_ACCOUNTS_LOG',
+        ].includes(action)
+    ) {
+        return 'border border-purple-700 bg-purple-600 text-white';
+    }
+    if (action === 'UPDATE_PAYMENT_SETTINGS') {
+        return 'border border-amber-600 bg-amber-500 text-white';
+    }
+    if (action === 'BROADCAST_SMS') {
+        return 'border border-emerald-700 bg-emerald-600 text-white';
+    }
+    // Fallback for any unmapped/legacy action strings
+    return 'border border-slate-700 bg-slate-600 text-white';
+};
+
+// Maps raw audit action strings to human-readable labels
+const AUDIT_ACTION_LABELS = {
+    STATUS_UPDATE: 'Status Updated',
+    REQUEST_REJECTED: 'Request Rejected',
+    BATCH_UPDATE: 'Batch Status Update',
+    BATCH_REJECT: 'Batch Rejection',
+    WALKIN_ENCODED: 'Walk-in Encoded',
+    PRINT_LOGBOOK: 'Logbook Printed',
+    MANUAL_VERIFY: 'Manual Verification',
+    MANUAL_VERIFY_PENDING: 'Pending Account Verified',
+    REJECT_REGISTRATION: 'Registration Rejected',
+    PRINT_ACCOUNTS_LOG: 'Accounts Log Printed',
+    UPDATE_PAYMENT_SETTINGS: 'Payment Settings Updated',
+    BROADCAST_SMS: 'SMS Broadcast Sent',
+};
+
+const formatAuditAction = (action) =>
+    AUDIT_ACTION_LABELS[action] ||
+    String(action || '')
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function AdminDashboard() {
     // Idagdag ito malapit sa ibang useEffect sa Admin-Dashboard.jsx
     useEffect(() => {
@@ -78,6 +135,7 @@ export default function AdminDashboard() {
         receivedQueue = { data: [], links: [] },
         documents = [],
         auditLogs = { data: [], links: [] },
+        auditFilter = 'all', // Sub-Task 4.2: active audit action category
         analyticsSummary = {},
         censusRecords = { data: [], links: [] },
         residentAccounts = { data: [], links: [] },
@@ -739,11 +797,30 @@ export default function AdminDashboard() {
         e.preventDefault();
         router.get(
             route('admin.dashboard'),
-            { audit_search: auditSearch },
+            // Keep the active category filter when searching (Sub-Task 4.2)
+            { audit_search: auditSearch, audit_action: auditFilter },
             {
                 preserveState: true,
                 preserveScroll: true,
-                only: ['auditLogs', 'filters'],
+                only: ['auditLogs', 'auditFilter', 'filters'],
+            }
+        );
+    };
+
+    // Sub-Task 4.2: Change audit action category. preserveState keeps the active tab (no jump/flash);
+    // omitting audit_page resets pagination to page 1 for the new filter.
+    const handleAuditActionFilter = (value) => {
+        router.get(
+            route('admin.dashboard'),
+            {
+                ...(auditSearch ? { audit_search: auditSearch } : {}),
+                audit_action: value,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: ['auditLogs', 'auditFilter', 'filters'],
             }
         );
     };
@@ -2350,24 +2427,48 @@ export default function AdminDashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                     System Audit Logs
                                 </h2>
-                                <form
-                                    onSubmit={handleAuditSearch}
-                                    className="flex w-full items-center gap-2 sm:w-auto"
-                                >
-                                    <input
-                                        type="text"
-                                        placeholder="I-search ang logs..."
-                                        value={auditSearch}
-                                        onChange={(e) => setAuditSearch(e.target.value)}
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 sm:w-64"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-slate-800"
+                                <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
+                                    {/* Sub-Task 4.2: Filter by Action category */}
+                                    <select
+                                        id="audit-action-filter"
+                                        aria-label="Salain ayon sa Aksyon (Filter by Action)"
+                                        value={auditFilter}
+                                        onChange={(e) => handleAuditActionFilter(e.target.value)}
+                                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500"
                                     >
-                                        Hanapin
-                                    </button>
-                                </form>
+                                        <option value="all">Lahat ng Aksyon (All Actions)</option>
+                                        <option value="request">
+                                            Mga Request at Pila (Queue & Requests)
+                                        </option>
+                                        <option value="kyc">
+                                            KYC at Beripikasyon (KYC & Accounts)
+                                        </option>
+                                        <option value="settings">
+                                            Mga Setting at GCash (Settings & GCash)
+                                        </option>
+                                        <option value="broadcast">
+                                            Mga Broadcast at SMS (Broadcast & SMS)
+                                        </option>
+                                    </select>
+                                    <form
+                                        onSubmit={handleAuditSearch}
+                                        className="flex w-full items-center gap-2 sm:w-auto"
+                                    >
+                                        <input
+                                            type="text"
+                                            placeholder="I-search ang logs..."
+                                            value={auditSearch}
+                                            onChange={(e) => setAuditSearch(e.target.value)}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 sm:w-64"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-slate-800"
+                                        >
+                                            Hanapin
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
                                 <table className="relative w-full border-collapse text-left">
@@ -2394,8 +2495,11 @@ export default function AdminDashboard() {
                                                         {log.admin?.last_name || ''}
                                                     </td>
                                                     <td className="p-4">
-                                                        <span className="rounded bg-slate-900 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">
-                                                            {log.action}
+                                                        {/* Sub-Task 4.2: Category-colored action badge */}
+                                                        <span
+                                                            className={`rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${getAuditBadgeClass(log.action)}`}
+                                                        >
+                                                            {formatAuditAction(log.action)}
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-xs font-medium text-slate-600">
