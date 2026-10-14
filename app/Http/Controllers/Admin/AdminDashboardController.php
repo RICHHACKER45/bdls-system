@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
@@ -613,10 +614,12 @@ class AdminDashboardController extends Controller
     public function storeDocument(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:document_types,name',
             'requirements_description' => 'required|string',
             'processing_fee' => 'required|numeric|min:0',
             'processing_time_minutes' => 'required|integer|min:1',
+        ], [
+            'name.unique' => 'Mayroon nang umiiral na dokumento na may ganitong pangalan.',
         ]);
 
         DocumentType::create([
@@ -641,10 +644,17 @@ class AdminDashboardController extends Controller
     public function updateDocument(Request $request, DocumentType $documentType)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('document_types', 'name')->ignore($documentType->id),
+            ],
             'requirements_description' => 'required|string',
             'processing_fee' => 'required|numeric|min:0',
             'processing_time_minutes' => 'required|integer|min:1',
+        ], [
+            'name.unique' => 'Mayroon nang ibang dokumento na may ganitong pangalan.',
         ]);
 
         $documentType->update($request->only(
