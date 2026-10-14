@@ -112,6 +112,10 @@ export default function AdminDashboard() {
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [selectedReceiptPath, setSelectedReceiptPath] = useState('');
     const [manualVerifyConfirmOpen, setManualVerifyConfirmOpen] = useState(false);
+    // Modal states for Pending Registrations (Failed OCR) manual verification and rejection
+    const [pendingVerifyModalOpen, setPendingVerifyModalOpen] = useState(false);
+    const [pendingRejectModalOpen, setPendingRejectModalOpen] = useState(false);
+    const [selectedPendingUser, setSelectedPendingUser] = useState(null);
 
     // ADD ACTION HANDLERS
     const triggerManualVerify = (account) => {
@@ -160,28 +164,45 @@ export default function AdminDashboard() {
         });
     };
 
-    const submitPendingManualVerify = (user) => {
-        if (
-            window.confirm(
-                `Sigurado ka bang gusto mong manu-manong i-verify ang registration ni ${user.full_name}?`
-            )
-        ) {
-            router.post(route('admin.users.manual-verify', user.id), {}, { preserveScroll: true });
-        }
+    // Triggers and handlers for Pending Registration action confirmation modals (replacing window.confirm)
+    const triggerPendingManualVerify = (user) => {
+        setSelectedPendingUser(user);
+        setPendingVerifyModalOpen(true);
     };
 
-    const confirmRejectRegistration = (user) => {
-        if (
-            window.confirm(
-                `Sigurado ka bang gusto mong i-reject at burahin ang registration ni ${user.full_name}?`
-            )
-        ) {
-            router.post(
-                route('admin.users.reject-registration', user.id),
-                {},
-                { preserveScroll: true }
-            );
-        }
+    const submitPendingManualVerify = () => {
+        if (!selectedPendingUser) return;
+        router.post(
+            route('admin.users.manual-verify', selectedPendingUser.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setPendingVerifyModalOpen(false);
+                    setSelectedPendingUser(null);
+                },
+            }
+        );
+    };
+
+    const triggerPendingReject = (user) => {
+        setSelectedPendingUser(user);
+        setPendingRejectModalOpen(true);
+    };
+
+    const submitPendingReject = () => {
+        if (!selectedPendingUser) return;
+        router.post(
+            route('admin.users.reject-registration', selectedPendingUser.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setPendingRejectModalOpen(false);
+                    setSelectedPendingUser(null);
+                },
+            }
+        );
     };
 
     const [residentFormMode, setResidentFormMode] = useState('add'); // 'add' or 'edit'
@@ -397,6 +418,10 @@ export default function AdminDashboard() {
 
     const submitBatchAction = (newStatus, specificIds) => {
         if (!specificIds || specificIds.length === 0) return;
+        if (newStatus === 'rejected') {
+            handleOpenRejectModal(specificIds);
+            return;
+        }
         setBatchModal({ isOpen: true, nextStatus: newStatus, specificIds });
     };
 
@@ -476,6 +501,84 @@ export default function AdminDashboard() {
     const triggerToast = (msg) => {
         setLocalToast({ visible: true, message: msg });
         setTimeout(() => setLocalToast({ visible: false, message: '' }), 5000);
+    };
+
+    // --- REJECTION MODAL STATE & PIPELINE (Sub-Task 3.4) ---
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [targetRequestForRejection, setTargetRequestForRejection] = useState(null); // holds request object or array of IDs
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
+    const [rejectionError, setRejectionError] = useState('');
+
+    const handleOpenRejectModal = (request) => {
+        setTargetRequestForRejection(request);
+        setRejectionReason('');
+        setRejectionError('');
+        setRejectionModalOpen(true);
+    };
+
+    const submitRejection = (e) => {
+        e.preventDefault();
+        if (!rejectionReason.trim()) {
+            setRejectionError('Mangyaring magbigay ng dahilan para sa pag-reject.');
+            return;
+        }
+        setIsSubmittingRejection(true);
+        setRejectionError('');
+
+        if (Array.isArray(targetRequestForRejection)) {
+            router.post(
+                route('admin.request.batch_update'),
+                {
+                    request_ids: targetRequestForRejection,
+                    status: 'rejected',
+                    rejection_reason: rejectionReason.trim(),
+                },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setRejectionModalOpen(false);
+                        setTargetRequestForRejection(null);
+                        setRejectionReason('');
+                        setIsSubmittingRejection(false);
+                        setSelectedRequests([]);
+                        triggerToast('Matagumpay na nai-reject ang mga napiling requests.');
+                    },
+                    onError: (errs) => {
+                        setIsSubmittingRejection(false);
+                        setRejectionError(
+                            errs.rejection_reason || 'May naganap na error sa pag-reject.'
+                        );
+                    },
+                }
+            );
+        } else if (targetRequestForRejection?.id) {
+            router.post(
+                route('admin.request.update_status', targetRequestForRejection.id),
+                {
+                    status: 'rejected',
+                    rejection_reason: rejectionReason.trim(),
+                },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setRejectionModalOpen(false);
+                        setTargetRequestForRejection(null);
+                        setRejectionReason('');
+                        setIsSubmittingRejection(false);
+                        triggerToast(
+                            `Nai-reject ang request ${targetRequestForRejection.queue_number}.`
+                        );
+                    },
+                    onError: (errs) => {
+                        setIsSubmittingRejection(false);
+                        setRejectionError(
+                            errs.rejection_reason || 'May naganap na error sa pag-reject.'
+                        );
+                    },
+                }
+            );
+        }
     };
 
     // ==========================================
@@ -835,6 +938,46 @@ export default function AdminDashboard() {
                                     <option value="newest">Pila: Bago (Descending)</option>
                                 </select>
                             </div>
+
+                            {/* BATCH ACTION TOOLBAR (Sub-Task 3.4) */}
+                            {selectedRequests.length > 0 && (
+                                <div className="animate-in fade-in mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50/90 p-3.5 shadow-sm">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-black text-white shadow-sm">
+                                            {selectedRequests.length}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-800">
+                                            request(s) napili para sa Batch Actions
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                submitBatchAction('processing', selectedRequests)
+                                            }
+                                            className="rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-black tracking-wider text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                        >
+                                            I-proseso Lahat
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenRejectModal(selectedRequests)}
+                                            className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-wider text-red-600 uppercase shadow-sm transition-all hover:bg-red-50 active:scale-95"
+                                        >
+                                            I-reject ang mga Napili
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedRequests([])}
+                                            className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800"
+                                        >
+                                            Kanselahin
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                                 <div className="relative max-h-[60vh] overflow-y-auto">
                                     <table className="w-full border-collapse text-left">
@@ -1130,15 +1273,11 @@ export default function AdminDashboard() {
                                                                             rawStatus ===
                                                                                 'processing') && (
                                                                             <button
+                                                                                type="button"
                                                                                 onClick={() =>
-                                                                                    setStatusModal({
-                                                                                        isOpen: true,
-                                                                                        requestId:
-                                                                                            queue.id,
-                                                                                        nextStatus:
-                                                                                            'rejected',
-                                                                                        label: 'Reject Request',
-                                                                                    })
+                                                                                    handleOpenRejectModal(
+                                                                                        queue
+                                                                                    )
                                                                                 }
                                                                                 className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
                                                                             >
@@ -1373,6 +1512,19 @@ export default function AdminDashboard() {
                                                                                         : 'Walang karagdagang detalye'}
                                                                                 </p>
                                                                             </div>
+                                                                            {queue.rejection_reason && (
+                                                                                <div className="col-span-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                                                                                    <p className="text-[10px] font-black tracking-widest text-red-600 uppercase">
+                                                                                        Dahilan ng
+                                                                                        Pag-reject:
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs font-semibold text-slate-800">
+                                                                                        {
+                                                                                            queue.rejection_reason
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </td>
@@ -2094,7 +2246,7 @@ export default function AdminDashboard() {
                             <div className="animate-in fade-in p-6 duration-300">
                                 <div className="mb-6">
                                     <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">
-                                        Pending Registrations (Failed OCR)
+                                        Pending Registrations (Failed ID Verification)
                                     </h3>
                                     <p className="mt-1 text-xs text-slate-500">
                                         Mga residenteng hindi nakapasa sa automated ID verification.
@@ -2107,7 +2259,7 @@ export default function AdminDashboard() {
                                         <thead>
                                             <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
                                                 <th className="p-4 font-black">
-                                                    Pangalan & OCR Status
+                                                    Pangalan & Verification Status
                                                 </th>
                                                 <th className="p-4 font-black">
                                                     ID Verification Data
@@ -2130,8 +2282,8 @@ export default function AdminDashboard() {
                                                             </p>
                                                             <div className="mt-1 flex items-center gap-2">
                                                                 <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">
-                                                                    Failed OCR ({user.ocr_attempts}{' '}
-                                                                    attempts)
+                                                                    Failed ID Verification (
+                                                                    {user.ocr_attempts} attempts)
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -2147,17 +2299,21 @@ export default function AdminDashboard() {
                                                             </p>
                                                         </td>
                                                         <td className="flex justify-end gap-2 p-4 text-right">
+                                                            {/* Interactive Modal Trigger for Manual Verification */}
                                                             <button
+                                                                type="button"
                                                                 onClick={() =>
-                                                                    submitPendingManualVerify(user)
+                                                                    triggerPendingManualVerify(user)
                                                                 }
                                                                 className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-[10px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
                                                             >
                                                                 Manual Verify
                                                             </button>
+                                                            {/* Interactive Modal Trigger for Reject & Delete */}
                                                             <button
+                                                                type="button"
                                                                 onClick={() =>
-                                                                    confirmRejectRegistration(user)
+                                                                    triggerPendingReject(user)
                                                                 }
                                                                 className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
                                                             >
@@ -3089,6 +3245,165 @@ export default function AdminDashboard() {
 
             {/* --- MODALS --- */}
 
+            {/* --- REJECTION REASON MODAL (Sub-Task 3.4) --- */}
+            {rejectionModalOpen && targetRequestForRejection && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-red-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
+                        <div className="mb-6 flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 shadow-sm">
+                                <svg
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                    Kumpirmahin ang Pag-Reject
+                                </h3>
+                                <p className="mt-1 text-xs font-bold text-slate-500">
+                                    {Array.isArray(targetRequestForRejection) ? (
+                                        <>
+                                            Sasailalim sa rejection ang{' '}
+                                            <span className="font-black text-red-600">
+                                                {targetRequestForRejection.length} napiling
+                                                request(s)
+                                            </span>
+                                            .
+                                        </>
+                                    ) : (
+                                        <>
+                                            Queue Ticket:{' '}
+                                            <span className="font-black text-red-600">
+                                                #{targetRequestForRejection.queue_number}
+                                            </span>{' '}
+                                            —{' '}
+                                            {targetRequestForRejection.user?.full_name ||
+                                                'Residente'}
+                                        </>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="mb-4 text-xs font-medium text-slate-600">
+                            Mahalaga: Ang dahilan ay matatanggap ng residente via SMS at makikita sa
+                            kanilang personal tracking portal. Siguraduhing malinaw at nakakatulong
+                            ang paliwanag.
+                        </p>
+
+                        <form onSubmit={submitRejection} className="space-y-4">
+                            <div>
+                                <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                    Dahilan ng Pag-reject <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    rows="4"
+                                    value={rejectionReason}
+                                    onChange={(e) => {
+                                        setRejectionReason(e.target.value);
+                                        if (rejectionError) setRejectionError('');
+                                    }}
+                                    placeholder="Halimbawa: Malabo o hindi tugma ang ID na isinumite, o kulang ang kinakailangang residency requirements."
+                                    maxLength="500"
+                                    className={`w-full rounded-xl border bg-slate-50 p-4 text-sm font-medium text-slate-800 placeholder-slate-400 transition-all outline-none focus:bg-white focus:ring-2 ${
+                                        rejectionError
+                                            ? 'border-red-500 focus:ring-red-500'
+                                            : 'border-slate-300 focus:border-red-600 focus:ring-red-600'
+                                    }`}
+                                    required
+                                />
+                                <div className="mt-1.5 flex items-center justify-between">
+                                    {rejectionError ? (
+                                        <p className="text-xs font-bold text-red-600">
+                                            {rejectionError}
+                                        </p>
+                                    ) : (
+                                        <span className="text-[10px] font-semibold text-slate-400">
+                                            Required (Maximum 500 characters)
+                                        </span>
+                                    )}
+                                    <span className="font-mono text-[10px] text-slate-400">
+                                        {rejectionReason.length}/500
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRejectionModalOpen(false);
+                                        setTargetRequestForRejection(null);
+                                        setRejectionReason('');
+                                        setRejectionError('');
+                                    }}
+                                    disabled={isSubmittingRejection}
+                                    className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                                >
+                                    Kanselahin
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingRejection}
+                                    className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSubmittingRejection ? (
+                                        <>
+                                            <svg
+                                                className="h-4 w-4 animate-spin text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8v8H4z"
+                                                ></path>
+                                            </svg>
+                                            <span>Ipinoproseso...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                            <span>I-reject ang Request</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Suspend Account Modal */}
             {suspendModalOpen && selectedAccount && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
@@ -4009,7 +4324,7 @@ export default function AdminDashboard() {
 
             {/* GCASH RECEIPT VIEWER LIGHTBOX */}
             {receiptModalOpen && selectedReceiptPath && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
                             <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">
@@ -4055,7 +4370,7 @@ export default function AdminDashboard() {
 
             {/* MANUAL KYC OVERRIDE CONFIRMATION MODAL */}
             {manualVerifyConfirmOpen && selectedAccount && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -4077,15 +4392,11 @@ export default function AdminDashboard() {
                                 Manual Verify Resident?
                             </h3>
                             <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Sigurado ka bang gusto mong manu-manong i-verify at i-approve si{' '}
+                                Sigurado ka bang gusto mong i-verify at i-approve si{' '}
                                 <strong className="text-slate-900">
                                     {selectedAccount.first_name} {selectedAccount.last_name}
                                 </strong>
                                 ?
-                            </p>
-                            <p className="mt-2 text-xs text-slate-400 italic">
-                                Ito ay bypass sa automated Google Vision scanner kung nagpakita na
-                                sila ng valid ID sa hall.
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
@@ -4105,6 +4416,121 @@ export default function AdminDashboard() {
                                 className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
                             >
                                 Approve and Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PENDING REGISTRATION MANUAL VERIFY CONFIRMATION MODAL */}
+            {pendingVerifyModalOpen && selectedPendingUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Manual Verify Registration?
+                            </h3>
+                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
+                                Sigurado ka bang gusto mong manu-manong i-verify ang registration ni{' '}
+                                <strong className="text-slate-900">
+                                    {selectedPendingUser.full_name ||
+                                        `${selectedPendingUser.first_name} ${selectedPendingUser.last_name}`}
+                                </strong>
+                                ?
+                            </p>
+
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPendingVerifyModalOpen(false);
+                                    setSelectedPendingUser(null);
+                                }}
+                                className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitPendingManualVerify}
+                                className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
+                            >
+                                Approve and Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PENDING REGISTRATION REJECT & DELETE CONFIRMATION MODAL */}
+            {pendingRejectModalOpen && selectedPendingUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Reject & Delete Registration?
+                            </h3>
+                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
+                                Sigurado ka bang gusto mong i-reject at burahin ang registration ni{' '}
+                                <strong className="text-slate-900">
+                                    {selectedPendingUser.full_name ||
+                                        `${selectedPendingUser.first_name} ${selectedPendingUser.last_name}`}
+                                </strong>
+                                ?
+                            </p>
+                            <p className="mt-2 text-xs font-bold text-red-500">
+                                Ang aksyong ito ay permanente at hindi na mababawi. Mabubura ang
+                                record ng aplikasyon.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPendingRejectModalOpen(false);
+                                    setSelectedPendingUser(null);
+                                }}
+                                className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitPendingReject}
+                                className="w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                            >
+                                Reject & Delete Permanently
                             </button>
                         </div>
                     </div>
