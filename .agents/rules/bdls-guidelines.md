@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # BDLS Development Guidelines (React + Inertia.js Architecture)
 
 **AI INSTRUCTION / LANGUAGE CONTEXT:** STRICTLY ENGLISH. All code comments, AI-generated code, and system modifications must adhere to these English guidelines to prevent multi-language confusion in the codebase.
