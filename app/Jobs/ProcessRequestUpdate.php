@@ -58,12 +58,14 @@ class ProcessRequestUpdate implements ShouldQueue
             );
 
             // 2. Ipadala ang Email (Kung naka-verify at opt-in)
-            if ($user->email_verified_at && $user->wants_email_notification) {
-                $emailService->sendEmail(
-                    $user->id,
+            if ($user->email_verified_at && $user->wants_email_notification && $user->email) {
+                $emailService->sendStatusUpdate(
                     $user->email,
-                    'BDLS Request Update',
+                    $user->first_name ?? 'Residente',
+                    (string) $this->serviceRequest->queue_number,
+                    (string) $this->serviceRequest->status,
                     $this->message,
+                    $user->id,
                     $this->serviceRequest->id
                 );
             }
