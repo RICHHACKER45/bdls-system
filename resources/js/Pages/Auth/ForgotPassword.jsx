@@ -13,7 +13,7 @@ export default function ForgotPassword({ errors }) {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
-            <Head title="Forgot Password - BDLS" />
+            <Head title="Forgot Password" />
 
             {/* BACK BUTTON */}
             <div className="absolute top-4 left-4 md:top-8 md:left-8">

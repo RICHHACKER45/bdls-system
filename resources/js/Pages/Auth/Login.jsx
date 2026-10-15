@@ -14,7 +14,7 @@ export default function Login({ errors, session }) {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 font-sans text-slate-900 antialiased">
-            <Head title="BDLS - Login" />
+            <Head title="Login" />
 
             <div className="absolute top-4 left-4 md:top-8 md:left-8">
                 <Link

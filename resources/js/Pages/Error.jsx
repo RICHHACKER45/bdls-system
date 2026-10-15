@@ -30,7 +30,7 @@ export default function ErrorPage({ status }) {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900">
-            <Head title={`${title} - BDLS`} />
+            <Head title={title} />
 
             <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl">
                 {/* Warning Icon (Red Accent) */}

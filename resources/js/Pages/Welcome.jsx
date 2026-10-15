@@ -49,7 +49,7 @@ export default function Welcome() {
 
     return (
         <div className="bg-slate-50 font-sans text-slate-900 antialiased">
-            <Head title="Welcome - Barangay Doña Lucia" />
+            <Head title="Welcome" />
 
             <div className="fixed top-0 left-0 z-50 w-full">
                 {/* LAUNCH NOTICE BANNER
