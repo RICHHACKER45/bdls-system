@@ -5,7 +5,7 @@ nixPkgs = ["php83", "nodejs", "bun"] # Tinitiyak na kasama ang Bun runtime at PH
 
 # ⚡ ANG KRITIKAL NA ISINELYONG EXTENSION (HATAW!)
 [providers.php]
-extensions = ["apcu", "pcntl"] # Tinitiyak na bago mag-build, compile na agad ang APCu at real-time process monitoring layers
+extensions = ["apcu", "pcntl", "redis",] # Tinitiyak na bago mag-build, compile na agad ang APCu at real-time process monitoring layers
 
 [phases.build]
 cmds = [
