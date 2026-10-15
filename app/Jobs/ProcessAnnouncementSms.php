@@ -16,43 +16,61 @@ class ProcessAnnouncementSms implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public mixed $recipients;
+    public string $message;
+
     /**
-     * THE LARAVEL WAY: PHP 8 Constructor Property Promotion
-     * Ipapasa natin ang Residente at ang Mensahe papunta sa background worker.
+     * Create a new job instance.
+     * Supports a single User, contact string, or array/collection of recipients.
      */
     public function __construct(
-        public User $resident,
-        public string $messageBody
-    ) {}
+        mixed $recipients,
+        ?string $message = null
+    ) {
+        $this->recipients = $recipients;
+        $this->message = $message ?? '';
+    }
 
     /**
-     * Dito gagawin ang mabigat na trabaho.
-     * Awtomatikong i-i-inject ng Laravel ang SmsService at EmailService natin dito.
+     * Execute the job.
      */
-    public function handle(SmsService $smsService, EmailService $emailService): void
+    public function handle(SmsService $smsService, ?EmailService $emailService = null): void
     {
-        try {
-            // 1. Ipadala ang SMS (Pansinin ang 'true' para sa isAnnouncement rules)
-            $smsService->sendSms(
-                $this->resident->id,
-                $this->resident->contact_number,
-                $this->messageBody,
-                null,
-                true
-            );
+        $delay = (int) config('services.sms.queue_delay_ms', 200000);
 
-            // 2. Ipadala ang Email Broadcast (Kung verified at naka-opt-in)
-            if ($this->resident->email_verified_at && $this->resident->wants_email_notification) {
-                $emailService->sendEmail(
-                    $this->resident->id,
-                    $this->resident->email,
-                    'BDLS Barangay Announcement',
-                    $this->messageBody
-                );
+        $recipientList = is_iterable($this->recipients) ? $this->recipients : [$this->recipients];
+
+        foreach ($recipientList as $recipient) {
+            try {
+                $contactNumber = null;
+                $user = null;
+
+                if ($recipient instanceof User) {
+                    $user = $recipient;
+                    $contactNumber = $recipient->contact_number;
+                } elseif (is_string($recipient)) {
+                    $contactNumber = $recipient;
+                }
+
+                if ($contactNumber) {
+                    $smsService->send($contactNumber, $this->message, true);
+                }
+
+                if ($user && $emailService && $user->email_verified_at && $user->wants_email_notification) {
+                    $emailService->sendEmail(
+                        $user->id,
+                        $user->email,
+                        'BDLS Barangay Announcement',
+                        $this->message
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to blast SMS/Email to recipient: '.$e->getMessage());
             }
-        } catch (\Exception $e) {
-            // I-log lang kung may pumalyang isa, wag i-crash ang queue worker
-            Log::error("Failed to blast SMS/Email to {$this->resident->contact_number}: ".$e->getMessage());
+
+            if ($delay > 0) {
+                usleep($delay);
+            }
         }
     }
 }

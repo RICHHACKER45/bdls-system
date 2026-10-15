@@ -11,7 +11,14 @@ window.route = route;
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => {
+        if (!title) return appName;
+        const cleaned = title
+            .replace(new RegExp(`(\\s*-\\s*${appName})+$`, 'i'), '')
+            .replace(new RegExp(`^${appName}\\s*-\\s*`, 'i'), '')
+            .trim();
+        return `${cleaned} - ${appName}`;
+    },
     resolve: (name) =>
         resolvePageComponent(`./Pages/${name}.jsx`, import.meta.glob('./Pages/**/*.jsx')),
     setup({ el, App, props }) {

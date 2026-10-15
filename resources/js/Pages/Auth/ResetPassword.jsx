@@ -16,7 +16,7 @@ export default function ResetPassword({ errors, session }) {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
-            <Head title="Reset Password - BDLS" />
+            <Head title="Reset Password" />
 
             <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8">
                 <div className="mb-8 text-center">

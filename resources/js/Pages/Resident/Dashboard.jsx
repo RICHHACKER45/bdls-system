@@ -842,7 +842,7 @@ export default function Dashboard(props) {
 
     return (
         <ResidentLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-            <Head title="Dashboard - BDLS" />
+            <Head title="Dashboard" />
 
             {/* --- TAB 1: DASHBOARD --- */}
             {activeTab === 'dashboard' && (

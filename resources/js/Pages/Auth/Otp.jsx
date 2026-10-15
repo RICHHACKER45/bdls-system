@@ -63,7 +63,7 @@ export default function Otp({ verifyRoute, resendRoute, cooldown, errors, sessio
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 font-sans text-slate-900 antialiased">
-            <Head title="OTP Verification - Barangay Doña Lucia" />
+            <Head title="OTP Verification" />
 
             <div className="mx-4 w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-xl md:p-8">
                 <h2 className="mb-2 text-2xl font-bold text-slate-900">

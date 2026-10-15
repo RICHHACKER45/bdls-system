@@ -4,16 +4,109 @@ namespace App\Services;
 
 use App\Models\NotificationLog;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log; // Idinagdag para makapagbato tayo ng errors kapag may lumabag sa rules
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SmsService
 {
+    protected string $driver;
+    protected int $maxLength;
+    protected int $curfewStart;
+    protected int $curfewEnd;
+    protected array $smartPrefixes;
+
+    protected ?string $pinasApiKey;
+    protected string $pinasBaseUrl;
+    protected int $pinasTimeout;
+
+    protected ?string $fortmedApiKey;
+    protected ?string $fortmedUrl;
+    protected string $fortmedSender;
+    protected int $fortmedTimeout;
+
+    public function __construct()
+    {
+        $this->driver = config('services.sms.driver', 'hybrid');
+        $this->maxLength = config('services.sms.max_length', 160);
+        $this->curfewStart = config('services.sms.curfew_start', 21);
+        $this->curfewEnd = config('services.sms.curfew_end', 7);
+
+        $rawPrefixes = config('services.sms.smart_prefixes', '');
+        $this->smartPrefixes = array_filter(array_map('trim', explode(',', $rawPrefixes)));
+
+        $this->pinasApiKey = config('services.pinassms.api_key');
+        $this->pinasBaseUrl = config('services.pinassms.base_url', 'https://pinassms.com/api');
+        $this->pinasTimeout = config('services.pinassms.timeout', 15);
+
+        $this->fortmedApiKey = config('services.fortmed.api_key');
+        $this->fortmedUrl = config('services.fortmed.api_url');
+        $this->fortmedSender = config('services.fortmed.sender_name', 'BDLS');
+        $this->fortmedTimeout = config('services.fortmed.timeout', 15);
+    }
+
     /**
-     * Ipadala ang SMS nang may mahigpit na NTC Compliance at Credit Optimization.
-     * Nagdagdag tayo ng $isAnnouncement parameter.
+     * Dispatch SMS using configured driver, telco prefix routing, and failover
+     */
+    public function send(string $recipient, string $message, bool $isAnnouncement = false): bool
+    {
+        // 1. Mock Log Driver (Local Testing)
+        if ($this->driver === 'log') {
+            Log::info("SMS [LOG DRIVER] to {$recipient}: {$message}");
+            return true;
+        }
+
+        // 2. NTC Night Curfew Check for Announcements (9:00 PM - 7:00 AM)
+        if ($isAnnouncement && $this->isWithinCurfewHours()) {
+            Log::warning("NTC Compliance: SMS announcement to {$recipient} blocked during curfew hours ({$this->curfewStart}:00 - {$this->curfewEnd}:00).");
+            return false;
+        }
+
+        // 3. NTC Compliance: URL Link Stripping
+        $sanitizedMessage = $this->stripLinks($message);
+
+        // 4. GSM Character Limit Safeguard
+        $finalMessage = Str::limit(trim($sanitizedMessage), $this->maxLength, '');
+
+        // 5. Explicit Driver Overrides
+        if ($this->driver === 'pinassms') {
+            return $this->sendViaPinasSms($recipient, $finalMessage);
+        }
+
+        if ($this->driver === 'fortmed') {
+            return $this->sendViaFortmed($recipient, $finalMessage);
+        }
+
+        // 6. HYBRID MODE: Smart Routing & Failover
+        if ($this->isSmartNetwork($recipient)) {
+            Log::info("Telco Routing: {$recipient} identified as SMART/TNT. Attempting Fortmed API...");
+            $sent = $this->sendViaFortmed($recipient, $finalMessage);
+
+            if ($sent) {
+                return true;
+            }
+
+            Log::warning("Fortmed failed for Smart recipient {$recipient}. Triggering PinasSMS fallback...");
+            return $this->sendViaPinasSms($recipient, $finalMessage);
+        }
+
+        // Default Route for Globe, TM, DITO
+        Log::info("Telco Routing: {$recipient} identified as GLOBE/TM/DITO. Directing to PinasSMS...");
+        return $this->sendViaPinasSms($recipient, $finalMessage);
+    }
+
+    /**
+     * Backward-compatible alias
+     */
+    public function sendNotification(string $recipient, string $message): bool
+    {
+        return $this->send($recipient, $message, false);
+    }
+
+    /**
+     * Backward-compatible alias for existing callers throughout the application.
      */
     public function sendSms(
         $userId,
@@ -21,183 +114,20 @@ class SmsService
         $messageContent,
         $serviceRequestId = null,
         $isAnnouncement = false,
-        $isOtp = false,
-    ) {
-        // ==========================================
-        // 0. SECURITY: UNVERIFIED NUMBER BLOCKER (Process 1.0)
-        // ==========================================
-        $user = User::find($userId);
-
-        // Kung walang contact_verified_at at HINDI ito OTP message, harangin!
-        if ($user && is_null($user->contact_verified_at) && ! $isOtp) {
-            Log::warning(
-                "SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.",
-            );
-
-            return false; // I-abort agad ang proseso
-        }
-
-        // ==========================================
-        // 1. LINK BLOCKER (NTC Compliance)
-        // ==========================================
-        // Bawal ang links para hindi ma-ban ang shared API mo.
-        if (preg_match('/(http|https|www\.)/i', $messageContent)) {
-            Log::warning("SMS Blocked: URL detected in message for {$recipientContact}.");
-            throw new Exception(
-                'Bawal mag-send ng links o website URLs ayon sa NTC Anti-Spam rules.',
-            );
-        }
-
-        // ==========================================
-        // 2. NIGHT CURFEW (9:00 PM to 7:00 AM)
-        // ==========================================
-        // Haharangin natin ang system kapag gabi na at announcement ito.
-        if ($isAnnouncement) {
-            $currentHour = (int) now()->format('H');
-            if ($currentHour >= 21 || $currentHour < 7) {
-                throw new Exception(
-                    'Bawal mag-send ng announcements mula 9:00 PM hanggang 7:00 AM.',
-                );
+        $isOtp = false
+    ): bool {
+        // Block unverified numbers from receiving non-OTP notifications
+        if ($userId && ! $isOtp) {
+            $user = User::find($userId);
+            if ($user && is_null($user->contact_verified_at)) {
+                Log::warning("SMS BLOCKED: Bawal padalhan ng non-OTP message ang unverified number ({$recipientContact}). Tipid API Credits.");
+                return false;
             }
         }
 
-        // ==========================================
-        // 3. UNICODE SANITIZER (Iwas 70-character Trap)
-        // ==========================================
+        $sent = $this->send((string) $recipientContact, (string) $messageContent, (bool) $isAnnouncement);
 
-        // A. Palitan ang smart quotes ng normal quotes
-        $messageContent = str_replace(['“', '”', '‘', '’'], ['"', '"', "'", "'"], $messageContent);
-
-        // B. Burahin ang lahat ng Emojis gamit ang Regex para manatili sa 160 ang limit
-        $messageContent = preg_replace('/[\x{1F600}-\x{1F64F}]/u', '', $messageContent);
-        $messageContent = preg_replace('/[\x{1F300}-\x{1F5FF}]/u', '', $messageContent);
-        $messageContent = preg_replace('/[\x{1F680}-\x{1F6FF}]/u', '', $messageContent);
-        $messageContent = preg_replace('/[\x{2600}-\x{26FF}]/u', '', $messageContent);
-        $messageContent = preg_replace('/[\x{2700}-\x{27BF}]/u', '', $messageContent);
-
-        // C. WHITESPACE COMPRESSION (Decluttering)
-        // Gawing isahan ang double/triple spaces at limitahan ang newlines sa dalawa
-        $messageContent = preg_replace('/[ \t]+/', ' ', $messageContent);
-        $messageContent = preg_replace('/[\r\n]{3,}/', "\n\n", $messageContent);
-        $messageContent = trim($messageContent);
-
-        // ==========================================
-        // 4. IDENTITY HEADER (Mandatory NTC Prefix)
-        // ==========================================
-        $prefix = env('SMS_PREFIX');
-        $fullMessage = $prefix.trim($messageContent);
-
-        $driver = env('SMS_DRIVER', 'log');
-
-        // ==========================================
-        // 5. ROUTING: Transactional vs Announcement
-        // ==========================================
-        if (! $isAnnouncement) {
-            // TRANSACTIONAL (OTP / Queue Updates) -> STRICTLY 150 CHARACTERS
-            if (Str::length($fullMessage) > 150) {
-                $fullMessage = Str::limit($fullMessage, 150, ''); // Puputulin pilit para tipid credit
-                Log::warning("SMS Truncated to 150 chars for {$recipientContact} para iwas double-charge.");
-            }
-            $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver, $isOtp);
-        } else {
-            // ANNOUNCEMENTS (Concatenation Logic - Multi-part SMS)
-            if (Str::length($fullMessage) <= 150) {
-                $this->executeSend($userId, $recipientContact, $fullMessage, $serviceRequestId, $driver, $isOtp);
-            } else {
-                // Hahatiin natin sa 144 characters + 6 chars para sa "(1/10)" = 150 max payload per credit
-                $chunks = str_split($fullMessage, 144);
-                $totalChunks = count($chunks);
-
-                foreach ($chunks as $index => $chunk) {
-                    $partNum = $index + 1;
-                    $segmentMessage = $chunk." ({$partNum}/{$totalChunks})";
-                    $this->executeSend($userId, $recipientContact, $segmentMessage, $serviceRequestId, $driver, $isOtp);
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Private function na tagapag-padala (The Laravel Way: DRY Principle)
-     */
-    private function executeSend(
-        $userId,
-        $recipientContact,
-        $messageContent,
-        $serviceRequestId,
-        $driver,
-        $isOtp = false // THE FIX: Ipasa ang flag para malaman kung OTP ito
-    ) {
-        $status = 'Pending';
-        $providerResponse = null;
-
-        // ==========================================
-        // UNIVERSAL LOGGING: Isusulat ito sa laravel.log
-        // bago pa man tingnan kung 'log' o 'api' ang gamit mo!
-        // ==========================================
-        Log::info('====================================');
-        Log::info("SMS SEND INITIATED [Driver: {$driver}] [To: {$recipientContact}]");
-        Log::info('Length: '.Str::length($messageContent).' chars');
-        Log::info("Message: {$messageContent}");
-        Log::info('====================================');
-
-        if ($driver === 'log') {
-            $status = 'Sent (Mock)';
-            $providerResponse = 'Simulated via Laravel Log';
-        } elseif ($driver === 'api') {
-            try {
-                $response = Http::timeout(10)
-                    ->withHeaders([
-                        'Content-Type' => 'application/json',
-                        'X-API-Key' => env('SMS_API_KEY'),
-                    ])
-                    ->post(env('SMS_API_URL'), [
-                        // INAYOS KO ITO: Ginawa kong SMS_API_URL
-                        'SenderName' => env('SMS_SENDER_NAME'),
-                        'ToNumber' => $recipientContact,
-                        'MessageBody' => $messageContent,
-                        'FromNumber' => env('SMS_FROM_NUMBER'),
-                    ]);
-
-                if ($response->successful()) {
-                    $status = 'Sent (Live)';
-                    $providerResponse = $response->body();
-                    // DAGDAG RESIBO: Isusulat kung success ang API
-                    Log::info(
-                        "SMS API SUCCESS: Message delivered to {$recipientContact}. Provider Response: {$providerResponse}",
-                    );
-                } else {
-                    $status = 'Failed';
-                    $providerResponse =
-                        'HTTP Error: '.$response->status().' - '.$response->body();
-                    // DAGDAG RESIBO: Isusulat kung nag-fail ang API
-                    // BAGONG LOG: Isusulat nito sa laravel.log kapag nag 400 or 500 error ang Fortmed
-                    Log::error(
-                        "SMS API HTTP FAILED: Hindi naipadala kay {$recipientContact}. Reason: {$providerResponse}",
-                    );
-                }
-            } catch (Exception $e) {
-                $status = 'Failed (Exception)';
-                $providerResponse = $e->getMessage();
-                // BAGONG LOG: Isusulat nito kapag nag-timeout o nawalan ng internet ang server natin
-                Log::error(
-                    "SMS API CRITICAL EXCEPTION: Server failed to contact API for {$recipientContact}. Error: ".
-                        $e->getMessage(),
-                );
-
-                // THE FIX: Kapag OTP ito at nag-fail ang API, mag-throw tayo ng Exception
-                // para marinig ng DB::transaction() sa AuthController at i-rollback ang registration!
-                if ($isOtp) {
-                    throw new Exception('Bigo ang SMS Gateway na ipadala ang OTP. Na-rollback ang rehistrasyon.');
-                }
-            }
-        }
-
-        // ==========================================
-        // FAIL-SAFE DATABASE LOGGING
-        // ==========================================
+        // Fail-safe database logging in notification_logs
         try {
             NotificationLog::create([
                 'user_id' => $userId,
@@ -205,16 +135,177 @@ class SmsService
                 'channel' => 'SMS',
                 'recipient_contact' => $recipientContact,
                 'message_content' => $messageContent,
-                'status' => $status,
-                'provider_response' => $providerResponse,
+                'status' => $sent ? 'Sent' : 'Failed',
+                'provider_response' => $sent ? "Delivered via {$this->driver}" : 'Failed or blocked',
             ]);
         } catch (Exception $e) {
-            // Kung sakaling mag-crash ang MySQL Database mo, hindi sasabog ang screen ng user.
-            // Isusulat na lang niya ito sa laravel.log bilang emergency backup.
-            Log::critical(
-                "DATABASE ERROR: Hindi na-save sa notification_logs ang SMS para kay {$recipientContact}. Error: ".
-                    $e->getMessage(),
-            );
+            Log::critical("DATABASE ERROR: Hindi na-save sa notification_logs ang SMS para kay {$recipientContact}: {$e->getMessage()}");
+        }
+
+        // Throw exception on failed OTP so caller DB transactions can roll back safely
+        if ($isOtp && ! $sent && $this->driver !== 'log') {
+            throw new Exception('Bigo ang SMS Gateway na ipadala ang OTP. Na-rollback ang rehistrasyon.');
+        }
+
+        return $sent;
+    }
+
+    /**
+     * PinasSMS Gateway Integration
+     */
+    protected function sendViaPinasSms(string $recipient, string $message): bool
+    {
+        if (! $this->pinasApiKey) {
+            Log::error('PinasSMS API key is not configured.');
+            return false;
+        }
+
+        $formatted = $this->formatForPinas($recipient);
+
+        try {
+            $response = Http::withHeaders([
+                'X-API-KEY' => $this->pinasApiKey,
+                'Content-Type' => 'application/json',
+            ])
+                ->timeout($this->pinasTimeout)
+                ->post("{$this->pinasBaseUrl}/sms/send", [
+                    'recipient' => $formatted,
+                    'message' => $message,
+                ]);
+
+            if ($response->successful()) {
+                Log::info("PinasSMS successfully delivered to {$formatted}");
+                return true;
+            }
+
+            Log::error("PinasSMS rejected dispatch: HTTP {$response->status()} - {$response->body()}");
+            return false;
+        } catch (\Throwable $e) {
+            Log::error("PinasSMS network exception: {$e->getMessage()}");
+            return false;
+        }
+    }
+
+    /**
+     * Fortmed (FMCSMS) Gateway Integration
+     */
+    protected function sendViaFortmed(string $recipient, string $message): bool
+    {
+        if (! $this->fortmedApiKey || ! $this->fortmedUrl) {
+            Log::error('Fortmed API credentials not configured.');
+            return false;
+        }
+
+        $formatted = $this->formatForFortmed($recipient);
+
+        try {
+            $response = Http::asForm()
+                ->timeout($this->fortmedTimeout)
+                ->post($this->fortmedUrl, [
+                    'api_key' => $this->fortmedApiKey,
+                    'number' => $formatted,
+                    'message' => $message,
+                    'sender' => $this->fortmedSender,
+                ]);
+
+            if ($response->successful()) {
+                Log::info("Fortmed successfully delivered to {$formatted}");
+                return true;
+            }
+
+            Log::error("Fortmed rejected dispatch: HTTP {$response->status()} - {$response->body()}");
+            return false;
+        } catch (\Throwable $e) {
+            Log::error("Fortmed network exception: {$e->getMessage()}");
+            return false;
+        }
+    }
+
+    /**
+     * Check if number prefix matches Smart/TNT/Sun list
+     */
+    protected function isSmartNetwork(string $number): bool
+    {
+        $clean = preg_replace('/[^0-9]/', '', $number);
+
+        if (str_starts_with($clean, '639')) {
+            $prefix = '09' . substr($clean, 3, 2);
+        } elseif (str_starts_with($clean, '09')) {
+            $prefix = substr($clean, 0, 4);
+        } elseif (str_starts_with($clean, '9')) {
+            $prefix = '09' . substr($clean, 1, 2);
+        } else {
+            return false;
+        }
+
+        return in_array($prefix, $this->smartPrefixes, true);
+    }
+
+    /**
+     * PinasSMS requires 639XXXXXXXXX (strictly no leading '+')
+     */
+    protected function formatForPinas(string $number): string
+    {
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+
+        if (str_starts_with($cleaned, '09')) {
+            return '63' . substr($cleaned, 1);
+        }
+
+        return str_starts_with($cleaned, '639') ? $cleaned : '63' . $cleaned;
+    }
+
+    /**
+     * Fortmed standard local format 09XXXXXXXXX
+     */
+    protected function formatForFortmed(string $number): string
+    {
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+
+        if (str_starts_with($cleaned, '639')) {
+            return '09' . substr($cleaned, 3);
+        }
+
+        return str_starts_with($cleaned, '09') ? $cleaned : '09' . $cleaned;
+    }
+
+    /**
+     * NTC Compliance Link Stripping & Unicode Clean
+     */
+    protected function stripLinks(string $text): string
+    {
+        return preg_replace('/\b(?:https?:\/\/|www\.)\S+\b/i', '[link removed]', $text);
+    }
+
+    /**
+     * NTC Night Curfew Logic (21:00 to 07:00 Asia/Manila)
+     */
+    protected function isWithinCurfewHours(): bool
+    {
+        $hour = Carbon::now('Asia/Manila')->hour;
+        return $hour >= $this->curfewStart || $hour < $this->curfewEnd;
+    }
+
+    /**
+     * Balance Check Endpoint for PinasSMS
+     */
+    public function checkBalance(): ?array
+    {
+        if (! $this->pinasApiKey) {
+            return null;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'X-API-KEY' => $this->pinasApiKey,
+            ])
+                ->timeout(10)
+                ->get("{$this->pinasBaseUrl}/balance");
+
+            return $response->successful() ? $response->json() : null;
+        } catch (\Throwable $e) {
+            Log::error("PinasSMS balance check exception: {$e->getMessage()}");
+            return null;
         }
     }
 }

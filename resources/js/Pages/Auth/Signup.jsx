@@ -379,7 +379,7 @@ export default function Signup() {
 
     return (
         <div className="flex min-h-screen flex-col justify-center bg-slate-50 py-10 font-sans text-slate-900 antialiased">
-            <Head title="Mag-Signup - Barangay Doña Lucia" />
+            <Head title="Mag-Signup" />
 
             {/* Global Toast */}
             <div className="pointer-events-none fixed top-6 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">

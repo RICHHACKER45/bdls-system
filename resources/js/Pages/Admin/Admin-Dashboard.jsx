@@ -555,10 +555,23 @@ export default function AdminDashboard() {
     const [logbookModalOpen, setLogbookModalOpen] = useState(false);
     const [logbookUrl, setLogbookUrl] = useState('');
 
-    const [localToast, setLocalToast] = useState({ visible: false, message: '' });
-    const triggerToast = (msg) => {
-        setLocalToast({ visible: true, message: msg });
-        setTimeout(() => setLocalToast({ visible: false, message: '' }), 5000);
+    const [localToast, setLocalToast] = useState({
+        visible: false,
+        message: '',
+        type: 'success',
+        title: '',
+    });
+    const triggerToast = (msg, type = 'success', title = '') => {
+        setLocalToast({
+            visible: true,
+            message: Array.isArray(msg) ? msg.join(', ') : msg,
+            type,
+            title: title || (type === 'error' ? 'Error' : 'Success'),
+        });
+        setTimeout(
+            () => setLocalToast({ visible: false, message: '', type: 'success', title: '' }),
+            5000
+        );
     };
 
     // --- REJECTION MODAL STATE & PIPELINE (Sub-Task 3.4) ---
@@ -600,7 +613,11 @@ export default function AdminDashboard() {
                         setRejectionReason('');
                         setIsSubmittingRejection(false);
                         setSelectedRequests([]);
-                        triggerToast('Matagumpay na nai-reject ang mga napiling requests.');
+                        triggerToast(
+                            'Matagumpay na nai-reject ang mga napiling requests.',
+                            'success',
+                            'Batch Rejection'
+                        );
                     },
                     onError: (errs) => {
                         setIsSubmittingRejection(false);
@@ -625,7 +642,9 @@ export default function AdminDashboard() {
                         setRejectionReason('');
                         setIsSubmittingRejection(false);
                         triggerToast(
-                            `Nai-reject ang request ${targetRequestForRejection.queue_number}.`
+                            `Nai-reject ang request ${targetRequestForRejection.queue_number}.`,
+                            'success',
+                            'Request Rejected'
                         );
                     },
                     onError: (errs) => {
@@ -651,7 +670,9 @@ export default function AdminDashboard() {
             onSuccess: () =>
                 setStatusModal({ isOpen: false, requestId: null, nextStatus: '', label: '' }),
             onError: (errs) => {
-                if (Object.keys(errs).length > 0) triggerToast(Object.values(errs));
+                if (Object.keys(errs).length > 0) {
+                    triggerToast(Object.values(errs).join(', '), 'error', 'Error');
+                }
             },
         });
     };
@@ -926,27 +947,49 @@ export default function AdminDashboard() {
 
     return (
         <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-            <Head title="Admin Dashboard - BDLS" />
+            <Head title="Admin Dashboard" />
 
             <div className="pointer-events-none fixed top-24 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
-                    className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${localToast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
+                    className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 ${
+                        localToast.type === 'error' ? 'border-red-500' : 'border-green-400'
+                    } bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${
+                        localToast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+                    }`}
                 >
-                    <svg
-                        className="h-6 w-6 shrink-0 text-red-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        ></path>
-                    </svg>
+                    {localToast.type === 'error' ? (
+                        <svg
+                            className="h-6 w-6 shrink-0 text-red-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                            ></path>
+                        </svg>
+                    ) : (
+                        <svg
+                            className="h-6 w-6 shrink-0 text-green-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            ></path>
+                        </svg>
+                    )}
                     <div>
-                        <p className="text-sm font-bold">Error</p>
+                        <p className="text-sm font-bold">
+                            {localToast.title || (localToast.type === 'error' ? 'Error' : 'Success')}
+                        </p>
                         <p className="text-sm font-medium">{localToast.message}</p>
                     </div>
                 </div>
