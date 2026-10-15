@@ -96,7 +96,7 @@ class AuthController extends Controller
 
                 // CLOUD ENV FALLBACK: Kung wala ang file sa server (Railway), i-restore mula sa GOOGLE_CREDENTIALS_BASE64 / JSON
                 if (! file_exists($credentialsPath)) {
-                    $rawKey = env('GOOGLE_CREDENTIALS_BASE64') ?: env('GOOGLE_CREDENTIALS_JSON');
+                    $rawKey = config('services.google.credentials_base64') ?: env('GOOGLE_CREDENTIALS_BASE64') ?: env('GOOGLE_CREDENTIALS_JSON');
                     if ($rawKey) {
                         $decoded = base64_decode($rawKey, true);
                         $jsonContent = ($decoded && str_contains($decoded, 'private_key')) ? $decoded : $rawKey;

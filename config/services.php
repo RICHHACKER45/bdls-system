@@ -40,4 +40,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
+    'google' => [
+        'credentials_path' => env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json'),
+        'credentials_base64' => env('GOOGLE_CREDENTIALS_BASE64'),
+        'credentials_json' => env('GOOGLE_CREDENTIALS_JSON'),
+        'vision_api_url' => env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate'),
+        'auth_scope' => env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform'),
+    ],
 ];
