@@ -92,9 +92,20 @@ class AuthController extends Controller
                 $envPath = env('GOOGLE_CREDENTIALS_PATH', 'app/private/google-credentials.json');
                 $credentialsPath = storage_path($envPath);
                 $apiUrl = env('GOOGLE_VISION_API_URL', 'https://vision.googleapis.com/v1/images:annotate');
-
-                // BAGONG FIX: Dynamic Auth Scope mula sa .env!
                 $authScope = env('GOOGLE_AUTH_SCOPE', 'https://www.googleapis.com/auth/cloud-platform');
+
+                // CLOUD ENV FALLBACK: Kung wala ang file sa server (Railway), i-restore mula sa GOOGLE_CREDENTIALS_BASE64 / JSON
+                if (! file_exists($credentialsPath)) {
+                    $rawKey = env('GOOGLE_CREDENTIALS_BASE64') ?: env('GOOGLE_CREDENTIALS_JSON');
+                    if ($rawKey) {
+                        $decoded = base64_decode($rawKey, true);
+                        $jsonContent = ($decoded && str_contains($decoded, 'private_key')) ? $decoded : $rawKey;
+                        if (! is_dir(dirname($credentialsPath))) {
+                            mkdir(dirname($credentialsPath), 0755, true);
+                        }
+                        file_put_contents($credentialsPath, $jsonContent);
+                    }
+                }
 
                 if (file_exists($credentialsPath)) {
 

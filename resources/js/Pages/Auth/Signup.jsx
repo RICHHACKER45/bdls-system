@@ -928,79 +928,6 @@ export default function Signup() {
                             </div>
 
                             <div className="mb-8">
-                                {/* DEV MODE BYPASS */}
-                                {!isScanning && !previewImage && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            // 🛡️ DEV MODE: Valid 1x1 base64 JPEG binary upang pumasa sa Laravel 'image' rule
-                                            const base64Jpeg =
-                                                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
-                                            const byteChars = atob(base64Jpeg);
-                                            const byteNums = new Array(byteChars.length);
-                                            for (let i = 0; i < byteChars.length; i++) {
-                                                byteNums[i] = byteChars.charCodeAt(i);
-                                            }
-                                            const dummyFile = new File(
-                                                [new Uint8Array(byteNums)],
-                                                'mock_id.jpg',
-                                                {
-                                                    type: 'image/jpeg',
-                                                }
-                                            );
-                                            setData('id_photo_path', dummyFile);
-                                            setPreviewImage(
-                                                'https://via.placeholder.com/400x250.png?text=MOCK+ID+BYPASS'
-                                            );
-                                            setIsScanning(false);
-                                            triggerToast('Dev Mode: Simulated ID Capture!');
-                                        }}
-                                        className="mb-4 w-full rounded-xl bg-purple-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 active:scale-95"
-                                    >
-                                        🛠️ DEV MODE: Bypass Camera & Scanner
-                                    </button>
-                                )}
-
-                                {/* DEV MODE FORCED ERROR */}
-                                {!isScanning && !previewImage && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            // 🛡️ DEV MODE: Valid 1x1 base64 JPEG binary na may simulate_error flag
-                                            const base64Jpeg =
-                                                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
-                                            const byteChars = atob(base64Jpeg);
-                                            const byteNums = new Array(byteChars.length);
-                                            for (let i = 0; i < byteChars.length; i++) {
-                                                byteNums[i] = byteChars.charCodeAt(i);
-                                            }
-                                            const errorFile = new File(
-                                                [new Uint8Array(byteNums)],
-                                                'error.jpg',
-                                                {
-                                                    type: 'image/jpeg',
-                                                }
-                                            );
-                                            setData((data) => ({
-                                                ...data,
-                                                id_photo_path: errorFile,
-                                                simulate_error: true,
-                                                ocr_attempt: 5,
-                                            }));
-                                            setPreviewImage(
-                                                'https://via.placeholder.com/400x250.png?text=FORCED+ERROR'
-                                            );
-                                            setIsScanning(false);
-                                            triggerToast(
-                                                'Dev Mode: Simulated Error Active. Proceed to Terms.'
-                                            );
-                                        }}
-                                        className="mb-4 w-full rounded-xl bg-red-600 px-8 py-3 font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
-                                    >
-                                        🚨 DEV MODE: Force Failed Scan (Test Lockout)
-                                    </button>
-                                )}
-
                                 {/* BUTTON PARA BUKSAN ANG CAMERA */}
                                 {!isScanning && !previewImage && (
                                     <button
@@ -1035,29 +962,46 @@ export default function Signup() {
 
                                 {/* ANG LIVE CAMERA FRAME */}
                                 {isScanning && (
-                                    <div className="relative overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
+                                    <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border-2 border-slate-800 bg-black shadow-xl">
                                         <Webcam
                                             audio={false}
                                             ref={webcamRef}
                                             screenshotFormat="image/jpeg"
-                                            videoConstraints={{ facingMode: 'environment' }}
-                                            className="w-full object-cover opacity-80"
+                                            forceScreenshotSourceSize
+                                            playsInline
+                                            videoConstraints={{
+                                                facingMode: { ideal: 'environment' },
+                                            }}
+                                            className="absolute inset-0 h-full w-full object-cover"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
 
                                         {/* ID Frame Guide (Kahon sa gitna para sa user) */}
-                                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                            <div className="h-3/5 w-4/5 rounded-xl border-2 border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
+                                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+                                            <div className="relative aspect-[85.6/54] w-[85%] max-w-[320px] rounded-xl border-2 border-white/80 bg-black/20 shadow-sm backdrop-blur-[1px]">
+                                                {/* Corner alignment markers */}
+                                                <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl-md border-t-4 border-l-4 border-blue-500"></div>
+                                                <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr-md border-t-4 border-r-4 border-blue-500"></div>
+                                                <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl-md border-b-4 border-l-4 border-blue-500"></div>
+                                                <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-br-md border-b-4 border-r-4 border-blue-500"></div>
+                                            </div>
                                         </div>
-                                        <p className="absolute top-4 w-full text-center text-xs font-bold tracking-widest text-white uppercase drop-shadow-md">
-                                            I-posisyon ang ID sa loob ng kahon
-                                        </p>
 
+                                        {/* Instruction label */}
+                                        <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-900/80 px-4 py-1.5 shadow-md backdrop-blur-sm">
+                                            <p className="text-[11px] font-bold tracking-wider text-white uppercase">
+                                                I-posisyon ang ID sa loob ng kahon
+                                            </p>
+                                        </div>
+
+                                        {/* Capture button */}
                                         <button
                                             type="button"
                                             onClick={captureId}
-                                            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-red-600 px-8 py-3 text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all active:scale-95"
+                                            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-red-600 px-7 py-2.5 text-xs font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-red-700 active:scale-95"
                                         >
-                                            📸 Capture
+                                            <span>📸</span>
+                                            <span>Capture</span>
                                         </button>
                                     </div>
                                 )}
@@ -1065,11 +1009,11 @@ export default function Signup() {
                                 {/* PREVIEW NG NAKUHAANG ID */}
                                 {previewImage && (
                                     <div className="flex flex-col items-center">
-                                        <div className="relative w-full overflow-hidden rounded-2xl border border-slate-300 shadow-sm">
+                                        <div className="relative w-full overflow-hidden rounded-2xl border border-slate-300 bg-slate-900 shadow-sm">
                                             <img
                                                 src={previewImage}
                                                 alt="ID Preview"
-                                                className="mb-4 max-h-64 w-full rounded-xl bg-slate-100 object-contain shadow-sm"
+                                                className="max-h-64 w-full bg-slate-900 object-contain"
                                             />
                                             <button
                                                 type="button"
@@ -1078,7 +1022,7 @@ export default function Signup() {
                                                     setIsScanning(true);
                                                     setData('id_photo_path', null);
                                                 }}
-                                                className="absolute right-3 bottom-6 rounded-lg bg-slate-900 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-slate-800 active:scale-95"
+                                                className="absolute right-3 bottom-3 rounded-lg bg-slate-900/90 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-md backdrop-blur-sm transition-all hover:bg-slate-800 active:scale-95"
                                             >
                                                 Ulitin ang Pag-scan
                                             </button>
