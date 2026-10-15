@@ -11,15 +11,36 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProcessRequestUpdate implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public string $message;
+
     public function __construct(
         public ServiceRequest $serviceRequest,
-        public string $message
-    ) {}
+        ?string $message = null
+    ) {
+        if (! empty($message)) {
+            $this->message = $message;
+        } else {
+            $status = strtolower($this->serviceRequest->status ?? '');
+            if ($status === 'rejected') {
+                $reasonText = Str::limit($this->serviceRequest->rejection_reason ?? 'Kulang sa requirements', 40);
+                $this->message = "Ang iyong request (Queue #{$this->serviceRequest->queue_number}) ay na-reject. Dahilan: {$reasonText}. Maaari kayong mag-pasa muli sa portal.";
+            } elseif ($status === 'processing') {
+                $this->message = "Queue {$this->serviceRequest->queue_number} ay kasalukuyang pino-proseso na.";
+            } elseif ($status === 'for_interview') {
+                $this->message = "Queue {$this->serviceRequest->queue_number}: Kailangan ng panayam (interview). Mangyaring pumunta sa hall.";
+            } elseif ($status === 'released') {
+                $this->message = "Queue {$this->serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
+            } else {
+                $this->message = "Queue {$this->serviceRequest->queue_number} status: ".strtoupper($status).'.';
+            }
+        }
+    }
 
     public function handle(SmsService $smsService, EmailService $emailService): void
     {

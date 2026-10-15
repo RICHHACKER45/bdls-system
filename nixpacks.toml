@@ -3,11 +3,15 @@
 [phases.setup]
 nixPkgs = ["php83", "nodejs", "bun"] # Tinitiyak na kasama ang Bun runtime at PHP engines sa workspace
 
+# ⚡ ANG KRITIKAL NA ISINELYONG EXTENSION (HATAW!)
+[providers.php]
+extensions = ["apcu", "pcntl"] # Tinitiyak na bago mag-build, compile na agad ang APCu at real-time process monitoring layers
+
 [phases.build]
 cmds = [
     "composer install --no-dev --optimize-autoloader",
     "bun install",
-    "bun run build", # Kinokompile ang React/Inertia assets patungo sa public/build [LPDS]
+    "bun run build", # Kinokompile ang React/Inertia assets patungo sa public/build [BDLS-System]
     "php artisan config:cache",
     "php artisan route:cache",
     "php artisan view:cache"

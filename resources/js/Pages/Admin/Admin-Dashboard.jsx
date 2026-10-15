@@ -52,6 +52,63 @@ const calculateAge = (dobString) => {
     return Math.abs(age_dt.getUTCFullYear() - 1970);
 };
 
+// Sub-Task 4.2: Maps an audit action string to its category badge styling (Request, KYC, Settings, Broadcast)
+const getAuditBadgeClass = (action) => {
+    if (
+        [
+            'STATUS_UPDATE',
+            'REQUEST_REJECTED',
+            'BATCH_UPDATE',
+            'BATCH_REJECT',
+            'WALKIN_ENCODED',
+            'PRINT_LOGBOOK',
+        ].includes(action)
+    ) {
+        return 'border border-blue-700 bg-blue-600 text-white';
+    }
+    if (
+        [
+            'MANUAL_VERIFY',
+            'MANUAL_VERIFY_PENDING',
+            'REJECT_REGISTRATION',
+            'PRINT_ACCOUNTS_LOG',
+        ].includes(action)
+    ) {
+        return 'border border-purple-700 bg-purple-600 text-white';
+    }
+    if (action === 'UPDATE_PAYMENT_SETTINGS') {
+        return 'border border-amber-600 bg-amber-500 text-white';
+    }
+    if (action === 'BROADCAST_SMS') {
+        return 'border border-emerald-700 bg-emerald-600 text-white';
+    }
+    // Fallback for any unmapped/legacy action strings
+    return 'border border-slate-700 bg-slate-600 text-white';
+};
+
+// Maps raw audit action strings to human-readable labels
+const AUDIT_ACTION_LABELS = {
+    STATUS_UPDATE: 'Status Updated',
+    REQUEST_REJECTED: 'Request Rejected',
+    BATCH_UPDATE: 'Batch Status Update',
+    BATCH_REJECT: 'Batch Rejection',
+    WALKIN_ENCODED: 'Walk-in Encoded',
+    PRINT_LOGBOOK: 'Logbook Printed',
+    MANUAL_VERIFY: 'Manual Verification',
+    MANUAL_VERIFY_PENDING: 'Pending Account Verified',
+    REJECT_REGISTRATION: 'Registration Rejected',
+    PRINT_ACCOUNTS_LOG: 'Accounts Log Printed',
+    UPDATE_PAYMENT_SETTINGS: 'Payment Settings Updated',
+    BROADCAST_SMS: 'SMS Broadcast Sent',
+};
+
+const formatAuditAction = (action) =>
+    AUDIT_ACTION_LABELS[action] ||
+    String(action || '')
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function AdminDashboard() {
     // Idagdag ito malapit sa ibang useEffect sa Admin-Dashboard.jsx
     useEffect(() => {
@@ -78,13 +135,16 @@ export default function AdminDashboard() {
         receivedQueue = { data: [], links: [] },
         documents = [],
         auditLogs = { data: [], links: [] },
+        auditFilter = 'all', // Sub-Task 4.2: active audit action category
         analyticsSummary = {},
         censusRecords = { data: [], links: [] },
         residentAccounts = { data: [], links: [] },
+        pendingUsers = [],
         filters = {},
         auth,
         flash = {},
         errors = {},
+        paymentSettings = {},
     } = usePage().props;
 
     const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
@@ -110,6 +170,10 @@ export default function AdminDashboard() {
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [selectedReceiptPath, setSelectedReceiptPath] = useState('');
     const [manualVerifyConfirmOpen, setManualVerifyConfirmOpen] = useState(false);
+    // Modal states for Pending Registrations (Failed OCR) manual verification and rejection
+    const [pendingVerifyModalOpen, setPendingVerifyModalOpen] = useState(false);
+    const [pendingRejectModalOpen, setPendingRejectModalOpen] = useState(false);
+    const [selectedPendingUser, setSelectedPendingUser] = useState(null);
 
     // ADD ACTION HANDLERS
     const triggerManualVerify = (account) => {
@@ -156,6 +220,47 @@ export default function AdminDashboard() {
                 setSelectedAccount(null);
             },
         });
+    };
+
+    // Triggers and handlers for Pending Registration action confirmation modals (replacing window.confirm)
+    const triggerPendingManualVerify = (user) => {
+        setSelectedPendingUser(user);
+        setPendingVerifyModalOpen(true);
+    };
+
+    const submitPendingManualVerify = () => {
+        if (!selectedPendingUser) return;
+        router.post(
+            route('admin.users.manual-verify', selectedPendingUser.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setPendingVerifyModalOpen(false);
+                    setSelectedPendingUser(null);
+                },
+            }
+        );
+    };
+
+    const triggerPendingReject = (user) => {
+        setSelectedPendingUser(user);
+        setPendingRejectModalOpen(true);
+    };
+
+    const submitPendingReject = () => {
+        if (!selectedPendingUser) return;
+        router.post(
+            route('admin.users.reject-registration', selectedPendingUser.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setPendingRejectModalOpen(false);
+                    setSelectedPendingUser(null);
+                },
+            }
+        );
     };
 
     const [residentFormMode, setResidentFormMode] = useState('add'); // 'add' or 'edit'
@@ -336,6 +441,15 @@ export default function AdminDashboard() {
         return () => clearTimeout(delayDebounceFn);
     }, [accountSearch]);
 
+    // --- EXPANDABLE ROW STATES ---
+    const [expandedRows, setExpandedRows] = useState([]);
+    const toggleRow = (id, e) => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        setExpandedRows((prev) =>
+            prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+        );
+    };
+
     // --- BATCH PROCESSING STATES ---
     const [selectedRequests, setSelectedRequests] = useState([]);
 
@@ -362,6 +476,10 @@ export default function AdminDashboard() {
 
     const submitBatchAction = (newStatus, specificIds) => {
         if (!specificIds || specificIds.length === 0) return;
+        if (newStatus === 'rejected') {
+            handleOpenRejectModal(specificIds);
+            return;
+        }
         setBatchModal({ isOpen: true, nextStatus: newStatus, specificIds });
     };
 
@@ -441,6 +559,84 @@ export default function AdminDashboard() {
     const triggerToast = (msg) => {
         setLocalToast({ visible: true, message: msg });
         setTimeout(() => setLocalToast({ visible: false, message: '' }), 5000);
+    };
+
+    // --- REJECTION MODAL STATE & PIPELINE (Sub-Task 3.4) ---
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [targetRequestForRejection, setTargetRequestForRejection] = useState(null); // holds request object or array of IDs
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
+    const [rejectionError, setRejectionError] = useState('');
+
+    const handleOpenRejectModal = (request) => {
+        setTargetRequestForRejection(request);
+        setRejectionReason('');
+        setRejectionError('');
+        setRejectionModalOpen(true);
+    };
+
+    const submitRejection = (e) => {
+        e.preventDefault();
+        if (!rejectionReason.trim()) {
+            setRejectionError('Mangyaring magbigay ng dahilan para sa pag-reject.');
+            return;
+        }
+        setIsSubmittingRejection(true);
+        setRejectionError('');
+
+        if (Array.isArray(targetRequestForRejection)) {
+            router.post(
+                route('admin.request.batch_update'),
+                {
+                    request_ids: targetRequestForRejection,
+                    status: 'rejected',
+                    rejection_reason: rejectionReason.trim(),
+                },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setRejectionModalOpen(false);
+                        setTargetRequestForRejection(null);
+                        setRejectionReason('');
+                        setIsSubmittingRejection(false);
+                        setSelectedRequests([]);
+                        triggerToast('Matagumpay na nai-reject ang mga napiling requests.');
+                    },
+                    onError: (errs) => {
+                        setIsSubmittingRejection(false);
+                        setRejectionError(
+                            errs.rejection_reason || 'May naganap na error sa pag-reject.'
+                        );
+                    },
+                }
+            );
+        } else if (targetRequestForRejection?.id) {
+            router.post(
+                route('admin.request.update_status', targetRequestForRejection.id),
+                {
+                    status: 'rejected',
+                    rejection_reason: rejectionReason.trim(),
+                },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setRejectionModalOpen(false);
+                        setTargetRequestForRejection(null);
+                        setRejectionReason('');
+                        setIsSubmittingRejection(false);
+                        triggerToast(
+                            `Nai-reject ang request ${targetRequestForRejection.queue_number}.`
+                        );
+                    },
+                    onError: (errs) => {
+                        setIsSubmittingRejection(false);
+                        setRejectionError(
+                            errs.rejection_reason || 'May naganap na error sa pag-reject.'
+                        );
+                    },
+                }
+            );
+        }
     };
 
     // ==========================================
@@ -528,7 +724,9 @@ export default function AdminDashboard() {
     const walkinStoreForm = useForm({
         contact_number: '',
         first_name: '',
+        middle_name: '',
         last_name: '',
+        suffix: '',
         sex: '',
         date_of_birth: '',
         address: '',
@@ -556,6 +754,39 @@ export default function AdminDashboard() {
         });
     };
 
+    // --- GCASH PAYMENT CONFIGURATION (Phase 3.3) ---
+    const gcashForm = useForm({
+        gcash_name: paymentSettings?.gcash_name || '',
+        gcash_number: paymentSettings?.gcash_number || '',
+        gcash_qr_image: null,
+    });
+    const [qrPreview, setQrPreview] = useState(null);
+
+    useEffect(() => {
+        if (paymentSettings) {
+            gcashForm.setData({
+                gcash_name: paymentSettings.gcash_name || '',
+                gcash_number: paymentSettings.gcash_number || '',
+                gcash_qr_image: null,
+            });
+        }
+    }, [
+        paymentSettings?.gcash_name,
+        paymentSettings?.gcash_number,
+        paymentSettings?.gcash_qr_path,
+    ]);
+
+    const submitGcashSettings = (e) => {
+        e.preventDefault();
+        gcashForm.post(route('admin.settings.payment'), {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                setQrPreview(null);
+            },
+        });
+    };
+
     const [reportMonth, setReportMonth] = useState('all');
     const [reportYear, setReportYear] = useState(new Date().getFullYear().toString());
 
@@ -566,11 +797,30 @@ export default function AdminDashboard() {
         e.preventDefault();
         router.get(
             route('admin.dashboard'),
-            { audit_search: auditSearch },
+            // Keep the active category filter when searching (Sub-Task 4.2)
+            { audit_search: auditSearch, audit_action: auditFilter },
             {
                 preserveState: true,
                 preserveScroll: true,
-                only: ['auditLogs', 'filters'],
+                only: ['auditLogs', 'auditFilter', 'filters'],
+            }
+        );
+    };
+
+    // Sub-Task 4.2: Change audit action category. preserveState keeps the active tab (no jump/flash);
+    // omitting audit_page resets pagination to page 1 for the new filter.
+    const handleAuditActionFilter = (value) => {
+        router.get(
+            route('admin.dashboard'),
+            {
+                ...(auditSearch ? { audit_search: auditSearch } : {}),
+                audit_action: value,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: ['auditLogs', 'auditFilter', 'filters'],
             }
         );
     };
@@ -765,6 +1015,46 @@ export default function AdminDashboard() {
                                     <option value="newest">Pila: Bago (Descending)</option>
                                 </select>
                             </div>
+
+                            {/* BATCH ACTION TOOLBAR (Sub-Task 3.4) */}
+                            {selectedRequests.length > 0 && (
+                                <div className="animate-in fade-in mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50/90 p-3.5 shadow-sm">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-black text-white shadow-sm">
+                                            {selectedRequests.length}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-800">
+                                            request(s) napili para sa Batch Actions
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                submitBatchAction('processing', selectedRequests)
+                                            }
+                                            className="rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-black tracking-wider text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                        >
+                                            I-proseso Lahat
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenRejectModal(selectedRequests)}
+                                            className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-[10px] font-black tracking-wider text-red-600 uppercase shadow-sm transition-all hover:bg-red-50 active:scale-95"
+                                        >
+                                            I-reject ang mga Napili
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedRequests([])}
+                                            className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800"
+                                        >
+                                            Kanselahin
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                                 <div className="relative max-h-[60vh] overflow-y-auto">
                                     <table className="w-full border-collapse text-left">
@@ -824,104 +1114,178 @@ export default function AdminDashboard() {
                                                             'bg-red-100 text-red-700 border border-red-200';
 
                                                     return (
-                                                        <tr
-                                                            key={queue.id}
-                                                            className={`transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
-                                                        >
-                                                            <td className="p-4 text-center">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={selectedRequests.includes(
-                                                                        queue.id
-                                                                    )}
-                                                                    onChange={() =>
-                                                                        toggleSelectOne(queue.id)
-                                                                    }
-                                                                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600"
-                                                                />
-                                                            </td>
-                                                            <td className="p-4 text-xl font-black tracking-tighter text-slate-900">
-                                                                {queue.queue_number}
-                                                            </td>
-                                                            <td className="p-4">
-                                                                <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                    {queue.user?.last_name},{' '}
-                                                                    {queue.user?.first_name}
-                                                                </p>
-                                                                <p className="font-mono text-[10px] tracking-tight text-slate-500">
-                                                                    {queue.user?.contact_number}
-                                                                </p>
-                                                            </td>
-                                                            <td className="p-4 text-xs font-bold text-slate-700 uppercase">
-                                                                {queue.document_type?.name ?? 'N/A'}
-                                                                {queue.payment_method === 'GCash' &&
-                                                                    queue.payment_receipt_path && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setSelectedReceiptPath(
-                                                                                    queue.payment_receipt_path
-                                                                                );
-                                                                                setReceiptModalOpen(
-                                                                                    true
-                                                                                );
-                                                                            }}
-                                                                            className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100"
-                                                                        >
-                                                                            View Receipt 📄
-                                                                        </button>
-                                                                    )}
-                                                            </td>
-                                                            <td className="p-4">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${badgeClass}`}
-                                                                >
-                                                                    {rawStatus.replace('_', ' ')}
-                                                                </span>
-                                                            </td>
-                                                            <td className="p-4 align-middle">
-                                                                <div className="flex flex-col items-end gap-2">
-                                                                    {/* PENDING STATE */}
-                                                                    {rawStatus === 'pending' && (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setStatusModal({
-                                                                                    isOpen: true,
-                                                                                    requestId:
-                                                                                        queue.id,
-                                                                                    nextStatus:
-                                                                                        'processing',
-                                                                                    label: 'Process Request',
-                                                                                })
-                                                                            }
-                                                                            className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-                                                                        >
-                                                                            Process Request
-                                                                        </button>
-                                                                    )}
-
-                                                                    {/* PROCESSING STATE WITH CHOICES (FOR INTERVIEW DOCS) */}
-                                                                    {rawStatus === 'processing' &&
-                                                                        isInterviewDoc && (
-                                                                            <>
+                                                        <React.Fragment key={queue.id}>
+                                                            <tr
+                                                                onClick={(e) =>
+                                                                    toggleRow(queue.id, e)
+                                                                }
+                                                                className={`cursor-pointer transition-colors hover:bg-slate-50 ${selectedRequests.includes(queue.id) ? 'bg-red-50/50' : ''}`}
+                                                            >
+                                                                <td className="p-4 text-center">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selectedRequests.includes(
+                                                                            queue.id
+                                                                        )}
+                                                                        onChange={() =>
+                                                                            toggleSelectOne(
+                                                                                queue.id
+                                                                            )
+                                                                        }
+                                                                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-red-600 focus:ring-red-600"
+                                                                    />
+                                                                </td>
+                                                                <td className="p-4 text-xl font-black tracking-tighter text-slate-900">
+                                                                    {queue.queue_number}
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
+                                                                        {queue.user?.full_name ||
+                                                                            'WALANG PANGALAN'}
+                                                                    </p>
+                                                                    <p className="font-mono text-[10px] tracking-tight text-slate-500">
+                                                                        {queue.user?.contact_number}
+                                                                    </p>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <p className="text-xs font-bold text-slate-700 uppercase">
+                                                                        {queue.document_type
+                                                                            ?.name ?? 'N/A'}
+                                                                    </p>
+                                                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                        {queue.payment_method ===
+                                                                        'GCash' ? (
+                                                                            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm">
+                                                                                GCash
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm">
+                                                                                Cash
+                                                                            </span>
+                                                                        )}
+                                                                        {queue.payment_method ===
+                                                                            'GCash' &&
+                                                                            queue.payment_receipt_path && (
                                                                                 <button
-                                                                                    onClick={() =>
-                                                                                        setStatusModal(
-                                                                                            {
-                                                                                                isOpen: true,
-                                                                                                requestId:
-                                                                                                    queue.id,
-                                                                                                nextStatus:
-                                                                                                    'for_interview',
-                                                                                                label: 'Set for Interview',
-                                                                                            }
-                                                                                        )
-                                                                                    }
-                                                                                    className="w-36 rounded-lg bg-purple-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-700 active:scale-95"
+                                                                                    type="button"
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.stopPropagation();
+                                                                                        setSelectedReceiptPath(
+                                                                                            queue.payment_receipt_path
+                                                                                        );
+                                                                                        setReceiptModalOpen(
+                                                                                            true
+                                                                                        );
+                                                                                    }}
+                                                                                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                                                                    title="View GCash Receipt"
                                                                                 >
-                                                                                    Set for
-                                                                                    Interview
+                                                                                    <svg
+                                                                                        className="h-3 w-3"
+                                                                                        fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        viewBox="0 0 24 24"
+                                                                                    >
+                                                                                        <path
+                                                                                            strokeLinecap="round"
+                                                                                            strokeLinejoin="round"
+                                                                                            strokeWidth="2"
+                                                                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                                                        />
+                                                                                        <path
+                                                                                            strokeLinecap="round"
+                                                                                            strokeLinejoin="round"
+                                                                                            strokeWidth="2"
+                                                                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                                                        />
+                                                                                    </svg>
+                                                                                    Receipt
                                                                                 </button>
+                                                                            )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4">
+                                                                    <span
+                                                                        className={`rounded-full px-3 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${badgeClass}`}
+                                                                    >
+                                                                        {rawStatus.replace(
+                                                                            '_',
+                                                                            ' '
+                                                                        )}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4 align-middle">
+                                                                    <div className="flex flex-col items-end gap-2">
+                                                                        {/* PENDING STATE */}
+                                                                        {rawStatus ===
+                                                                            'pending' && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setStatusModal({
+                                                                                        isOpen: true,
+                                                                                        requestId:
+                                                                                            queue.id,
+                                                                                        nextStatus:
+                                                                                            'processing',
+                                                                                        label: 'Process Request',
+                                                                                    })
+                                                                                }
+                                                                                className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                                                            >
+                                                                                Process Request
+                                                                            </button>
+                                                                        )}
+
+                                                                        {/* PROCESSING STATE WITH CHOICES (FOR INTERVIEW DOCS) */}
+                                                                        {rawStatus ===
+                                                                            'processing' &&
+                                                                            isInterviewDoc && (
+                                                                                <>
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            setStatusModal(
+                                                                                                {
+                                                                                                    isOpen: true,
+                                                                                                    requestId:
+                                                                                                        queue.id,
+                                                                                                    nextStatus:
+                                                                                                        'for_interview',
+                                                                                                    label: 'Set for Interview',
+                                                                                                }
+                                                                                            )
+                                                                                        }
+                                                                                        className="w-36 rounded-lg bg-purple-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-purple-700 active:scale-95"
+                                                                                    >
+                                                                                        Set for
+                                                                                        Interview
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            setStatusModal(
+                                                                                                {
+                                                                                                    isOpen: true,
+                                                                                                    requestId:
+                                                                                                        queue.id,
+                                                                                                    nextStatus:
+                                                                                                        'released',
+                                                                                                    label: 'Release Document',
+                                                                                                }
+                                                                                            )
+                                                                                        }
+                                                                                        className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95"
+                                                                                    >
+                                                                                        Release
+                                                                                        Document
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+
+                                                                        {/* PROCESSING STATE (NON-INTERVIEW DOCS) */}
+                                                                        {rawStatus ===
+                                                                            'processing' &&
+                                                                            !isInterviewDoc && (
                                                                                 <button
                                                                                     onClick={() =>
                                                                                         setStatusModal(
@@ -939,12 +1303,11 @@ export default function AdminDashboard() {
                                                                                 >
                                                                                     Release Document
                                                                                 </button>
-                                                                            </>
-                                                                        )}
+                                                                            )}
 
-                                                                    {/* PROCESSING STATE (NON-INTERVIEW DOCS) */}
-                                                                    {rawStatus === 'processing' &&
-                                                                        !isInterviewDoc && (
+                                                                        {/* FOR INTERVIEW STATE */}
+                                                                        {rawStatus ===
+                                                                            'for_interview' && (
                                                                             <button
                                                                                 onClick={() =>
                                                                                     setStatusModal({
@@ -962,80 +1325,93 @@ export default function AdminDashboard() {
                                                                             </button>
                                                                         )}
 
-                                                                    {/* FOR INTERVIEW STATE */}
-                                                                    {rawStatus ===
-                                                                        'for_interview' && (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setStatusModal({
-                                                                                    isOpen: true,
-                                                                                    requestId:
-                                                                                        queue.id,
-                                                                                    nextStatus:
-                                                                                        'released',
-                                                                                    label: 'Release Document',
-                                                                                })
-                                                                            }
-                                                                            className="w-36 rounded-lg bg-green-600 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-green-700 active:scale-95"
-                                                                        >
-                                                                            Release Document
-                                                                        </button>
-                                                                    )}
+                                                                        {/* RELEASED STATE */}
+                                                                        {rawStatus ===
+                                                                            'released' && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setStatusModal({
+                                                                                        isOpen: true,
+                                                                                        requestId:
+                                                                                            queue.id,
+                                                                                        nextStatus:
+                                                                                            'received',
+                                                                                        label: 'Mark as Received',
+                                                                                    })
+                                                                                }
+                                                                                className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
+                                                                            >
+                                                                                Mark as Received
+                                                                            </button>
+                                                                        )}
 
-                                                                    {/* RELEASED STATE */}
-                                                                    {rawStatus === 'released' && (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setStatusModal({
-                                                                                    isOpen: true,
-                                                                                    requestId:
-                                                                                        queue.id,
-                                                                                    nextStatus:
-                                                                                        'received',
-                                                                                    label: 'Mark as Received',
-                                                                                })
-                                                                            }
-                                                                            className="w-36 rounded-lg bg-slate-900 py-2 text-center text-[10px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-                                                                        >
-                                                                            Mark as Received
-                                                                        </button>
-                                                                    )}
+                                                                        {/* GLOBAL REJECT BUTTON (Only in Pending/Processing) */}
+                                                                        {(rawStatus === 'pending' ||
+                                                                            rawStatus ===
+                                                                                'processing') && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    handleOpenRejectModal(
+                                                                                        queue
+                                                                                    )
+                                                                                }
+                                                                                className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
+                                                                            >
+                                                                                Reject
+                                                                            </button>
+                                                                        )}
 
-                                                                    {/* GLOBAL REJECT BUTTON (Only in Pending/Processing) */}
-                                                                    {(rawStatus === 'pending' ||
-                                                                        rawStatus ===
-                                                                            'processing') && (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setStatusModal({
-                                                                                    isOpen: true,
-                                                                                    requestId:
-                                                                                        queue.id,
-                                                                                    nextStatus:
-                                                                                        'rejected',
-                                                                                    label: 'Reject Request',
-                                                                                })
-                                                                            }
-                                                                            className="w-36 rounded-lg border border-red-200 bg-red-50 py-2 text-center text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                                        >
-                                                                            Reject
-                                                                        </button>
-                                                                    )}
-
-                                                                    {/* NO ACTION FALLBACK */}
-                                                                    {![
-                                                                        'pending',
-                                                                        'processing',
-                                                                        'for_interview',
-                                                                        'released',
-                                                                    ].includes(rawStatus) && (
-                                                                        <span className="mt-2 w-36 text-center text-xs font-bold text-slate-400 italic">
-                                                                            No Action
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
+                                                                        {/* NO ACTION FALLBACK */}
+                                                                        {![
+                                                                            'pending',
+                                                                            'processing',
+                                                                            'for_interview',
+                                                                            'released',
+                                                                        ].includes(rawStatus) && (
+                                                                            <span className="mt-2 w-36 text-center text-xs font-bold text-slate-400 italic">
+                                                                                No Action
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            {expandedRows.includes(queue.id) && (
+                                                                <tr className="border-b border-slate-100 bg-slate-50">
+                                                                    <td
+                                                                        colSpan="7"
+                                                                        className="p-4 pl-12"
+                                                                    >
+                                                                        <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm duration-200">
+                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                                        Layunin
+                                                                                        (Purpose)
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs font-bold text-slate-700">
+                                                                                        {
+                                                                                            queue.purpose
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                                        Karagdagang
+                                                                                        Detalye
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs font-medium text-slate-600">
+                                                                                        {queue.additional_details
+                                                                                            ? queue.additional_details
+                                                                                            : 'Walang karagdagang detalye'}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
                                                     );
                                                 })
                                             ) : (
@@ -1099,37 +1475,139 @@ export default function AdminDashboard() {
                                         <tbody className="divide-y divide-slate-100">
                                             {receivedQueue.data && receivedQueue.data.length > 0 ? (
                                                 receivedQueue.data.map((queue) => (
-                                                    <tr key={queue.id} className="bg-slate-50/50">
-                                                        <td className="p-4 text-xl font-black tracking-tighter text-slate-400">
-                                                            {queue.queue_number}
-                                                        </td>
-                                                        <td className="p-4 opacity-75">
-                                                            <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
-                                                                {queue.user?.last_name},{' '}
-                                                                {queue.user?.first_name}
-                                                            </p>
-                                                            <p className="font-mono text-[10px] text-slate-500">
-                                                                {queue.user?.contact_number}
-                                                            </p>
-                                                        </td>
-                                                        <td className="p-4 text-xs font-bold text-slate-600 uppercase">
-                                                            {queue.document_type?.name ?? 'N/A'}
-                                                        </td>
-                                                        <td className="p-4 text-xs font-bold text-slate-500">
-                                                            {queue.released_at
-                                                                ? new Date(
-                                                                      queue.released_at
-                                                                  ).toLocaleString()
-                                                                : 'N/A'}
-                                                        </td>
-                                                        <td className="p-4 text-right">
-                                                            <span
-                                                                className={`rounded-full border px-3 py-1 text-[9px] font-black tracking-widest uppercase ${queue.status === 'received' ? 'border-green-200 bg-green-100 text-green-700' : 'border-red-200 bg-red-100 text-red-700'}`}
-                                                            >
-                                                                {queue.status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
+                                                    <React.Fragment key={queue.id}>
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="p-4 text-xl font-black tracking-tighter text-slate-400">
+                                                                {queue.queue_number}
+                                                            </td>
+                                                            <td className="p-4 opacity-75">
+                                                                <p className="mb-1 text-sm leading-none font-bold text-slate-900 uppercase">
+                                                                    {queue.user?.full_name ||
+                                                                        'WALANG PANGALAN'}
+                                                                </p>
+                                                                <p className="font-mono text-[10px] text-slate-500">
+                                                                    {queue.user?.contact_number}
+                                                                </p>
+                                                            </td>
+                                                            <td className="p-4">
+                                                                <p className="text-xs font-bold text-slate-600 uppercase">
+                                                                    {queue.document_type?.name ??
+                                                                        'N/A'}
+                                                                </p>
+                                                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                    {queue.payment_method ===
+                                                                    'GCash' ? (
+                                                                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm">
+                                                                            GCash
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm">
+                                                                            Cash
+                                                                        </span>
+                                                                    )}
+                                                                    {queue.payment_method ===
+                                                                        'GCash' &&
+                                                                        queue.payment_receipt_path && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedReceiptPath(
+                                                                                        queue.payment_receipt_path
+                                                                                    );
+                                                                                    setReceiptModalOpen(
+                                                                                        true
+                                                                                    );
+                                                                                }}
+                                                                                className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-black tracking-widest text-blue-700 uppercase shadow-sm transition-all hover:bg-blue-100 active:scale-95"
+                                                                                title="View GCash Receipt"
+                                                                            >
+                                                                                <svg
+                                                                                    className="h-3 w-3"
+                                                                                    fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    viewBox="0 0 24 24"
+                                                                                >
+                                                                                    <path
+                                                                                        strokeLinecap="round"
+                                                                                        strokeLinejoin="round"
+                                                                                        strokeWidth="2"
+                                                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                                                    />
+                                                                                    <path
+                                                                                        strokeLinecap="round"
+                                                                                        strokeLinejoin="round"
+                                                                                        strokeWidth="2"
+                                                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                                                    />
+                                                                                </svg>
+                                                                                Receipt
+                                                                            </button>
+                                                                        )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-4 text-xs font-bold text-slate-500">
+                                                                {queue.released_at
+                                                                    ? new Date(
+                                                                          queue.released_at
+                                                                      ).toLocaleString()
+                                                                    : 'N/A'}
+                                                            </td>
+                                                            <td className="p-4 text-right">
+                                                                <span
+                                                                    className={`rounded-full border px-3 py-1 text-[9px] font-black tracking-widest uppercase ${queue.status === 'received' ? 'border-green-200 bg-green-100 text-green-700' : 'border-red-200 bg-red-100 text-red-700'}`}
+                                                                >
+                                                                    {queue.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                        {expandedRows.includes(queue.id) && (
+                                                            <tr className="border-b border-slate-100 bg-slate-50">
+                                                                <td
+                                                                    colSpan="5"
+                                                                    className="p-4 pl-12"
+                                                                >
+                                                                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm duration-200">
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                                    Layunin
+                                                                                    (Purpose)
+                                                                                </p>
+                                                                                <p className="mt-1 text-xs font-bold text-slate-700">
+                                                                                    {queue.purpose}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                                                    Karagdagang
+                                                                                    Detalye
+                                                                                </p>
+                                                                                <p className="mt-1 text-xs font-medium text-slate-600">
+                                                                                    {queue.additional_details
+                                                                                        ? queue.additional_details
+                                                                                        : 'Walang karagdagang detalye'}
+                                                                                </p>
+                                                                            </div>
+                                                                            {queue.rejection_reason && (
+                                                                                <div className="col-span-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                                                                                    <p className="text-[10px] font-black tracking-widest text-red-600 uppercase">
+                                                                                        Dahilan ng
+                                                                                        Pag-reject:
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs font-semibold text-slate-800">
+                                                                                        {
+                                                                                            queue.rejection_reason
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
                                                 ))
                                             ) : (
                                                 <tr>
@@ -1212,7 +1690,9 @@ export default function AdminDashboard() {
                                                     ...data,
                                                     contact_number: val,
                                                     first_name: '',
+                                                    middle_name: '',
                                                     last_name: '',
+                                                    suffix: '',
                                                     sex: 'Male',
                                                     date_of_birth: '',
                                                     address: '',
@@ -1234,7 +1714,9 @@ export default function AdminDashboard() {
                                                                 ...data,
                                                                 contact_number: val,
                                                                 first_name: u.first_name,
+                                                                middle_name: u.middle_name || '',
                                                                 last_name: u.last_name,
+                                                                suffix: u.suffix || '',
                                                                 sex: u.sex,
                                                                 date_of_birth: u.date_of_birth,
                                                                 address: u.address,
@@ -1269,6 +1751,20 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Middle Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walkinStoreForm.data.middle_name}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('middle_name', e.target.value)
+                                        }
+                                        placeholder="Gitnang Pangalan (Opsyonal)"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Last Name *
                                     </label>
                                     <input
@@ -1281,6 +1777,26 @@ export default function AdminDashboard() {
                                         placeholder="Apelyido"
                                         className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
                                     />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        Suffix
+                                    </label>
+                                    <select
+                                        value={walkinStoreForm.data.suffix}
+                                        onChange={(e) =>
+                                            walkinStoreForm.setData('suffix', e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
+                                    >
+                                        <option value="">Wala</option>
+                                        <option value="Jr.">Jr.</option>
+                                        <option value="Sr.">Sr.</option>
+                                        <option value="I">I</option>
+                                        <option value="II">II</option>
+                                        <option value="III">III</option>
+                                        <option value="IV">IV</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
@@ -1299,7 +1815,7 @@ export default function AdminDashboard() {
                                         <option value="Female">Babae</option>
                                     </select>
                                 </div>
-                                <div className="sm:col-span-1">
+                                <div>
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Date of Birth *
                                     </label>
@@ -1313,7 +1829,7 @@ export default function AdminDashboard() {
                                         className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-slate-900"
                                     />
                                 </div>
-                                <div className="sm:col-span-2">
+                                <div className="sm:col-span-3">
                                     <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         Address *
                                     </label>
@@ -1564,6 +2080,12 @@ export default function AdminDashboard() {
                             >
                                 Analytics & Reports
                             </button>
+                            <button
+                                onClick={() => setAccountsSubTab('pending')}
+                                className={`rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all ${accountsSubTab === 'pending' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Pending Registrations
+                            </button>
                         </div>
 
                         {accountsSubTab === 'list' && (
@@ -1607,8 +2129,7 @@ export default function AdminDashboard() {
                                                         >
                                                             <td className="p-4">
                                                                 <p className="text-sm font-bold text-slate-900 uppercase">
-                                                                    {account.last_name},{' '}
-                                                                    {account.first_name}
+                                                                    {account.full_name}
                                                                 </p>
                                                                 <p className="text-[10px] font-medium text-slate-500">
                                                                     DOB:{' '}
@@ -1645,18 +2166,20 @@ export default function AdminDashboard() {
                                                                 {!account.is_verified && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() =>
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
                                                                             triggerManualVerify(
                                                                                 account
-                                                                            )
-                                                                        }
+                                                                            );
+                                                                        }}
                                                                         className="rounded border border-green-200 bg-green-50 px-3 py-1.5 text-[9px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
                                                                     >
                                                                         Verify
                                                                     </button>
                                                                 )}
                                                                 <button
-                                                                    onClick={() => {
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setSelectedAccount(account);
                                                                         setSuspendModalOpen(true);
                                                                     }}
@@ -1665,7 +2188,8 @@ export default function AdminDashboard() {
                                                                     Suspend
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => {
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setSelectedAccount(account);
                                                                         setDeleteAccountModalOpen(
                                                                             true
@@ -1794,6 +2318,102 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                         )}
+
+                        {accountsSubTab === 'pending' && (
+                            <div className="animate-in fade-in p-6 duration-300">
+                                <div className="mb-6">
+                                    <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">
+                                        Pending Registrations (Failed ID Verification)
+                                    </h3>
+                                    <p className="mt-1 text-xs text-slate-500">
+                                        Mga residenteng hindi nakapasa sa automated ID verification.
+                                        Paki-review nang manu-mano.
+                                    </p>
+                                </div>
+
+                                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="w-full border-collapse text-left">
+                                        <thead>
+                                            <tr className="border-b border-slate-200 bg-slate-100 text-[10px] tracking-[0.15em] text-slate-500 uppercase">
+                                                <th className="p-4 font-black">
+                                                    Pangalan & Verification Status
+                                                </th>
+                                                <th className="p-4 font-black">
+                                                    ID Verification Data
+                                                </th>
+                                                <th className="p-4 text-right font-black">
+                                                    Aksyon
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {pendingUsers.length > 0 ? (
+                                                pendingUsers.map((user) => (
+                                                    <tr
+                                                        key={user.id}
+                                                        className="transition-colors hover:bg-slate-50"
+                                                    >
+                                                        <td className="p-4">
+                                                            <p className="text-sm font-bold text-slate-900 uppercase">
+                                                                {user.full_name}
+                                                            </p>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                <span className="rounded bg-red-100 px-2 py-1 text-[9px] font-black tracking-widest text-red-700 uppercase shadow-sm">
+                                                                    Failed ID Verification (
+                                                                    {user.ocr_attempts} attempts)
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <p className="font-mono text-xs font-bold text-slate-800">
+                                                                DOB:{' '}
+                                                                {new Date(
+                                                                    user.date_of_birth
+                                                                ).toLocaleDateString()}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-500">
+                                                                Contact: {user.contact_number}
+                                                            </p>
+                                                        </td>
+                                                        <td className="flex justify-end gap-2 p-4 text-right">
+                                                            {/* Interactive Modal Trigger for Manual Verification */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    triggerPendingManualVerify(user)
+                                                                }
+                                                                className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-[10px] font-black tracking-widest text-green-600 uppercase shadow-sm transition-all hover:bg-green-100 active:scale-95"
+                                                            >
+                                                                Manual Verify
+                                                            </button>
+                                                            {/* Interactive Modal Trigger for Reject & Delete */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    triggerPendingReject(user)
+                                                                }
+                                                                className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[10px] font-black tracking-widest text-red-600 uppercase shadow-sm transition-all hover:bg-red-100 active:scale-95"
+                                                            >
+                                                                Reject & Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td
+                                                        colSpan="3"
+                                                        className="p-12 text-center font-bold text-slate-400 italic"
+                                                    >
+                                                        Walang pending registrations sa ngayon.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -1807,24 +2427,48 @@ export default function AdminDashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                     System Audit Logs
                                 </h2>
-                                <form
-                                    onSubmit={handleAuditSearch}
-                                    className="flex w-full items-center gap-2 sm:w-auto"
-                                >
-                                    <input
-                                        type="text"
-                                        placeholder="I-search ang logs..."
-                                        value={auditSearch}
-                                        onChange={(e) => setAuditSearch(e.target.value)}
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 sm:w-64"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-slate-800"
+                                <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
+                                    {/* Sub-Task 4.2: Filter by Action category */}
+                                    <select
+                                        id="audit-action-filter"
+                                        aria-label="Salain ayon sa Aksyon (Filter by Action)"
+                                        value={auditFilter}
+                                        onChange={(e) => handleAuditActionFilter(e.target.value)}
+                                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500"
                                     >
-                                        Hanapin
-                                    </button>
-                                </form>
+                                        <option value="all">Lahat ng Aksyon (All Actions)</option>
+                                        <option value="request">
+                                            Mga Request at Pila (Queue & Requests)
+                                        </option>
+                                        <option value="kyc">
+                                            KYC at Beripikasyon (KYC & Accounts)
+                                        </option>
+                                        <option value="settings">
+                                            Mga Setting at GCash (Settings & GCash)
+                                        </option>
+                                        <option value="broadcast">
+                                            Mga Broadcast at SMS (Broadcast & SMS)
+                                        </option>
+                                    </select>
+                                    <form
+                                        onSubmit={handleAuditSearch}
+                                        className="flex w-full items-center gap-2 sm:w-auto"
+                                    >
+                                        <input
+                                            type="text"
+                                            placeholder="I-search ang logs..."
+                                            value={auditSearch}
+                                            onChange={(e) => setAuditSearch(e.target.value)}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500 sm:w-64"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-slate-800"
+                                        >
+                                            Hanapin
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
                                 <table className="relative w-full border-collapse text-left">
@@ -1851,8 +2495,11 @@ export default function AdminDashboard() {
                                                         {log.admin?.last_name || ''}
                                                     </td>
                                                     <td className="p-4">
-                                                        <span className="rounded bg-slate-900 px-2 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-sm">
-                                                            {log.action}
+                                                        {/* Sub-Task 4.2: Category-colored action badge */}
+                                                        <span
+                                                            className={`rounded px-2 py-1 text-[9px] font-black tracking-widest uppercase shadow-sm ${getAuditBadgeClass(log.action)}`}
+                                                        >
+                                                            {formatAuditAction(log.action)}
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-xs font-medium text-slate-600">
@@ -2530,11 +3177,336 @@ export default function AdminDashboard() {
                                 </div>
                             </form>
                         </div>
+
+                        {/* GCASH PAYMENT CONFIGURATION CARD (Phase 3.3) */}
+                        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                            <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">
+                                        GCash Payment Configuration
+                                    </h2>
+                                    <p className="text-xs font-semibold text-slate-400">
+                                        I-set up ang opisyal na GCash details at QR code para sa
+                                        online transactions.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={submitGcashSettings} className="space-y-5">
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            GCash Account Name{' '}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={gcashForm.data.gcash_name}
+                                            onChange={(e) =>
+                                                gcashForm.setData('gcash_name', e.target.value)
+                                            }
+                                            placeholder="Hal. Juan Dela Cruz (Brgy. Treasurer)"
+                                            required
+                                            className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none ${gcashForm.errors.gcash_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {gcashForm.errors.gcash_name && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {gcashForm.errors.gcash_name}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            GCash Mobile Number{' '}
+                                            <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={gcashForm.data.gcash_number}
+                                            onChange={(e) =>
+                                                gcashForm.setData('gcash_number', e.target.value)
+                                            }
+                                            placeholder="Hal. 0912 345 6789"
+                                            required
+                                            className={`w-full rounded-xl border bg-slate-50 px-4 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-blue-600 focus:outline-none ${gcashForm.errors.gcash_number ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        />
+                                        {gcashForm.errors.gcash_number && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {gcashForm.errors.gcash_number}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                        GCash QR Code Image (PNG, JPG, JPEG - Max 2MB)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/jpg"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            gcashForm.setData('gcash_qr_image', file);
+                                            if (file) {
+                                                setQrPreview(URL.createObjectURL(file));
+                                            } else {
+                                                setQrPreview(null);
+                                            }
+                                        }}
+                                        className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-xs file:font-bold file:text-blue-700 hover:file:bg-blue-200"
+                                    />
+                                    {gcashForm.errors.gcash_qr_image && (
+                                        <p className="mt-1 text-xs text-red-500">
+                                            {gcashForm.errors.gcash_qr_image}
+                                        </p>
+                                    )}
+
+                                    {/* QR Code Active / Preview Box */}
+                                    <div className="mt-4 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-inner">
+                                            {qrPreview ? (
+                                                <img
+                                                    src={qrPreview}
+                                                    alt="New QR Preview"
+                                                    className="h-full w-full object-contain"
+                                                />
+                                            ) : paymentSettings?.gcash_qr_path ? (
+                                                <img
+                                                    src={`/storage/${paymentSettings.gcash_qr_path}`}
+                                                    alt="Active GCash QR"
+                                                    className="h-full w-full object-contain"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="p-2 text-center text-[10px] font-bold text-slate-400">
+                                                    Walang QR Code
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800">
+                                                {qrPreview
+                                                    ? 'Bagong Piling QR Code (Handa nang i-save)'
+                                                    : paymentSettings?.gcash_qr_path
+                                                      ? 'Kasalukuyang Aktibong QR Code'
+                                                      : 'Wala pang naka-upload na GCash QR Code'}
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-slate-500">
+                                                Ito ang QR code na makikita ng mga residente sa
+                                                kanilang dashboard kapag pumili ng GCash payment.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end border-t border-slate-100 pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={gcashForm.processing}
+                                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                                    >
+                                        <svg
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M5 13l4 4L19 7"
+                                            />
+                                        </svg>
+                                        {gcashForm.processing
+                                            ? 'Sinasave...'
+                                            : 'Save GCash Settings'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* --- MODALS --- */}
+
+            {/* --- REJECTION REASON MODAL (Sub-Task 3.4) --- */}
+            {rejectionModalOpen && targetRequestForRejection && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-red-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
+                        <div className="mb-6 flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 shadow-sm">
+                                <svg
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                    Kumpirmahin ang Pag-Reject
+                                </h3>
+                                <p className="mt-1 text-xs font-bold text-slate-500">
+                                    {Array.isArray(targetRequestForRejection) ? (
+                                        <>
+                                            Sasailalim sa rejection ang{' '}
+                                            <span className="font-black text-red-600">
+                                                {targetRequestForRejection.length} napiling
+                                                request(s)
+                                            </span>
+                                            .
+                                        </>
+                                    ) : (
+                                        <>
+                                            Queue Ticket:{' '}
+                                            <span className="font-black text-red-600">
+                                                #{targetRequestForRejection.queue_number}
+                                            </span>{' '}
+                                            —{' '}
+                                            {targetRequestForRejection.user?.full_name ||
+                                                'Residente'}
+                                        </>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="mb-4 text-xs font-medium text-slate-600">
+                            Mahalaga: Ang dahilan ay matatanggap ng residente via SMS at makikita sa
+                            kanilang personal tracking portal. Siguraduhing malinaw at nakakatulong
+                            ang paliwanag.
+                        </p>
+
+                        <form onSubmit={submitRejection} className="space-y-4">
+                            <div>
+                                <label className="mb-2 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                    Dahilan ng Pag-reject <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    rows="4"
+                                    value={rejectionReason}
+                                    onChange={(e) => {
+                                        setRejectionReason(e.target.value);
+                                        if (rejectionError) setRejectionError('');
+                                    }}
+                                    placeholder="Halimbawa: Malabo o hindi tugma ang ID na isinumite, o kulang ang kinakailangang residency requirements."
+                                    maxLength="500"
+                                    className={`w-full rounded-xl border bg-slate-50 p-4 text-sm font-medium text-slate-800 placeholder-slate-400 transition-all outline-none focus:bg-white focus:ring-2 ${
+                                        rejectionError
+                                            ? 'border-red-500 focus:ring-red-500'
+                                            : 'border-slate-300 focus:border-red-600 focus:ring-red-600'
+                                    }`}
+                                    required
+                                />
+                                <div className="mt-1.5 flex items-center justify-between">
+                                    {rejectionError ? (
+                                        <p className="text-xs font-bold text-red-600">
+                                            {rejectionError}
+                                        </p>
+                                    ) : (
+                                        <span className="text-[10px] font-semibold text-slate-400">
+                                            Required (Maximum 500 characters)
+                                        </span>
+                                    )}
+                                    <span className="font-mono text-[10px] text-slate-400">
+                                        {rejectionReason.length}/500
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRejectionModalOpen(false);
+                                        setTargetRequestForRejection(null);
+                                        setRejectionReason('');
+                                        setRejectionError('');
+                                    }}
+                                    disabled={isSubmittingRejection}
+                                    className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                                >
+                                    Kanselahin
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingRejection}
+                                    className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSubmittingRejection ? (
+                                        <>
+                                            <svg
+                                                className="h-4 w-4 animate-spin text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8v8H4z"
+                                                ></path>
+                                            </svg>
+                                            <span>Ipinoproseso...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                            <span>I-reject ang Request</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Suspend Account Modal */}
             {suspendModalOpen && selectedAccount && (
@@ -2562,7 +3534,7 @@ export default function AdminDashboard() {
                             <p className="mt-2 px-4 text-sm font-medium text-slate-500">
                                 Sigurado ka bang gusto mong patawan ng 7-araw na penalty si{' '}
                                 <strong className="text-slate-900">
-                                    {selectedAccount.first_name} {selectedAccount.last_name}
+                                    {selectedAccount.full_name}
                                 </strong>
                                 ?
                             </p>
@@ -2608,12 +3580,12 @@ export default function AdminDashboard() {
                             <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
                                 Delete Account?
                             </h3>
-                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Warning: Ang account ni{' '}
-                                <strong className="text-slate-900">
-                                    {selectedAccount.first_name} {selectedAccount.last_name}
-                                </strong>{' '}
-                                ay permanenteng mabubura.
+                            <p className="mb-6 text-sm text-slate-500">
+                                Sigurado ka bang gusto mong permanenteng burahin ang account ni{' '}
+                                <strong className="text-slate-900 uppercase">
+                                    {selectedAccount.full_name}
+                                </strong>
+                                ? Hindi na maibabalik ang impormasyong ito.
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
@@ -2960,8 +3932,13 @@ export default function AdminDashboard() {
                                     value={docForm.data.name}
                                     onChange={(e) => docForm.setData('name', e.target.value)}
                                     required
-                                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900"
+                                    className={`w-full rounded-lg border px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 ${docForm.errors.name ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-slate-900'}`}
                                 />
+                                {docForm.errors.name && (
+                                    <p className="mt-1 text-xs font-bold text-red-600">
+                                        {docForm.errors.name}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="mb-1 block text-[10px] font-black tracking-widest text-slate-400 uppercase">
@@ -3456,7 +4433,7 @@ export default function AdminDashboard() {
 
             {/* GCASH RECEIPT VIEWER LIGHTBOX */}
             {receiptModalOpen && selectedReceiptPath && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
                             <h3 className="text-lg font-black tracking-tight text-slate-900 uppercase">
@@ -3502,7 +4479,7 @@ export default function AdminDashboard() {
 
             {/* MANUAL KYC OVERRIDE CONFIRMATION MODAL */}
             {manualVerifyConfirmOpen && selectedAccount && (
-                <div className="fixed inset-0 z-[11] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -3524,15 +4501,11 @@ export default function AdminDashboard() {
                                 Manual Verify Resident?
                             </h3>
                             <p className="mt-2 px-4 text-sm font-medium text-slate-500">
-                                Sigurado ka bang gusto mong manu-manong i-verify at i-approve si{' '}
+                                Sigurado ka bang gusto mong i-verify at i-approve si{' '}
                                 <strong className="text-slate-900">
                                     {selectedAccount.first_name} {selectedAccount.last_name}
                                 </strong>
                                 ?
-                            </p>
-                            <p className="mt-2 text-xs text-slate-400 italic">
-                                Ito ay bypass sa automated Google Vision scanner kung nagpakita na
-                                sila ng valid ID sa hall.
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
@@ -3552,6 +4525,121 @@ export default function AdminDashboard() {
                                 className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
                             >
                                 Approve and Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PENDING REGISTRATION MANUAL VERIFY CONFIRMATION MODAL */}
+            {pendingVerifyModalOpen && selectedPendingUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-green-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Manual Verify Registration?
+                            </h3>
+                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
+                                Sigurado ka bang gusto mong manu-manong i-verify ang registration ni{' '}
+                                <strong className="text-slate-900">
+                                    {selectedPendingUser.full_name ||
+                                        `${selectedPendingUser.first_name} ${selectedPendingUser.last_name}`}
+                                </strong>
+                                ?
+                            </p>
+
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPendingVerifyModalOpen(false);
+                                    setSelectedPendingUser(null);
+                                }}
+                                className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitPendingManualVerify}
+                                className="w-full rounded-xl bg-green-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-green-700 active:scale-95"
+                            >
+                                Approve and Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PENDING REGISTRATION REJECT & DELETE CONFIRMATION MODAL */}
+            {pendingRejectModalOpen && selectedPendingUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-4 backdrop-blur-sm transition-opacity">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-6 flex flex-col items-center text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                                Reject & Delete Registration?
+                            </h3>
+                            <p className="mt-2 px-4 text-sm font-medium text-slate-500">
+                                Sigurado ka bang gusto mong i-reject at burahin ang registration ni{' '}
+                                <strong className="text-slate-900">
+                                    {selectedPendingUser.full_name ||
+                                        `${selectedPendingUser.first_name} ${selectedPendingUser.last_name}`}
+                                </strong>
+                                ?
+                            </p>
+                            <p className="mt-2 text-xs font-bold text-red-500">
+                                Ang aksyong ito ay permanente at hindi na mababawi. Mabubura ang
+                                record ng aplikasyon.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPendingRejectModalOpen(false);
+                                    setSelectedPendingUser(null);
+                                }}
+                                className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={submitPendingReject}
+                                className="w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95"
+                            >
+                                Reject & Delete Permanently
                             </button>
                         </div>
                     </div>

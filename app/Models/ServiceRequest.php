@@ -23,6 +23,7 @@ class ServiceRequest extends Model
         // BINURA: 'preferred_pickup_time',
 
         'status',
+        'rejection_reason',
         'released_at',
         'released_by_admin_id',
     ];

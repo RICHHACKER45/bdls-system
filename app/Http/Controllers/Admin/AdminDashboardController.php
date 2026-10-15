@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\DocumentType;
 use App\Models\NotificationLog;
 use App\Models\ServiceRequest;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\EmailService;
 use App\Services\SmsService;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AdminDashboardController extends Controller
@@ -49,7 +51,11 @@ class AdminDashboardController extends Controller
         $queueSort = $request->get('queue_sort', 'oldest');
         $queueSearch = $request->get('queue_search', '');
 
-        $queueBase = ServiceRequest::with(['user', 'documentType']);
+        // Sub-Task 4.1: Eliminate N+1 queries with strict eager loading & column projection
+        $queueBase = ServiceRequest::withTrashed()->with([
+            'user:id,first_name,last_name,middle_name,suffix,contact_number',
+            'documentType:id,name,processing_fee,processing_time_minutes',
+        ]);
 
         // THE FIX: Universal Search across relationships
         if (! empty($queueSearch)) {
@@ -71,7 +77,7 @@ class AdminDashboardController extends Controller
             $queueBase->oldest(); // Ascending queue
         }
 
-        $activeQuery = (clone $queueBase)->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
+        $activeQuery = (clone $queueBase)->whereNull('deleted_at')->whereIn('status', ['pending', 'processing', 'for_interview', 'released']);
 
         if ($queueStatus !== 'all') {
             $activeQuery->where('status', $queueStatus);
@@ -82,17 +88,48 @@ class AdminDashboardController extends Controller
 
         $activeQueue = $activeQuery->paginate(15, ['*'], 'active_page')->withQueryString();
 
-        // THE FIX: Isinama ang rejected at canceled sa History
+        // THE FIX: Isinama ang rejected at canceled sa History (Sub-Task 4.1: Paginated with QueryString)
         $receivedQueue = (clone $queueBase)
             ->whereIn('status', ['received', 'rejected', 'canceled'])
-            ->paginate(15, ['*'], 'history_page');
+            ->paginate(15, ['*'], 'history_page')
+            ->withQueryString();
 
         // THE FIX: Kunin lahat ng dokumento para sa Management Table
         $documents = DocumentType::all();
 
-        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0)
+        // 6. SYSTEM AUDIT LOGS WITH SEARCH (Process 6.0 - Optimized with admin column projection)
         $auditSearch = $request->get('audit_search', '');
-        $auditQuery = AuditLog::with('admin')->latest();
+
+        // Sub-Task 4.2: Audit action category filter (all, request, kyc, settings, broadcast)
+        $auditActionFilter = $request->query('audit_action', 'all');
+
+        $auditQuery = AuditLog::with('admin:id,first_name,last_name')
+            ->when($auditActionFilter && $auditActionFilter !== 'all', function ($query) use ($auditActionFilter) {
+                match ($auditActionFilter) {
+                    'request' => $query->whereIn('action', [
+                        'STATUS_UPDATE',
+                        'REQUEST_REJECTED',
+                        'BATCH_UPDATE',
+                        'BATCH_REJECT',
+                        'WALKIN_ENCODED',
+                        'PRINT_LOGBOOK',
+                    ]),
+                    'kyc' => $query->whereIn('action', [
+                        'MANUAL_VERIFY',
+                        'MANUAL_VERIFY_PENDING',
+                        'REJECT_REGISTRATION',
+                        'PRINT_ACCOUNTS_LOG',
+                    ]),
+                    'settings' => $query->whereIn('action', [
+                        'UPDATE_PAYMENT_SETTINGS',
+                    ]),
+                    'broadcast' => $query->whereIn('action', [
+                        'BROADCAST_SMS',
+                    ]),
+                    default => $query->where('action', 'like', "%{$auditActionFilter}%"),
+                };
+            })
+            ->latest();
 
         if ($auditSearch) {
             $auditQuery->where(function ($q) use ($auditSearch) {
@@ -145,15 +182,33 @@ class AdminDashboardController extends Controller
         }
         $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
 
+        // PHASE 2.2: PENDING REGISTRATIONS (Failed OCR) - Sub-Task 4.1 Index-aware column projection
+        $pendingUsers = User::where('role', 'resident')
+            ->where('is_verified', 0)
+            ->where('ocr_attempts', '>=', 5)
+            ->select(['id', 'first_name', 'last_name', 'middle_name', 'suffix', 'contact_number', 'date_of_birth', 'ocr_attempts', 'created_at'])
+            ->latest()
+            ->get();
+
+        // PHASE 3.3: GCASH PAYMENT SETTINGS
+        $paymentSettings = [
+            'gcash_name' => SystemSetting::where('key', 'gcash_name')->value('value') ?? '',
+            'gcash_number' => SystemSetting::where('key', 'gcash_number')->value('value') ?? '',
+            'gcash_qr_path' => SystemSetting::where('key', 'gcash_qr_path')->value('value') ?? '',
+        ];
+
         // THE ENTERPRISE FIX: Inertia Render with Auth Prop
         return Inertia::render('Admin/Admin-Dashboard', [
             'activeQueue' => $activeQueue,
             'receivedQueue' => $receivedQueue,
             'documents' => $documents,
             'auditLogs' => $auditLogs,
+            'auditFilter' => $auditActionFilter, // Sub-Task 4.2: active audit filter state
             'analyticsSummary' => $analyticsSummary,
             'censusRecords' => $censusRecords,
             'residentAccounts' => $residentAccounts,
+            'pendingUsers' => $pendingUsers,
+            'paymentSettings' => $paymentSettings,
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,
@@ -175,10 +230,37 @@ class AdminDashboardController extends Controller
         SmsService $smsService,
         EmailService $emailService,
     ) {
-        $request->validate(['status' => 'required|string']);
+        $newStatus = strtolower($request->status ?? '');
 
-        // THE LARAVEL WAY FIX: I-force sa lowercase bago i-save sa database
-        $newStatus = strtolower($request->status);
+        if ($newStatus === 'rejected') {
+            $request->validate([
+                'status' => 'required|string',
+                'rejection_reason' => 'required|string|max:500',
+            ]);
+
+            $serviceRequest->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+
+            AuditLog::create([
+                'admin_id' => Auth::id(),
+                'action' => 'REQUEST_REJECTED',
+                'description' => "Nai-reject ang request {$serviceRequest->queue_number}. Dahilan: {$request->rejection_reason}",
+            ]);
+
+            $reasonTruncated = Str::limit($request->rejection_reason, 40);
+            $message = "Ang iyong request (Queue #{$serviceRequest->queue_number}) ay na-reject. Dahilan: {$reasonTruncated}. Maaari kayong mag-pasa muli sa portal.";
+
+            ProcessRequestUpdate::dispatch($serviceRequest, $message);
+
+            event(new AdminDashboardUpdated);
+            event(new ResidentRequestUpdated($serviceRequest, $message));
+
+            return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at nai-record ang dahilan.');
+        }
+
+        $request->validate(['status' => 'required|string']);
 
         $serviceRequest->status = $newStatus;
         $message = '';
@@ -191,33 +273,12 @@ class AdminDashboardController extends Controller
             $serviceRequest->released_at = now();
             $serviceRequest->released_by_admin_id = Auth::id();
             $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
-        } elseif ($newStatus === 'rejected') {
-            $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
         }
 
         $serviceRequest->save();
 
-        // I-skip ang pag-text kung marked as received na para hindi masayang ang SMS API Budget
         if ($message !== '' && $newStatus !== 'received') {
-            $smsService->sendSms(
-                $serviceRequest->user_id,
-                $serviceRequest->user->contact_number,
-                $message,
-            );
-
-            // 2. Ipadala ang Email (Kung verified at naka-opt-in ang residente)
-            if (
-                $serviceRequest->user->email_verified_at &&
-                $serviceRequest->user->wants_email_notification
-            ) {
-                $emailService->sendEmail(
-                    $serviceRequest->user_id,
-                    $serviceRequest->user->email,
-                    'BDLS Request Update: '.strtoupper($newStatus),
-                    $message,
-                    $serviceRequest->id,
-                );
-            }
+            ProcessRequestUpdate::dispatch($serviceRequest, $message);
         }
 
         // SYSTEM AUDIT LOG RECORDER (Process 6.0)
@@ -230,18 +291,9 @@ class AdminDashboardController extends Controller
         ]);
 
         // Sabihan ang mismong residente na nag-iba na ang status niya in real-time
-        event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
+        event(new ResidentRequestUpdated($serviceRequest, $message));
         // Sabihan din ang sariling dashboard na mag-update ng listahan at counts
         event(new AdminDashboardUpdated);
-
-        // ==========================================
-        // THE FIX: Soft Delete for Rejected Requests
-        // ==========================================
-        if ($newStatus === 'rejected') {
-            $serviceRequest->delete(); // Ligtas na itatago ng Laravel ang request
-
-            return back()->with('active_tab', 'queue')->with('success_message', 'Request Rejected at inalis sa listahan.');
-        }
 
         return back()->with('active_tab', 'queue')->with('success_message', 'Status Updated');
     }
@@ -262,7 +314,9 @@ class AdminDashboardController extends Controller
                 'found' => true,
                 'user' => [
                     'first_name' => $user->first_name,
+                    'middle_name' => $user->middle_name,
                     'last_name' => $user->last_name,
+                    'suffix' => $user->suffix,
                     'sex' => $user->sex,
                     'date_of_birth' => $user->date_of_birth ? $user->date_of_birth->format('Y-m-d') : '',
                     'address' => $user->address,
@@ -282,7 +336,9 @@ class AdminDashboardController extends Controller
         $request->validate([
             'contact_number' => 'required|string|max:20',
             'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:10',
             'sex' => 'required|string|in:Male,Female',
             'date_of_birth' => 'required|date',
             'address' => 'required|string|max:255',
@@ -307,7 +363,9 @@ class AdminDashboardController extends Controller
             if (! $user) {
                 $user = User::create([
                     'first_name' => $request->first_name,
+                    'middle_name' => $request->middle_name,
                     'last_name' => $request->last_name,
+                    'suffix' => $request->suffix,
                     'sex' => $request->sex,
                     'date_of_birth' => $request->date_of_birth,
                     'address' => $request->address, // THE FIX: Isang address field na lang
@@ -556,10 +614,12 @@ class AdminDashboardController extends Controller
     public function storeDocument(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:document_types,name',
             'requirements_description' => 'required|string',
             'processing_fee' => 'required|numeric|min:0',
             'processing_time_minutes' => 'required|integer|min:1',
+        ], [
+            'name.unique' => 'Mayroon nang umiiral na dokumento na may ganitong pangalan.',
         ]);
 
         DocumentType::create([
@@ -584,10 +644,17 @@ class AdminDashboardController extends Controller
     public function updateDocument(Request $request, DocumentType $documentType)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('document_types', 'name')->ignore($documentType->id),
+            ],
             'requirements_description' => 'required|string',
             'processing_fee' => 'required|numeric|min:0',
             'processing_time_minutes' => 'required|integer|min:1',
+        ], [
+            'name.unique' => 'Mayroon nang ibang dokumento na may ganitong pangalan.',
         ]);
 
         $documentType->update($request->only(
@@ -625,19 +692,35 @@ class AdminDashboardController extends Controller
      */
     public function batchUpdateStatus(Request $request)
     {
-        $request->validate([
+        $newStatus = strtolower($request->status ?? '');
+
+        $rules = [
             'request_ids' => 'required|array',
             'request_ids.*' => 'exists:service_requests,id',
             'status' => 'required|string',
-        ]);
+        ];
 
-        $newStatus = strtolower($request->status);
+        if ($newStatus === 'rejected') {
+            $rules['rejection_reason'] = 'required|string|max:500';
+        }
+
+        $request->validate($rules);
+
         $requests = ServiceRequest::with('user')->whereIn('id', $request->request_ids)->get();
         $adminId = Auth::id();
         $processedCount = 0;
 
         foreach ($requests as $serviceRequest) {
-            $serviceRequest->status = $newStatus;
+            $updateData = ['status' => $newStatus];
+            if ($newStatus === 'rejected') {
+                $updateData['rejection_reason'] = $request->rejection_reason;
+            } elseif ($newStatus === 'released') {
+                $updateData['released_at'] = now();
+                $updateData['released_by_admin_id'] = $adminId;
+            }
+
+            $serviceRequest->update($updateData);
+
             $message = '';
 
             if ($newStatus === 'processing') {
@@ -645,14 +728,11 @@ class AdminDashboardController extends Controller
             } elseif ($newStatus === 'for_interview') {
                 $message = "Queue {$serviceRequest->queue_number}: Kailangan ng panayam (interview). Mangyaring pumunta sa hall.";
             } elseif ($newStatus === 'released') {
-                $serviceRequest->released_at = now();
-                $serviceRequest->released_by_admin_id = $adminId;
                 $message = "Queue {$serviceRequest->queue_number} ay ready for release na. Maaari nang kunin sa hall.";
             } elseif ($newStatus === 'rejected') {
-                $message = "Queue {$serviceRequest->queue_number} ay nai-reject (kulang sa detalye/reqs). Maaaring mag-request muli.";
+                $reasonTruncated = Str::limit($request->rejection_reason, 40);
+                $message = "Ang iyong request (Queue #{$serviceRequest->queue_number}) ay na-reject. Dahilan: {$reasonTruncated}. Maaari kayong mag-pasa muli sa portal.";
             }
-
-            $serviceRequest->save();
 
             if ($message !== '' && $newStatus !== 'received') {
                 // THE FIX: Magdadagdag ng 2 segundo na delay bawat request para iwas spam block
@@ -661,21 +741,18 @@ class AdminDashboardController extends Controller
             }
 
             // Real-time Push via WebSockets
-            event(new ResidentRequestUpdated($serviceRequest->user_id, $message));
-
-            // Soft Delete kung rejected
-            if ($newStatus === 'rejected') {
-                $serviceRequest->delete();
-            }
+            event(new ResidentRequestUpdated($serviceRequest, $message));
 
             $processedCount++;
         }
 
         // SYSTEM AUDIT LOG RECORDER
         AuditLog::create([
-            'admin_id' => Auth::id(),
-            'action' => 'BATCH_UPDATE',
-            'description' => "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
+            'admin_id' => $adminId,
+            'action' => $newStatus === 'rejected' ? 'BATCH_REJECT' : 'BATCH_UPDATE',
+            'description' => $newStatus === 'rejected'
+                ? "Sabay-sabay na ini-reject ang {$processedCount} requests. Dahilan: {$request->rejection_reason}"
+                : "Sabay-sabay na binago ang status ng {$processedCount} requests papuntang '".strtoupper($newStatus)."'.",
         ]);
 
         event(new AdminDashboardUpdated);
@@ -852,6 +929,41 @@ class AdminDashboardController extends Controller
         ]);
     }
 
+    public function manualVerifyUser(User $user)
+    {
+        $user->update([
+            'is_verified' => 1,
+            'ocr_attempts' => 0,
+            'ocr_locked_until' => null,
+        ]);
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'MANUAL_VERIFY_PENDING',
+            'description' => "Manu-manong na-verify ang pending registration ni {$user->first_name} {$user->last_name}.",
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Matagumpay na na-verify ang registration ni {$user->first_name}.", 'active_tab' => 'pending']);
+    }
+
+    public function rejectRegistration(User $user)
+    {
+        $name = $user->first_name.' '.$user->last_name;
+        $user->delete();
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'REJECT_REGISTRATION',
+            'description' => "Nai-reject ang registration ni {$name}.",
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with(['success_message' => "Ang registration ni {$name} ay nai-reject at inalis.", 'active_tab' => 'pending']);
+    }
+
     public function downloadCensusTemplate()
     {
         $headers = [
@@ -870,5 +982,48 @@ class AdminDashboardController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * MODULE: Update GCash Payment Configuration (Phase 3.3)
+     */
+    public function updatePaymentSettings(Request $request)
+    {
+        $request->validate([
+            'gcash_name' => 'required|string|max:100',
+            'gcash_number' => 'required|string|max:20',
+            'gcash_qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'gcash_name'],
+            ['value' => $request->gcash_name]
+        );
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'gcash_number'],
+            ['value' => $request->gcash_number]
+        );
+
+        if ($request->hasFile('gcash_qr_image')) {
+            $path = $request->file('gcash_qr_image')->store('qr_codes', 'public');
+            SystemSetting::updateOrCreate(
+                ['key' => 'gcash_qr_path'],
+                ['value' => $path]
+            );
+        }
+
+        AuditLog::create([
+            'admin_id' => Auth::id(),
+            'action' => 'UPDATE_PAYMENT_SETTINGS',
+            'description' => 'In-update ang GCash Payment Settings at QR Code.',
+        ]);
+
+        event(new AdminDashboardUpdated);
+
+        return back()->with([
+            'success_message' => 'GCash details updated successfully!',
+            'active_tab' => 'settings',
+        ]);
     }
 }

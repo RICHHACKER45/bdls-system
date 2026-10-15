@@ -103,6 +103,73 @@ export default function Signup() {
         setIsClearModalOpen(false); // Isara ang modal pagkatapos mag-clear
     };
 
+    // ========================================================
+    // 💡 HELPER: Humanize Backend Validation Error Messages
+    // Inalis ang mga underscores at database-like field names para malinis at madaling maunawaan ng residente
+    // ========================================================
+    const formatFriendlyError = (errKey, rawMsg) => {
+        if (!rawMsg) return 'Mayroong error sa iyong form. Pakisuri ang mga detalye.';
+
+        // Kung custom Tagalog error message na ito mula sa backend, ibalik nang direkta
+        if (!rawMsg.includes('field') && !rawMsg.includes('_')) {
+            return rawMsg;
+        }
+
+        const friendlyFieldNames = {
+            first_name: 'Pangalan (First Name)',
+            middle_name: 'Gitnang Pangalan (Middle Name)',
+            last_name: 'Apelyido (Last Name)',
+            suffix: 'Suffix',
+            sex: 'Kasarian',
+            dob_month: 'Buwan ng Kapanganakan',
+            dob_day: 'Araw ng Kapanganakan',
+            dob_year: 'Taon ng Kapanganakan',
+            address: 'Tirahan (Address)',
+            contact_number: 'Mobile Number',
+            email: 'Email Address',
+            password: 'Password',
+            password_confirmation: 'Confirm Password',
+            id_photo_path: 'Valid ID Photo',
+            terms: 'Terms and Conditions',
+        };
+
+        const fieldLabel = friendlyFieldNames[errKey] || errKey.replace(/_/g, ' ');
+
+        // I-sanitize ang standard Laravel validation strings
+        let clean = rawMsg;
+        if (clean.includes('must contain at least one symbol')) {
+            return 'Ang iyong Password ay dapat mayroong kahit isang simbolo (hal. @, !, #).';
+        }
+        if (
+            clean.includes('must contain at least one uppercase') ||
+            clean.includes('must contain at least one uppercase and one lowercase')
+        ) {
+            return 'Ang iyong Password ay dapat may malaki at maliit na letra.';
+        }
+        if (clean.includes('must contain at least one number')) {
+            return 'Ang iyong Password ay dapat mayroong kahit isang numero (0-9).';
+        }
+        if (clean.includes('must be at least 8 characters')) {
+            return 'Ang iyong Password ay dapat hindi bababa sa walong (8) characters.';
+        }
+        if (clean.includes('has already been taken')) {
+            return `Ang ${fieldLabel} ay ginagamit na ng ibang account.`;
+        }
+        if (clean.includes('must be accepted')) {
+            return 'Paki-scroll hanggang ibaba at tanggapin ang Terms & Conditions.';
+        }
+        if (clean.includes('is required') || clean.includes('field is required')) {
+            return `Kailangang punan ang ${fieldLabel}.`;
+        }
+
+        // Tanggalin ang technical prefix tulad ng "The [field_name] field "
+        clean = clean.replace(/the\s+[a-z0-9_]+\s+field\s+/i, '');
+        // Tanggalin ang natitirang underscores
+        clean = clean.replace(/_/g, ' ');
+
+        return clean;
+    };
+
     const validateForm = () => {
         const newErrors = {};
         const requiredMsg = 'Kailangan itong punan.';
@@ -163,7 +230,14 @@ export default function Signup() {
                         formattedErrors[key] = backendErrors[key][0];
                     }
                     setLocalErrors((prev) => ({ ...prev, ...formattedErrors }));
-                    triggerToast('Taken na ang detalye na ito. Paki-check ang mga pulang kahon.');
+
+                    // 💡 DYNAMIC TOAST: Ipakita ang totoong error message sa halip na generic text
+                    const firstKey = Object.keys(formattedErrors)[0];
+                    const friendlyToast = formatFriendlyError(firstKey, formattedErrors[firstKey]);
+                    triggerToast(
+                        friendlyToast ||
+                            'Taken na ang detalye na ito. Paki-check ang mga pulang kahon.'
+                    );
                 } else {
                     triggerToast('May nangyaring error sa server. Subukan muli.');
                 }
@@ -203,11 +277,14 @@ export default function Signup() {
         const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 20;
         if (bottom) {
             setIsScrolledToBottom(true);
+            // 🛑 BUG FIX: I-sync agad ang terms: true pagka-scroll upang hindi maging stale sa React state
+            setData('terms', true);
         }
     };
 
     const submitRegistration = (e) => {
         e.preventDefault();
+        // Tiyakin na naka-marka bilang tinanggap ang terms
         setData('terms', true);
 
         post(route('signup.post'), {
@@ -216,6 +293,7 @@ export default function Signup() {
             // 🛑 BUG FIX: Inalis natin ang `reset('password')` sa onFinish para hindi mabura ang tinype!
             onError: (errs) => {
                 if (Object.keys(errs).length > 0) {
+                    // 1. Kung may error sa ID photo/OCR, ibalik sa View 2 (Camera/Scanner)
                     if (errs.id_photo_path) {
                         triggerToast(errs.id_photo_path); // Ipakita ang "Attempt X of 5" error
                         setData('ocr_attempt', data.ocr_attempt + 1); // Dagdagan ang bilang ng attempt
@@ -223,10 +301,23 @@ export default function Signup() {
                         setPreviewImage(null); // I-reset ang Camera Preview
                         setIsScanning(true); // Buksan ulit ang Live Scanner
                         setUiView(2); // 🔄 I-bounce back ang user sa View 2 (Camera)
-                    } else if (errs.terms) setUiView(3);
+                    }
+                    // 2. Kung Terms & Conditions lang ang issue, manatili sa View 3
+                    else if (errs.terms && Object.keys(errs).length === 1) {
+                        triggerToast(
+                            'Paki-scroll hanggang ibaba at tanggapin ang Terms & Conditions.'
+                        );
+                        setUiView(3);
+                    }
+                    // 3. Kung may mali sa form details (View 1), kumuha ng user-friendly dynamic message
                     else {
-                        triggerToast('Mayroong error sa iyong form.');
-                        setUiView(1);
+                        // Kunin ang unang field na may error bukod sa 'terms' kung meron
+                        const firstKey =
+                            Object.keys(errs).find((k) => k !== 'terms') || Object.keys(errs)[0];
+                        const friendlyToast = formatFriendlyError(firstKey, errs[firstKey]);
+
+                        triggerToast(friendlyToast);
+                        setUiView(1); // I-bounce back ang user sa View 1 para maitama ang input
                     }
                 }
             },
@@ -340,8 +431,8 @@ export default function Signup() {
 
                 <div className="relative rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-10">
                     {/* =========================================
-              VIEW 1: ANG PINAGSAMANG REGISTRATION FORM 
-              ========================================= */}
+                    VIEW 1: ANG PINAGSAMANG REGISTRATION FORM 
+                    ========================================= */}
                     {uiView === 1 && (
                         <div className="animate-in fade-in duration-500">
                             <div className="relative mb-8 text-center">
@@ -441,11 +532,11 @@ export default function Signup() {
                                         onChange={(e) =>
                                             handleInputChange('middle_name', e.target.value)
                                         }
-                                        className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900"
+                                        className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.middle_name || errors.middle_name ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                                     />
-                                    {errors.middle_name && (
+                                    {(localErrors.middle_name || errors.middle_name) && (
                                         <p className="mt-1 text-xs font-bold text-red-500">
-                                            {errors.middle_name}
+                                            {localErrors.middle_name || errors.middle_name}
                                         </p>
                                     )}
                                 </div>
@@ -458,7 +549,7 @@ export default function Signup() {
                                         onChange={(e) =>
                                             handleInputChange('suffix', e.target.value)
                                         }
-                                        className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900"
+                                        className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.suffix || errors.suffix ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                                     >
                                         <option value="">Wala</option>
                                         <option value="Jr.">Jr.</option>
@@ -466,6 +557,11 @@ export default function Signup() {
                                         <option value="II">II</option>
                                         <option value="III">III</option>
                                     </select>
+                                    {(localErrors.suffix || errors.suffix) && (
+                                        <p className="mt-1 text-xs font-bold text-red-500">
+                                            {localErrors.suffix || errors.suffix}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="mb-1 block text-sm font-semibold text-slate-700">
@@ -516,7 +612,7 @@ export default function Signup() {
                                             onChange={(e) =>
                                                 handleInputChange('dob_month', e.target.value)
                                             }
-                                            className={`w-full rounded-lg border px-3 py-3 ${localErrors.dob_year || errors.dob_month ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                            className={`w-full rounded-lg border px-3 py-3 ${localErrors.dob_month || localErrors.dob_year || errors.dob_month ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                                         >
                                             <option value="">Month</option>
                                             <option value="01">Jan</option>
@@ -537,7 +633,7 @@ export default function Signup() {
                                             onChange={(e) =>
                                                 handleInputChange('dob_day', e.target.value)
                                             }
-                                            className={`w-full rounded-lg border px-3 py-3 ${localErrors.dob_year || errors.dob_day ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                            className={`w-full rounded-lg border px-3 py-3 ${localErrors.dob_day || localErrors.dob_year || errors.dob_day ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                                         >
                                             <option value="">Day</option>
                                             {Array.from({ length: 31 }, (_, i) => i + 1).map(
@@ -569,10 +665,16 @@ export default function Signup() {
                                             ))}
                                         </select>
                                     </div>
-                                    {(localErrors.dob_year || errors.dob_year) && (
+                                    {/* PINALAWAK: Kasama na ang dob_month at dob_day sa error checking para hindi magtago ang validation */}
+                                    {(localErrors.dob_year ||
+                                        errors.dob_year ||
+                                        errors.dob_month ||
+                                        errors.dob_day) && (
                                         <p className="mt-1 text-xs font-bold text-red-500">
                                             {localErrors.dob_year ||
                                                 errors.dob_year ||
+                                                errors.dob_month ||
+                                                errors.dob_day ||
                                                 'Pakikumpleto ang iyong kapanganakan.'}
                                         </p>
                                     )}
@@ -657,11 +759,11 @@ export default function Signup() {
                                         autoComplete="off"
                                         value={data.email}
                                         onChange={(e) => handleInputChange('email', e.target.value)}
-                                        className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                                        className={`w-full rounded-lg border px-4 py-3 outline-none focus:ring-2 focus:ring-slate-900 ${localErrors.email || errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                                     />
-                                    {errors.email && (
+                                    {(localErrors.email || errors.email) && (
                                         <p className="mt-1 text-xs font-bold text-red-500">
-                                            {errors.email}
+                                            {localErrors.email || errors.email}
                                         </p>
                                     )}
                                 </div>
@@ -812,8 +914,8 @@ export default function Signup() {
                     )}
 
                     {/* =========================================
-              VIEW 2: ON-THE-SPOT ID SCANNER (ENTERPRISE WEBCAM
-              ========================================= */}
+                    VIEW 2: ON-THE-SPOT ID SCANNER (ENTERPRISE WEBCAM
+                    ========================================= */}
                     {uiView === 2 && (
                         <div className="animate-in fade-in slide-in-from-right-8 duration-500">
                             <div className="mb-6 text-center">
@@ -831,10 +933,20 @@ export default function Signup() {
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            // 🛡️ DEV MODE: Valid 1x1 base64 JPEG binary upang pumasa sa Laravel 'image' rule
+                                            const base64Jpeg =
+                                                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+                                            const byteChars = atob(base64Jpeg);
+                                            const byteNums = new Array(byteChars.length);
+                                            for (let i = 0; i < byteChars.length; i++) {
+                                                byteNums[i] = byteChars.charCodeAt(i);
+                                            }
                                             const dummyFile = new File(
-                                                ['dummy content'],
+                                                [new Uint8Array(byteNums)],
                                                 'mock_id.jpg',
-                                                { type: 'image/jpeg' }
+                                                {
+                                                    type: 'image/jpeg',
+                                                }
                                             );
                                             setData('id_photo_path', dummyFile);
                                             setPreviewImage(
@@ -854,9 +966,21 @@ export default function Signup() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const errorFile = new File(['dummy'], 'error.jpg', {
-                                                type: 'image/jpeg',
-                                            });
+                                            // 🛡️ DEV MODE: Valid 1x1 base64 JPEG binary na may simulate_error flag
+                                            const base64Jpeg =
+                                                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+                                            const byteChars = atob(base64Jpeg);
+                                            const byteNums = new Array(byteChars.length);
+                                            for (let i = 0; i < byteChars.length; i++) {
+                                                byteNums[i] = byteChars.charCodeAt(i);
+                                            }
+                                            const errorFile = new File(
+                                                [new Uint8Array(byteNums)],
+                                                'error.jpg',
+                                                {
+                                                    type: 'image/jpeg',
+                                                }
+                                            );
                                             setData((data) => ({
                                                 ...data,
                                                 id_photo_path: errorFile,
@@ -992,8 +1116,8 @@ export default function Signup() {
                     )}
 
                     {/* =========================================
-              VIEW 3: INLINE TERMS & CONDITIONS (FORCED SCROLL)
-              ========================================= */}
+                    VIEW 3: INLINE TERMS & CONDITIONS (FORCED SCROLL)
+                    ========================================= */}
                     {uiView === 3 && (
                         <div className="animate-in fade-in slide-in-from-right-8 duration-500">
                             <div className="mb-4">
