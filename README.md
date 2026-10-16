@@ -182,7 +182,7 @@ To protect citizen privacy under Philippine Data Privacy laws:
 | **Cloud Hosting**           | Railway (Containerized Multi-Process Decoupled Monolith) |
 | **AI / Machine Learning**   | Google Cloud Vision API (OCR Text Detection)             |
 | **Telecommunications**      | Fortmed SMS Gateway & PinasSMS Dual-Engine Hybrid        |
-| **Transactional Email**     | Resend API (`resend/resend-laravel`)                   |
+| **Transactional Email**     | EmailJS                                                |
 | **Monitoring & Uptime**     | Uptime Kuma + Telegram Bot API                           |
 | **Document Generation**     | DomPDF (`barryvdh/laravel-dompdf`)                     |
 
