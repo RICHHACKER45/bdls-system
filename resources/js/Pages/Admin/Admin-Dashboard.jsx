@@ -16,6 +16,14 @@ import {
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
 
+const sanitizePaginationUrl = (url) => {
+    if (!url) return '#';
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+        return url.replace(/^http:\/\//i, 'https://');
+    }
+    return url;
+};
+
 const Pagination = ({ links }) => {
     if (!links || links.length <= 3) return null;
     return (
@@ -27,7 +35,7 @@ const Pagination = ({ links }) => {
                 return (
                     <Link
                         key={i}
-                        href={link.url || '#'}
+                        href={sanitizePaginationUrl(link.url)}
                         preserveScroll
                         preserveState
                         className={`flex min-w-[32px] items-center justify-center rounded-lg border px-3 py-2 text-xs font-bold transition-all ${

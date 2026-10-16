@@ -3,6 +3,14 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import Webcam from 'react-webcam';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
+const sanitizePaginationUrl = (url) => {
+    if (!url) return '#';
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+        return url.replace(/^http:\/\//i, 'https://');
+    }
+    return url;
+};
+
 const Pagination = ({ links }) => {
     if (!links || links.length <= 3) return null;
     return (
@@ -10,7 +18,7 @@ const Pagination = ({ links }) => {
             {links.map((link, i) => (
                 <Link
                     key={i}
-                    href={link.url || '#'}
+                    href={sanitizePaginationUrl(link.url)}
                     preserveScroll
                     className={`rounded border px-3 py-1 text-sm transition-all ${
                         link.active

@@ -20,9 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Detect if the request is coming through an ngrok tunnel
-        if (str_contains(request()->getHost(), 'ngrok-free.app') ||
-            request()->header('X-Forwarded-Proto') === 'https') {
+        if (app()->environment('production') ||
+            str_contains(config('app.url'), 'https://') ||
+            request()->header('X-Forwarded-Proto') === 'https' ||
+            str_contains(request()->getHost(), 'ngrok-free.app')) {
 
             URL::forceScheme('https');
         }
