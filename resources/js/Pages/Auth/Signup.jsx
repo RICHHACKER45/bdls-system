@@ -384,7 +384,7 @@ export default function Signup() {
             {/* Global Toast */}
             <div className="pointer-events-none fixed top-6 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
-                    className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
+                    className={`flex items-center gap-4 rounded-xl border-l-4 border-red-500 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-20 opacity-0'}`}
                 >
                     <svg
                         className="h-6 w-6 shrink-0 text-red-500"

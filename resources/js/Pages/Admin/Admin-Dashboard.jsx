@@ -951,10 +951,10 @@ export default function AdminDashboard() {
 
             <div className="pointer-events-none fixed top-24 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
-                    className={`pointer-events-auto flex items-center gap-4 rounded-xl border-l-4 ${
+                    className={`flex items-center gap-4 rounded-xl border-l-4 ${
                         localToast.type === 'error' ? 'border-red-500' : 'border-green-400'
                     } bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${
-                        localToast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'
+                        localToast.visible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-20 opacity-0'
                     }`}
                 >
                     {localToast.type === 'error' ? (

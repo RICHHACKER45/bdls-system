@@ -108,30 +108,43 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
 
             {/* SIDEBAR */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col ${isSidebarOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none lg:pointer-events-auto'}`}
             >
-                <div className="flex h-16 items-center border-b border-slate-100 px-6">
-                    <div className="mr-3 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                        <img
-                            src="/images/bdls-logo-large.png"
-                            alt="BDLS Logo"
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                                e.currentTarget.outerHTML =
-                                    '<span class="text-xs font-bold text-red-600">BD</span>';
-                            }}
-                        />
+                <div className="flex h-16 items-center justify-between border-b border-slate-100 px-6">
+                    <div className="flex items-center">
+                        <div className="mr-3 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                            <img
+                                src="/images/bdls-logo-large.png"
+                                alt="BDLS Logo"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.outerHTML =
+                                        '<span class="text-xs font-bold text-red-600">BD</span>';
+                                }}
+                            />
+                        </div>
+                        <span className="text-lg font-bold tracking-tight">BDLS System</span>
                     </div>
-                    <span className="text-lg font-bold tracking-tight">BDLS System</span>
+                    <button
+                        type="button"
+                        onClick={toggleSidebar}
+                        className="-mr-2 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+                        aria-label="Close Sidebar"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
                     {sidebarNav.map((nav) => (
                         <button
                             key={nav.id}
+                            type="button"
                             onClick={() => {
                                 if (setActiveTab) setActiveTab(nav.id);
-                                if (window.innerWidth < 1024) toggleSidebar();
+                                setIsSidebarOpen(false);
                             }}
                             className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-all ${activeTab === nav.id ? 'bg-red-50 text-red-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                         >
@@ -217,7 +230,7 @@ export default function ResidentLayout({ children, activeTab, setActiveTab }) {
             {/* TOAST ALERTS */}
             <div className="pointer-events-none fixed top-6 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
-                    className={`pointer-events-auto flex transform items-center gap-4 rounded-xl border-l-4 border-green-400 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
+                    className={`flex transform items-center gap-4 rounded-xl border-l-4 border-green-400 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-20 opacity-0'}`}
                 >
                     <svg
                         className="h-6 w-6 shrink-0 text-green-400"

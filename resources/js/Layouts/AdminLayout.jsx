@@ -185,7 +185,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
 
             {/* SIDEBAR */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:flex lg:translate-x-0 lg:flex-col ${isSidebarOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none lg:pointer-events-auto'}`}
             >
                 <div className="flex h-16 items-center justify-between border-b border-slate-100 px-6">
                     <div className="flex items-center gap-3">
@@ -202,6 +202,16 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                         </div>
                         <span className="text-lg font-bold tracking-tight">Admin Portal</span>
                     </div>
+                    <button
+                        type="button"
+                        onClick={toggleSidebar}
+                        className="-mr-2 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+                        aria-label="Close Sidebar"
+                    >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 {/* SIDEBAR NAVIGATION - Categorized into 3 functional domains */}
@@ -223,7 +233,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                                         type="button"
                                         onClick={() => {
                                             if (setActiveTab) setActiveTab(nav.id);
-                                            if (window.innerWidth < 1024) toggleSidebar();
+                                            setIsSidebarOpen(false);
                                         }}
                                         className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
                                             activeTab === nav.id
@@ -321,7 +331,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
             {/* TOAST ALERTS */}
             <div className="pointer-events-none fixed top-6 left-1/2 z-[60] flex w-full max-w-md -translate-x-1/2 transform flex-col gap-3 px-4">
                 <div
-                    className={`pointer-events-auto flex transform items-center gap-4 rounded-xl border-l-4 border-green-400 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
+                    className={`flex transform items-center gap-4 rounded-xl border-l-4 border-green-400 bg-slate-900 px-6 py-4 text-white shadow-2xl transition-all duration-500 ${toast.visible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-20 opacity-0'}`}
                 >
                     <svg
                         className="h-6 w-6 shrink-0 text-green-400"
