@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
+        // ISOLATED EXEMPTION: Strictly exempt developmental testing endpoints only
+        $middleware->validateCsrfTokens(except: [
+            'admin/dev/*',
+        ]);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 
 export default function DevOptionsTab({ devDiagnostics = {} }) {
     const [subTab, setSubTab] = useState('camera-id'); // 'camera-id' | 'sms-sandbox'
@@ -13,7 +14,7 @@ export default function DevOptionsTab({ devDiagnostics = {} }) {
     const [isCameraActive, setIsCameraActive] = useState(true);
     const [capturedImage, setCapturedImage] = useState(null);
     const [uploadedFile, setUploadedFile] = useState(null);
-    const [evaluatorName, setEvaluatorName] = useState('Juan Dela Cruz');
+    const [evaluatorName, setEvaluatorName] = useState('');
     const [idVerifying, setIdVerifying] = useState(false);
     const [idVerifyResult, setIdVerifyResult] = useState(null);
     const [idVerifyError, setIdVerifyError] = useState(null);
@@ -95,15 +96,43 @@ export default function DevOptionsTab({ devDiagnostics = {} }) {
         setIdVerifyResult(null);
     };
 
-    // Verify Identity in Memory
+    const { props: pageProps } = usePage();
+    const pageCsrf = pageProps?.csrf_token || '';
+
+    // CSRF Token Helper
+    const getCsrfToken = () => {
+        return (
+            pageCsrf ||
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+            document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('XSRF-TOKEN='))
+                ?.split('=')[1] ||
+            ''
+        );
+    };
+
+    // Verify Identity in Memory via Real Google Cloud Vision OCR
     const handleVerifyId = async (e) => {
         e.preventDefault();
+        if (cameraMode === 'live' && !capturedImage) {
+            setIdVerifyError('Mangyaring kumuha muna ng snapshot ng ID gamit ang camera.');
+            return;
+        }
+        if (cameraMode === 'upload' && !uploadedFile) {
+            setIdVerifyError('Mangyaring pumili muna ng larawan ng iyong ID.');
+            return;
+        }
+
         setIdVerifying(true);
         setIdVerifyResult(null);
         setIdVerifyError(null);
 
         const formData = new FormData();
-        formData.append('resident_name', evaluatorName);
+        const token = getCsrfToken();
+        if (token) {
+            formData.append('_token', token);
+        }
         if (cameraMode === 'live' && capturedImage) {
             formData.append('image', capturedImage);
         } else if (cameraMode === 'upload' && uploadedFile) {
@@ -111,10 +140,23 @@ export default function DevOptionsTab({ devDiagnostics = {} }) {
         }
 
         try {
-            const response = await axios.post(route('admin.dev.verify_id_capture'), formData);
+            const token = getCsrfToken();
+            const response = await axios.post(route('admin.dev.verify_id_capture'), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+                },
+            });
             setIdVerifyResult(response.data);
+            if (response.data.detected && response.data.detected_name) {
+                setEvaluatorName(response.data.detected_name);
+            }
         } catch (err) {
-            setIdVerifyError(err.response?.data?.message || 'Verification failed. Please try again.');
+            if (err.response?.status === 419 || err.response?.status === 401) {
+                setIdVerifyError('Nag-expire ang iyong admin session. Mangyaring i-refresh ang page at mag-login muli.');
+            } else {
+                setIdVerifyError(err.response?.data?.message || 'Verification failed. Please try again.');
+            }
         } finally {
             setIdVerifying(false);
         }
@@ -158,15 +200,28 @@ export default function DevOptionsTab({ devDiagnostics = {} }) {
         setSmsError(null);
 
         try {
-            const response = await axios.post(route('admin.dev.test_sms'), {
-                recipient: smsRecipient,
-                situation_key: situationKey,
-                resident_name: evaluatorName,
-                mode: smsMode,
-            });
+            const token = getCsrfToken();
+            const response = await axios.post(
+                route('admin.dev.test_sms'),
+                {
+                    recipient: smsRecipient,
+                    situation_key: situationKey,
+                    resident_name: evaluatorName || 'Residente',
+                    mode: smsMode,
+                },
+                {
+                    headers: {
+                        ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+                    },
+                }
+            );
             setSmsResult(response.data);
         } catch (err) {
-            setSmsError(err.response?.data?.message || 'Failed to dispatch SMS. Please verify your mobile number format.');
+            if (err.response?.status === 419 || err.response?.status === 401) {
+                setSmsError('Nag-expire ang iyong admin session. Mangyaring i-refresh ang page.');
+            } else {
+                setSmsError(err.response?.data?.message || 'Failed to dispatch SMS. Please verify your mobile number format.');
+            }
         } finally {
             setSmsLoading(false);
         }
@@ -378,101 +433,170 @@ export default function DevOptionsTab({ devDiagnostics = {} }) {
                                     </div>
                                 )}
 
-                                {/* Resident Name Binding */}
-                                <div>
-                                    <label className="block text-[11px] font-black tracking-wider text-slate-500 uppercase">
-                                        Resident Full Name (Binding to Automated SMS)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={evaluatorName}
-                                        onChange={(e) => setEvaluatorName(e.target.value)}
-                                        placeholder="Hal. Juan Dela Cruz"
-                                        className="mt-1.5 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-800 focus:border-purple-600 focus:outline-none"
-                                    />
-                                    <p className="mt-1 text-[11px] text-slate-400">
-                                        This name will be tested against the Census Masterlist and personalized in the situational SMS alerts.
-                                    </p>
-                                </div>
-
                                 <button
                                     type="submit"
-                                    disabled={idVerifying}
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-xs font-black tracking-wider text-white uppercase shadow-md transition-all hover:bg-purple-700 active:scale-95 disabled:opacity-50"
+                                    disabled={idVerifying || (cameraMode === 'live' ? !capturedImage : !uploadedFile)}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-3.5 text-xs font-black tracking-wider text-white uppercase shadow-md transition-all hover:bg-purple-700 active:scale-95 disabled:opacity-50"
                                 >
-                                    {idVerifying ? 'Verifying In-Memory...' : 'Verify Identity & Cross-Reference Census'}
+                                    {idVerifying ? (
+                                        <>
+                                            <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Analyzing ID with OCR...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span>Scan &amp; Extract Name via OCR</span>
+                                        </>
+                                    )}
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    {/* Right: Telemetry & Zero-Retention Security Proof */}
+                    {/* Right: Telemetry & Strict Green/Red Card Verification */}
                     <div className="lg:col-span-5 space-y-6">
                         {idVerifyResult ? (
-                            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <div className="text-sm font-black text-slate-900 uppercase">
-                                        Verification Verdict
+                            idVerifyResult.detected ? (
+                                /* 🟢 GREEN CARD: ID DETECTED & VERIFIED */
+                                <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/80 p-6 shadow-md space-y-4">
+                                    <div className="flex items-center justify-between border-b border-emerald-200 pb-3">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-black text-white uppercase tracking-wider shadow-sm">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            ID Detected &amp; Verified
+                                        </span>
+                                        <span className="text-[11px] font-bold text-emerald-800">
+                                            {idVerifyResult.zero_retention_audit?.execution_time_ms} ms
+                                        </span>
                                     </div>
-                                    <span className={`rounded-md px-3 py-1 text-xs font-black ${
-                                        idVerifyResult.census_reconciliation?.verification_verdict === 'AUTO_APPROVED'
-                                            ? 'bg-emerald-100 text-emerald-800'
-                                            : 'bg-amber-100 text-amber-800'
-                                    }`}>
-                                        {idVerifyResult.census_reconciliation?.verification_verdict}
-                                    </span>
-                                </div>
 
-                                {/* Zero-Retention Telemetry Card */}
-                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-xs">
-                                    <div className="font-black text-emerald-900 flex items-center gap-1.5">
-                                        <svg className="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                        </svg>
-                                        Zero-Retention Security Proof (RA 10173)
+                                    {/* Prominent Detected Name */}
+                                    <div className="rounded-xl border border-emerald-300 bg-white p-4 shadow-sm">
+                                        <div className="text-[10px] font-black tracking-wider text-emerald-700 uppercase">
+                                            Detected Name (Extracted via OCR)
+                                        </div>
+                                        <div className="mt-1 text-2xl font-black tracking-tight text-slate-900 uppercase">
+                                            {idVerifyResult.detected_name}
+                                        </div>
+                                        {idVerifyResult.census_reconciliation?.matched ? (
+                                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                                                <span>✓ Matched in Barangay Census Masterlist</span>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-sky-100 px-2.5 py-1 text-[11px] font-bold text-sky-800">
+                                                <span>ℹ️ Non-Census ID (Extracted Successfully from ID)</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="mt-2 space-y-1.5 text-[11px] text-emerald-800">
-                                        <div className="flex justify-between">
-                                            <span>Storage Disk Retention:</span>
-                                            <span className="font-black">0 Bytes (Zero Server Storage)</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>RAM Buffer Peak:</span>
-                                            <span className="font-bold">{idVerifyResult.zero_retention_audit?.in_memory_ram_peak_kb}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Processing Latency:</span>
-                                            <span className="font-bold">{idVerifyResult.zero_retention_audit?.execution_time_ms} ms</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Memory Buffer State:</span>
-                                            <span className="font-black text-emerald-700">Purged post-verification</span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Census Match Details */}
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs space-y-2">
-                                    <div className="font-black text-slate-800 uppercase text-[10px]">Census Masterlist Reconciliation</div>
-                                    {idVerifyResult.census_reconciliation?.matched ? (
-                                        <div className="space-y-1 text-slate-700">
-                                            <div>Verified Name: <span className="font-bold">{idVerifyResult.census_reconciliation?.census_record?.full_name}</span></div>
-                                            <div>Barangay Address: <span className="font-bold">{idVerifyResult.census_reconciliation?.census_record?.address}</span></div>
-                                            <div>Match Confidence: <span className="font-bold text-emerald-600">{idVerifyResult.census_reconciliation?.match_confidence}</span></div>
+                                    {/* OCR Raw Text Snippet */}
+                                    {idVerifyResult.raw_text_snippet && (
+                                        <div className="rounded-xl border border-emerald-200 bg-white/80 p-3 text-xs space-y-1">
+                                            <div className="text-[10px] font-black uppercase text-emerald-800">Scanned Text Preview:</div>
+                                            <div className="font-mono text-[10px] text-slate-600 break-words leading-relaxed">
+                                                "{idVerifyResult.raw_text_snippet}"
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <p className="text-amber-600 font-bold">Resident not found in local census records. Flagged for barangay captain manual review.</p>
                                     )}
-                                </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setSubTab('sms-sandbox')}
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white uppercase transition-all hover:bg-slate-800"
-                                >
-                                    Proceed to Test SMS with this Identity &rarr;
-                                </button>
-                            </div>
+                                    {/* Zero-Retention Telemetry Card */}
+                                    <div className="rounded-xl border border-emerald-300 bg-emerald-100/60 p-4 text-xs">
+                                        <div className="font-black text-emerald-950 flex items-center gap-1.5">
+                                            <svg className="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                            Zero-Retention Security Proof (RA 10173)
+                                        </div>
+                                        <div className="mt-2 space-y-1 text-[11px] text-emerald-900">
+                                            <div className="flex justify-between">
+                                                <span>Storage Disk Retention:</span>
+                                                <span className="font-black">0 Bytes (Zero Server Storage)</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>RAM Buffer Peak:</span>
+                                                <span className="font-bold">{idVerifyResult.zero_retention_audit?.in_memory_ram_peak_kb}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Memory Buffer State:</span>
+                                                <span className="font-black text-emerald-700">Purged post-verification</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSubTab('sms-sandbox')}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold text-white uppercase tracking-wider transition-all hover:bg-slate-800 shadow-md"
+                                    >
+                                        Proceed to Test Situational SMS with this Name &rarr;
+                                    </button>
+                                </div>
+                            ) : (
+                                /* 🔴 RED CARD: ID NOT DETECTED */
+                                <div className="rounded-2xl border-2 border-rose-400 bg-rose-50/90 p-6 shadow-md space-y-4">
+                                    <div className="flex items-center justify-between border-b border-rose-200 pb-3">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-black text-white uppercase tracking-wider shadow-sm">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            ID Not Detected
+                                        </span>
+                                        <span className="text-[11px] font-bold text-rose-700">
+                                            {idVerifyResult.zero_retention_audit?.execution_time_ms} ms
+                                        </span>
+                                    </div>
+
+                                    <div className="rounded-xl border border-rose-300 bg-white p-4 shadow-sm space-y-2">
+                                        <div className="text-base font-black text-rose-900">
+                                            Walang Nabasang Pangalan sa ID
+                                        </div>
+                                        <p className="text-xs text-rose-700 leading-relaxed">
+                                            {idVerifyResult.message || 'Hindi nakita o masyadong malabo ang pangalan sa kinunang imahe.'}
+                                        </p>
+                                        {idVerifyResult.raw_text_snippet && (
+                                            <div className="mt-2 rounded-lg bg-rose-50 p-2.5 text-[10px] text-rose-800 font-mono">
+                                                <span className="font-bold">Raw OCR Snippet: </span>
+                                                <span>"{idVerifyResult.raw_text_snippet}"</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-xl border border-rose-200 bg-white/70 p-3.5 text-xs text-rose-900 space-y-1.5">
+                                        <div className="font-black flex items-center gap-1.5">
+                                            <svg className="h-4 w-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Tips para ma-detect ng maayos:
+                                        </div>
+                                        <ul className="list-disc pl-5 space-y-1 text-[11px] text-rose-800">
+                                            <li>Tiyaking maliwanag at walang glare o reflection sa ibabaw ng ID.</li>
+                                            <li>Ipatapat ang buong ID card sa loob ng alignment box.</li>
+                                            <li>Huwag galawin ang kamay o camera habang kumukuha ng snapshot.</li>
+                                            <li>Siguraduhing malinaw at hindi malabo ang mga letra ng iyong pangalan.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-[11px] text-rose-800 font-bold px-1">
+                                        <span>Security Zero-Retention Audit:</span>
+                                        <span className="text-emerald-700">0 Bytes Stored (Safe)</span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleRetakeSnapshot}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-xs font-bold text-white uppercase tracking-wider transition-all hover:bg-rose-700 shadow-md"
+                                    >
+                                        Subukan Muli (Retake Snapshot)
+                                    </button>
+                                </div>
+                            )
                         ) : (
                             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-xs text-slate-400">
                                 <svg className="mx-auto h-10 w-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
