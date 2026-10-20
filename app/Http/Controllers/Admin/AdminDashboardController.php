@@ -209,6 +209,7 @@ class AdminDashboardController extends Controller
             'residentAccounts' => $residentAccounts,
             'pendingUsers' => $pendingUsers,
             'paymentSettings' => $paymentSettings,
+            'devDiagnostics' => DevOptionsController::getDiagnosticsData(),
             'filters' => [
                 'analytics_month' => $analyticsMonth,
                 'analytics_year' => $analyticsYear,

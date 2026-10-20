@@ -173,6 +173,26 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                 },
             ],
         },
+        {
+            title: 'I.T. Expert Evaluation',
+            items: [
+                {
+                    id: 'dev-options',
+                    label: 'Developmental Options',
+                    badge: 'DEV',
+                    icon: (
+                        <svg className="h-5 w-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                            ></path>
+                        </svg>
+                    ),
+                },
+            ],
+        },
     ];
 
     return (
@@ -242,7 +262,16 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                                         }`}
                                     >
                                         {nav.icon}
-                                        <span>{nav.label}</span>
+                                        <span className="truncate">{nav.label}</span>
+                                        {nav.badge && (
+                                            <span className={`ml-auto rounded-md px-1.5 py-0.5 text-[9px] font-black tracking-wide ${
+                                                activeTab === nav.id
+                                                    ? 'bg-indigo-500 text-white'
+                                                    : 'bg-indigo-50 text-indigo-600'
+                                            }`}>
+                                                {nav.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 ))}
                             </div>

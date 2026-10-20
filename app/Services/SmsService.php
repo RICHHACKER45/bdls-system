@@ -153,7 +153,7 @@ class SmsService
     /**
      * PinasSMS Gateway Integration
      */
-    protected function sendViaPinasSms(string $recipient, string $message): bool
+    public function sendViaPinasSms(string $recipient, string $message): bool
     {
         if (! $this->pinasApiKey) {
             Log::error('PinasSMS API key is not configured.');
@@ -189,7 +189,7 @@ class SmsService
     /**
      * Fortmed (FMCSMS) Gateway Integration
      */
-    protected function sendViaFortmed(string $recipient, string $message): bool
+    public function sendViaFortmed(string $recipient, string $message): bool
     {
         if (! $this->fortmedApiKey || ! $this->fortmedUrl) {
             Log::error('Fortmed API credentials not configured.');
@@ -222,9 +222,38 @@ class SmsService
     }
 
     /**
+     * Diagnose mobile number carrier routing, formatting, and failover target
+     */
+    public function diagnoseRecipient(string $number): array
+    {
+        $isSmart = $this->isSmartNetwork($number);
+        $clean = preg_replace('/[^0-9]/', '', $number);
+        $prefix = '';
+        if (str_starts_with($clean, '639')) {
+            $prefix = '09' . substr($clean, 3, 2);
+        } elseif (str_starts_with($clean, '09')) {
+            $prefix = substr($clean, 0, 4);
+        } elseif (str_starts_with($clean, '9')) {
+            $prefix = '09' . substr($clean, 1, 2);
+        }
+
+        return [
+            'raw' => $number,
+            'clean' => $clean,
+            'prefix' => $prefix,
+            'network' => $isSmart ? 'SMART / TNT / SUN' : 'GLOBE / TM / DITO',
+            'is_smart' => $isSmart,
+            'primary_gateway' => $isSmart ? 'Fortmed (FMCSMS)' : 'PinasSMS',
+            'failover_gateway' => $isSmart ? 'PinasSMS' : 'None (Direct Primary)',
+            'pinas_formatted' => $this->formatForPinas($number),
+            'fortmed_formatted' => $this->formatForFortmed($number),
+        ];
+    }
+
+    /**
      * Check if number prefix matches Smart/TNT/Sun list
      */
-    protected function isSmartNetwork(string $number): bool
+    public function isSmartNetwork(string $number): bool
     {
         $clean = preg_replace('/[^0-9]/', '', $number);
 
@@ -244,7 +273,7 @@ class SmsService
     /**
      * PinasSMS requires 639XXXXXXXXX (strictly no leading '+')
      */
-    protected function formatForPinas(string $number): string
+    public function formatForPinas(string $number): string
     {
         $cleaned = preg_replace('/[^0-9]/', '', $number);
 
@@ -258,7 +287,7 @@ class SmsService
     /**
      * Fortmed standard local format 09XXXXXXXXX
      */
-    protected function formatForFortmed(string $number): string
+    public function formatForFortmed(string $number): string
     {
         $cleaned = preg_replace('/[^0-9]/', '', $number);
 
@@ -272,7 +301,7 @@ class SmsService
     /**
      * NTC Compliance Link Stripping & Unicode Clean
      */
-    protected function stripLinks(string $text): string
+    public function stripLinks(string $text): string
     {
         return preg_replace('/\b(?:https?:\/\/|www\.)\S+\b/i', '[link removed]', $text);
     }
@@ -280,7 +309,7 @@ class SmsService
     /**
      * NTC Night Curfew Logic (21:00 to 07:00 Asia/Manila)
      */
-    protected function isWithinCurfewHours(): bool
+    public function isWithinCurfewHours(): bool
     {
         $hour = Carbon::now('Asia/Manila')->hour;
         return $hour >= $this->curfewStart || $hour < $this->curfewEnd;
