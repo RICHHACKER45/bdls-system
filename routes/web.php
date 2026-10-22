@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\SystemMaintenanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
@@ -151,6 +152,11 @@ Route::middleware(['auth'])->group(function () {
 
             // PAYMENT SETTINGS ROUTE (Phase 3.3)
             Route::post('/settings/payment', [AdminDashboardController::class, 'updatePaymentSettings'])->name('settings.payment');
+
+            // SYSTEM HEALTH & MAINTENANCE DIAGNOSTICS ROUTES (Super Admin Mode)
+            Route::get('/maintenance/logs', [SystemMaintenanceController::class, 'getLiveLogs'])->name('maintenance.logs');
+            Route::post('/maintenance/verify-id', [SystemMaintenanceController::class, 'verifyIdCapture'])->name('maintenance.verify_id');
+            Route::post('/maintenance/test-sms', [SystemMaintenanceController::class, 'sendDiagnosticSms'])->name('maintenance.test_sms');
         });
 
     // ==========================================
