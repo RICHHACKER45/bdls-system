@@ -1,0 +1,47 @@
+# .mise.toml - BDLS System Environment, Tooling & Task Automation
+# Branch: for-figma
+
+[tools]
+node = "22"
+bun = "1.3.11"
+
+[env]
+# Ensure system PHP and Composer are in PATH for mise tasks
+_.path = ["C:\\xampp\\php"]
+APP_NAME = "BDLS System"
+APP_ENV = "local"
+APP_URL = "http://127.0.0.1:8000"
+
+# Target Viewport Dimensions for Figma Design Extraction
+DESKTOP_VIEWPORT_WIDTH = "1440"
+DESKTOP_VIEWPORT_HEIGHT = "900"
+MOBILE_VIEWPORT_WIDTH = "375"
+MOBILE_VIEWPORT_HEIGHT = "812"
+
+[tasks.start]
+description = "Start all local services (Laravel backend, Vite dev server, Queue worker, Reverb)"
+run = "bun run start"
+
+[tasks.dev]
+description = "Run Vite development server with HMR"
+run = "bun run dev"
+
+[tasks.serve]
+description = "Serve Laravel backend only"
+run = "php artisan serve --host=127.0.0.1 --port=8000"
+
+[tasks.build]
+description = "Build production bundle for React + Inertia"
+run = "bun run build"
+
+[tasks.format]
+description = "Format code using Prettier and Laravel Pint"
+run = "bun run format"
+
+[tasks.clear]
+description = "Clear Laravel config, view, and cache stores"
+run = "bun run clear-all"
+
+[tasks.dbreset]
+description = "Migrate database fresh and run seeders"
+run = "bun run dbreset"

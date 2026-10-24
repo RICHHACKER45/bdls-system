@@ -8,7 +8,9 @@
     "format": "concurrently \"bunx prettier --write .\" \"php vendor/bin/pint --format agent\"",
     "start": "concurrently \"php artisan serve --host=0.0.0.0\" \"bun run dev\" \"php artisan queue:work\" \"php artisan reverb:start\" ",
     "clear-all": "concurrently \"php artisan optimize:clear\" \"php artisan view:clear\" \"php artisan cache:clear\"",
-    "dbreset": "php artisan migrate:fresh --seed"
+    "dbreset": "php artisan migrate:fresh --seed",
+    "extract-setup": "bun add -d playwright && bunx playwright install chromium",
+    "extract-designs": "node scripts/extract-designs.cjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
