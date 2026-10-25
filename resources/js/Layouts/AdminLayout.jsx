@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import LiveDiagnosticsDrawer from '@/Components/Admin/LiveDiagnosticsDrawer';
 
 export default function AdminLayout({ children, activeTab, setActiveTab }) {
     const { auth, flash = {} } = usePage().props;
@@ -168,26 +167,6 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                                 strokeLinejoin="round"
                                 strokeWidth="2"
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            ></path>
-                        </svg>
-                    ),
-                },
-            ],
-        },
-        {
-            title: 'Superadmin Options',
-            items: [
-                {
-                    id: 'maintenance',
-                    label: 'System Maintenance',
-                    badge: 'SUPER ADMIN',
-                    icon: (
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
                             ></path>
                         </svg>
                     ),
@@ -382,13 +361,6 @@ export default function AdminLayout({ children, activeTab, setActiveTab }) {
                     </div>
                 </div>
             </div>
-
-            {/* UNIVERSAL FLOATING LIVE DIAGNOSTICS DRAWER ("PALITAW SA GILID") */}
-            <LiveDiagnosticsDrawer
-                onNavigateToMaintenance={() => {
-                    if (setActiveTab) setActiveTab('maintenance');
-                }}
-            />
         </div>
     );
 }

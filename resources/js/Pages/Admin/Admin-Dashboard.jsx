@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import axios from 'axios';
-import SystemMaintenanceTab from './Tabs/SystemMaintenanceTab';
 
 const sanitizePaginationUrl = (url) => {
     if (!url) return '#';
@@ -154,7 +153,6 @@ export default function AdminDashboard() {
         flash = {},
         errors = {},
         paymentSettings = {},
-        systemDiagnostics = {},
     } = usePage().props;
 
     const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
@@ -3398,11 +3396,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* --- TAB: SYSTEM MAINTENANCE & ISO 25010 DIAGNOSTICS --- */}
-            {activeTab === 'maintenance' && (
-                <SystemMaintenanceTab systemDiagnostics={systemDiagnostics} />
             )}
 
             {/* --- MODALS --- */}
