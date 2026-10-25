@@ -14,7 +14,6 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
-import DevOptionsTab from './Tabs/DevOptionsTab';
 import axios from 'axios';
 
 const sanitizePaginationUrl = (url) => {
@@ -154,7 +153,6 @@ export default function AdminDashboard() {
         flash = {},
         errors = {},
         paymentSettings = {},
-        devDiagnostics = {},
     } = usePage().props;
 
     const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
@@ -3398,11 +3396,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* --- TAB 7: DEVELOPMENTAL OPTIONS (I.T. EXPERT EVALUATION) --- */}
-            {activeTab === 'dev-options' && (
-                <DevOptionsTab devDiagnostics={devDiagnostics} />
             )}
 
             {/* --- MODALS --- */}

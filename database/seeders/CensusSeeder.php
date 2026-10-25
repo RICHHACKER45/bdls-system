@@ -29,9 +29,14 @@ class CensusSeeder extends Seeder
 
             // 2. RANDOM CENSUS DATA (Para kunwari totoong barangay database)
             [
-                'first_name' => 'Jose', 'middle_name' => 'A', 'last_name' => 'Olinares',
-                'suffix' => 'III', 'sex' => 'Male', 'date_of_birth' => '2003-12-08', // Example mo
-                'address' => 'Purok 2, Brgy. Doña Lucia', 'is_alive' => 1,
+                'first_name' => 'Jose', 'middle_name' => 'Angeles', 'last_name' => 'Olinares',
+                'suffix' => 'III', 'sex' => 'Male', 'date_of_birth' => '2003-12-08',
+                'address' => '44 Capalungan St. Brgy Dona Lucia Q.N.E', 'is_alive' => 1,
+            ],
+            [
+                'first_name' => 'Resident', 'middle_name' => '', 'last_name' => 'User',
+                'suffix' => null, 'sex' => 'Male', 'date_of_birth' => '1995-01-01',
+                'address' => '44 Capalungan St. Brgy Dona Lucia Q.N.E', 'is_alive' => 1,
             ],
             [
                 'first_name' => 'Beatriz', 'middle_name' => 'D', 'last_name' => 'Villamia',

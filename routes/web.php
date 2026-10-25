@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\DevOptionsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\HomeController;
@@ -152,10 +151,6 @@ Route::middleware(['auth'])->group(function () {
 
             // PAYMENT SETTINGS ROUTE (Phase 3.3)
             Route::post('/settings/payment', [AdminDashboardController::class, 'updatePaymentSettings'])->name('settings.payment');
-
-            // DEVELOPMENTAL OPTIONS ROUTES (I.T. Expert Evaluation & Testing Suites)
-            Route::post('/dev/test-sms', [DevOptionsController::class, 'sendTestSms'])->name('dev.test_sms');
-            Route::post('/dev/verify-id-capture', [DevOptionsController::class, 'verifyIdCapture'])->name('dev.verify_id_capture');
         });
 
     // ==========================================
