@@ -145,6 +145,7 @@ export default function AdminDashboard() {
         auditLogs = { data: [], links: [] },
         auditFilter = 'all', // Sub-Task 4.2: active audit action category
         analyticsSummary = {},
+        residentMasterlist = { data: [], links: [] },
         censusRecords = { data: [], links: [] },
         residentAccounts = { data: [], links: [] },
         pendingUsers = [],
@@ -154,6 +155,8 @@ export default function AdminDashboard() {
         errors = {},
         paymentSettings = {},
     } = usePage().props;
+
+    const masterlistData = residentMasterlist?.data?.length ? residentMasterlist : (censusRecords?.data ? censusRecords : residentMasterlist);
 
     const [activeTab, setActiveTab] = useState(flash?.active_tab || 'queue');
 
@@ -308,12 +311,12 @@ export default function AdminDashboard() {
     const submitResident = (e) => {
         e.preventDefault();
         if (residentFormMode === 'add') {
-            residentForm.post(route('admin.census.store'), {
+            residentForm.post(route('admin.resident_masterlist.store'), {
                 preserveScroll: true,
                 onSuccess: () => setResidentModalOpen(false),
             });
         } else {
-            residentForm.post(route('admin.census.update', residentEditId), {
+            residentForm.post(route('admin.resident_masterlist.update', residentEditId), {
                 preserveScroll: true,
                 onSuccess: () => setResidentModalOpen(false),
             });
@@ -321,13 +324,13 @@ export default function AdminDashboard() {
     };
 
     const [selectedResidents, setSelectedResidents] = useState([]);
-    const [censusDeleteModalOpen, setCensusDeleteModalOpen] = useState(false);
-    const [censusDeleteConfirm, setCensusDeleteConfirm] = useState('');
-    const [censusDeleteTarget, setCensusDeleteTarget] = useState(null); // id or 'batch'
+    const [residentDeleteModalOpen, setResidentDeleteModalOpen] = useState(false);
+    const [residentDeleteConfirm, setResidentDeleteConfirm] = useState('');
+    const [residentDeleteTarget, setResidentDeleteTarget] = useState(null); // id or 'batch'
 
     const handleResidentSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedResidents(censusRecords.data.map((r) => r.id));
+            setSelectedResidents((masterlistData.data || []).map((r) => r.id));
         } else {
             setSelectedResidents([]);
         }
@@ -339,39 +342,39 @@ export default function AdminDashboard() {
         );
     };
 
-    const openDeleteCensusModal = (target) => {
-        setCensusDeleteTarget(target);
-        setCensusDeleteConfirm('');
-        setCensusDeleteModalOpen(true);
+    const openDeleteResidentModal = (target) => {
+        setResidentDeleteTarget(target);
+        setResidentDeleteConfirm('');
+        setResidentDeleteModalOpen(true);
     };
 
-    const submitCensusDelete = (e) => {
+    const submitResidentDelete = (e) => {
         e.preventDefault();
-        if (censusDeleteConfirm !== 'DELETE') return;
+        if (residentDeleteConfirm !== 'DELETE') return;
 
-        if (censusDeleteTarget === 'batch') {
+        if (residentDeleteTarget === 'batch') {
             router.post(
-                route('admin.census.batch_destroy'),
+                route('admin.resident_masterlist.batch_destroy'),
                 { ids: selectedResidents },
                 {
                     preserveScroll: true,
                     onSuccess: () => {
-                        setCensusDeleteModalOpen(false);
+                        setResidentDeleteModalOpen(false);
                         setSelectedResidents([]);
                     },
                 }
             );
         } else {
-            router.delete(route('admin.census.destroy', censusDeleteTarget), {
+            router.delete(route('admin.resident_masterlist.destroy', residentDeleteTarget), {
                 preserveScroll: true,
-                onSuccess: () => setCensusDeleteModalOpen(false),
+                onSuccess: () => setResidentDeleteModalOpen(false),
             });
         }
     };
 
     const submitImport = (e) => {
         e.preventDefault();
-        importForm.post(route('admin.census.import'), {
+        importForm.post(route('admin.resident_masterlist.import'), {
             preserveScroll: true,
             onSuccess: () => {
                 setImportModalOpen(false);
@@ -424,7 +427,7 @@ export default function AdminDashboard() {
                     {
                         preserveState: true,
                         preserveScroll: true,
-                        only: ['censusRecords', 'filters'],
+                        only: ['residentMasterlist', 'censusRecords', 'filters'],
                     }
                 );
             }
@@ -898,9 +901,9 @@ export default function AdminDashboard() {
     const searchParam = urlParams.get('search') || '';
     const sortParam = urlParams.get('sort') || 'latest';
 
-    // THE FIX: Memoize ang mabigat na Census Masterlist rendering para hindi mag-lag ang buong page kapag nagta-type sa Walk-in forms
+    // Memoize resident masterlist rendering to preserve high UI responsiveness
     const renderedMasterlist = useMemo(() => {
-        if (!censusRecords?.data || censusRecords.data.length === 0) {
+        if (!masterlistData?.data || masterlistData.data.length === 0) {
             return (
                 <tr>
                     <td colSpan="5" className="p-12 text-center font-bold text-slate-400 italic">
@@ -910,7 +913,7 @@ export default function AdminDashboard() {
             );
         }
 
-        return censusRecords.data.map((resident) => (
+        return masterlistData.data.map((resident) => (
             <tr key={resident.id} className="transition-colors hover:bg-slate-50">
                 <td className="p-4 text-center">
                     <input
@@ -943,7 +946,7 @@ export default function AdminDashboard() {
                         Edit
                     </button>
                     <button
-                        onClick={() => openDeleteCensusModal(resident.id)}
+                        onClick={() => openDeleteResidentModal(resident.id)}
                         className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-black text-red-600 uppercase transition-all hover:bg-red-100 active:scale-95"
                     >
                         Delete
@@ -951,7 +954,7 @@ export default function AdminDashboard() {
                 </td>
             </tr>
         ));
-    }, [censusRecords.data, selectedResidents]);
+    }, [masterlistData.data, selectedResidents]);
 
     return (
         <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -2299,7 +2302,7 @@ export default function AdminDashboard() {
                                         </p>
                                         <div className="mt-2 flex items-baseline gap-2">
                                             <p className="text-4xl font-black text-slate-900">
-                                                {analyticsSummary?.total_census || 0}
+                                                {analyticsSummary?.total_residents ?? analyticsSummary?.total_census ?? 0}
                                             </p>
                                             <p className="text-xs font-bold text-slate-500">
                                                 total population
@@ -3007,7 +3010,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
-            {/* --- TAB 7: RESIDENT MASTERLIST (KYC CENSUS) --- */}
+            {/* --- TAB 7: RESIDENT MASTERLIST (KYC) --- */}
             {activeTab === 'residents' && (
                 <div className="animate-in fade-in duration-500">
                     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -3086,10 +3089,10 @@ export default function AdminDashboard() {
                                                 className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                                                 onChange={handleResidentSelectAll}
                                                 checked={
-                                                    censusRecords.data &&
-                                                    censusRecords.data.length > 0 &&
+                                                    masterlistData.data &&
+                                                    masterlistData.data.length > 0 &&
                                                     selectedResidents.length ===
-                                                        censusRecords.data.length
+                                                        masterlistData.data.length
                                                 }
                                             />
                                         </th>
@@ -3105,7 +3108,7 @@ export default function AdminDashboard() {
                             </table>
                         </div>
                         <div className="mt-6 flex justify-center pb-8">
-                            <Pagination links={censusRecords.links} />
+                            <Pagination links={masterlistData.links} />
                         </div>
                     </div>
                 </div>
@@ -3840,7 +3843,7 @@ export default function AdminDashboard() {
 
                         <div className="mb-6 flex justify-center">
                             <a
-                                href={route('admin.census.template')}
+                                href={route('admin.resident_masterlist.template')}
                                 download
                                 className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-[10px] font-black tracking-widest text-slate-700 uppercase transition-all hover:bg-slate-200 active:scale-95"
                             >
@@ -4394,7 +4397,7 @@ export default function AdminDashboard() {
                         Cancel
                     </button>
                     <button
-                        onClick={() => openDeleteCensusModal('batch')}
+                        onClick={() => openDeleteResidentModal('batch')}
                         className="flex items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-[9px] font-black tracking-widest text-white uppercase shadow-sm transition-all hover:bg-red-500 active:scale-95 sm:px-6 sm:text-[10px]"
                     >
                         <svg
@@ -4415,7 +4418,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
             {/* Resident Masterlist Safety Delete Modal */}
-            {censusDeleteModalOpen && (
+            {residentDeleteModalOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm transition-opacity">
                     <div className="w-full max-w-sm transform overflow-hidden rounded-2xl border border-red-100 bg-white p-6 shadow-2xl transition-all">
                         <div className="mb-6 flex flex-col items-center text-center">
@@ -4438,7 +4441,7 @@ export default function AdminDashboard() {
                                 Warning: Data Deletion
                             </h3>
                             <p className="mt-2 text-sm font-medium text-slate-500">
-                                {censusDeleteTarget === 'batch'
+                                {residentDeleteTarget === 'batch'
                                     ? `Sigurado ka bang gusto mong burahin ang ${selectedResidents.length} napiling residente?`
                                     : 'Sigurado ka bang gusto mong burahin ang residenteng ito sa masterlist?'}
                             </p>
@@ -4446,7 +4449,7 @@ export default function AdminDashboard() {
                                 Ang aksyong ito ay hindi na mababawi.
                             </p>
                         </div>
-                        <form onSubmit={submitCensusDelete}>
+                        <form onSubmit={submitResidentDelete}>
                             <div className="mb-6">
                                 <label className="mb-2 block text-center text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                     I-type ang "DELETE" para mag-confirm{' '}
@@ -4454,8 +4457,8 @@ export default function AdminDashboard() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={censusDeleteConfirm}
-                                    onChange={(e) => setCensusDeleteConfirm(e.target.value)}
+                                    value={residentDeleteConfirm}
+                                    onChange={(e) => setResidentDeleteConfirm(e.target.value)}
                                     placeholder="DELETE"
                                     className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-center font-black text-slate-900 uppercase placeholder-slate-300 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500"
                                     required
@@ -4464,14 +4467,14 @@ export default function AdminDashboard() {
                             <div className="flex flex-col gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setCensusDeleteModalOpen(false)}
+                                    onClick={() => setResidentDeleteModalOpen(false)}
                                     className="w-full rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={censusDeleteConfirm !== 'DELETE'}
+                                    disabled={residentDeleteConfirm !== 'DELETE'}
                                     className="w-full rounded-xl bg-red-600 py-3 text-xs font-black tracking-widest text-white uppercase shadow-md transition-all hover:bg-red-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Delete Permanently

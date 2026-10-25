@@ -26,8 +26,8 @@
    - Creates `attachments` table.
 9. `2026_03_30_171659_create_notification_logs_table.php`  
    - Creates `notification_logs` table.
-10. `2026_06_04_134202_create_census_records_table.php`  
-    - Creates `census_records` masterlist table with composite unique index.
+10. `2026_06_04_134202_create_resident_masterlist_table.php`  
+    - Creates `resident_masterlist` table with composite unique index.
 11. `2026_08_26_012143_create_system_settings_table.php`  
     - Creates `system_settings` key-value configuration table.
 12. `2026_10_14_160820_add_performance_composite_indexes_to_bdls_tables.php`  
@@ -44,7 +44,7 @@
 - `AuditLog.php` (`App\Models\AuditLog`) -> Maps to `audit_logs`
 - `NotificationLog.php` (`App\Models\NotificationLog`) -> Maps to `notification_logs`
 - `SystemSetting.php` (`App\Models\SystemSetting`) -> Maps to `system_settings`
-- *Direct Query Builder Entities:* `census_records` (Queried via `DB::table('census_records')`), `landing_page_contents` (Direct table access).
+- *Direct Query Builder Entities:* `resident_masterlist` (Queried via `DB::table('resident_masterlist')`), `landing_page_contents` (Direct table access).
 
 ---
 
@@ -59,7 +59,7 @@
 | `announcements` | `id` (BIGINT PK) | `admin_id` -> `users.id` (CASCADE) | None | `announcements_admin_id_foreign` (`admin_id`) |
 | `audit_logs` | `id` (BIGINT PK) | `admin_id` -> `users.id` (CASCADE) | None | `audit_logs_created_at_action_index` (`created_at`, `action`)<br>`audit_logs_admin_id_index` (`admin_id`) |
 | `notification_logs` | `id` (BIGINT PK) | `user_id` -> `users.id` (CASCADE)<br>`service_request_id` -> `service_requests.id` (CASCADE) | None | `notification_logs_user_id_foreign`<br>`notification_logs_service_request_id_foreign` |
-| `census_records` | `id` (BIGINT PK) | None (Master Reference Entity) | `census_records_unique_index` (`first_name`, `last_name`, `date_of_birth`) | Built into unique composite index |
+| `resident_masterlist` | `id` (BIGINT PK) | None (Master Reference Entity) | `resident_masterlist_unique_index` (`first_name`, `last_name`, `date_of_birth`) | Built into unique composite index |
 | `system_settings` | `id` (BIGINT PK) | None | `system_settings_key_unique` (`key`) | Built into unique key index |
 | `landing_page_contents` | `id` (BIGINT PK) | None | `landing_page_contents_section_name_unique` (`section_name`) | Built into unique key index |
 
@@ -77,7 +77,7 @@
 | `users` (Admin) | Mandatory One to Optional Many (`\|\|` to `o{`) | `audit_logs` | generates | `audit_logs.admin_id` | CASCADE |
 | `users` (Resident) | Mandatory One to Optional Many (`\|\|` to `o{`) | `notification_logs` | receives | `notification_logs.user_id` | CASCADE |
 | `service_requests` | Optional One to Optional Many (`\|o` to `o{`) | `notification_logs` | triggers | `notification_logs.service_request_id` | CASCADE |
-| `census_records` | Zero-Retention Algorithmic Reference | `users` | validates identity of | Verified via OCR in memory | N/A (Business Logic Integrity) |
+| `resident_masterlist` | Zero-Retention Algorithmic Reference | `users` | validates identity of | Verified via OCR in memory | N/A (Business Logic Integrity) |
 
 ---
 
@@ -96,4 +96,4 @@ To satisfy academic thesis panel scrutiny, the normalization process will recons
    - **UNF:** Raw logbook sheet with repeating groups and compound strings.
    - **1NF:** Flattening repeating groups, enforcing atomic columns (`first_name`, `last_name`, `date_of_birth`, etc.), defining composite candidate keys.
    - **2NF:** Isolating partial functional dependencies into `USERS`, `SERVICE_REQUESTS`, `ATTACHMENTS`.
-   - **3NF:** Isolating transitive functional dependencies into `DOCUMENT_TYPES`, `AUDIT_LOGS`, `NOTIFICATION_LOGS`, `CENSUS_RECORDS`, and `SYSTEM_SETTINGS`.
+   - **3NF:** Isolating transitive functional dependencies into `DOCUMENT_TYPES`, `AUDIT_LOGS`, `NOTIFICATION_LOGS`, `RESIDENT_MASTERLIST`, and `SYSTEM_SETTINGS`.

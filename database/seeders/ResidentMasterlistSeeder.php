@@ -5,12 +5,12 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CensusSeeder extends Seeder
+class ResidentMasterlistSeeder extends Seeder
 {
     public function run(): void
     {
         $residents = [
-            // 1. MGA TEST ACCOUNTS NATIN (Para mag-match sa OCR Testing mo mamaya)
+            // 1. Test accounts for OCR verification matching
             [
                 'first_name' => 'Juan', 'middle_name' => 'Bautista', 'last_name' => 'Dela Cruz',
                 'suffix' => null, 'sex' => 'Male', 'date_of_birth' => '1990-05-15',
@@ -27,7 +27,7 @@ class CensusSeeder extends Seeder
                 'address' => '789 Purok 3, Brgy. Doña Lucia', 'is_alive' => 1,
             ],
 
-            // 2. RANDOM CENSUS DATA (Para kunwari totoong barangay database)
+            // 2. Sample barangay resident masterlist dataset
             [
                 'first_name' => 'Jose', 'middle_name' => 'Angeles', 'last_name' => 'Olinares',
                 'suffix' => 'III', 'sex' => 'Male', 'date_of_birth' => '2003-12-08',
@@ -58,7 +58,7 @@ class CensusSeeder extends Seeder
         foreach ($residents as $resident) {
             $resident['created_at'] = now();
             $resident['updated_at'] = now();
-            DB::table('census_records')->insert($resident);
+            DB::table('resident_masterlist')->insert($resident);
         }
     }
 }

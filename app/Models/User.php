@@ -12,8 +12,7 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    // BINURA: Tinanggal ko ang scopePending, scopeApproved, at scopeRejected
-    // Dahilan: Hindi na tayo gagamit ng manual rejection at approval ni Admin. Automated na tayo via Census.
+    // Removed manual approval scopes: Verification is automated via Resident Masterlist OCR matching.
 
     /**
      * VIRTUAL ATTRIBUTE: Age

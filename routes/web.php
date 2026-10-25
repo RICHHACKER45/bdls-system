@@ -132,13 +132,21 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/documents/{documentType}/update', [AdminDashboardController::class, 'updateDocument'])->name('documents.update');
             Route::post('/documents/{documentType}/toggle', [AdminDashboardController::class, 'toggleDocumentStatus'])->name('documents.toggle');
 
-            // CENSUS MANAGEMENT ROUTES
-            Route::post('/census', [AdminDashboardController::class, 'storeCensus'])->name('census.store');
-            Route::post('/census/{id}/update', [AdminDashboardController::class, 'updateCensus'])->name('census.update');
-            Route::delete('/census/{id}', [AdminDashboardController::class, 'deleteCensus'])->name('census.destroy');
-            Route::post('/census/batch-delete', [AdminDashboardController::class, 'deleteCensusBatch'])->name('census.batch_destroy');
-            Route::post('/census/import', [AdminDashboardController::class, 'importCensus'])->name('census.import');
-            Route::get('/census/template', [AdminDashboardController::class, 'downloadCensusTemplate'])->name('census.template');
+            // RESIDENT MASTERLIST MANAGEMENT ROUTES
+            Route::post('/resident-masterlist', [AdminDashboardController::class, 'storeResidentMasterlist'])->name('resident_masterlist.store');
+            Route::post('/resident-masterlist/{id}/update', [AdminDashboardController::class, 'updateResidentMasterlist'])->name('resident_masterlist.update');
+            Route::delete('/resident-masterlist/{id}', [AdminDashboardController::class, 'deleteResidentMasterlist'])->name('resident_masterlist.destroy');
+            Route::post('/resident-masterlist/batch-delete', [AdminDashboardController::class, 'deleteResidentMasterlistBatch'])->name('resident_masterlist.batch_destroy');
+            Route::post('/resident-masterlist/import', [AdminDashboardController::class, 'importResidentMasterlist'])->name('resident_masterlist.import');
+            Route::get('/resident-masterlist/template', [AdminDashboardController::class, 'downloadResidentMasterlistTemplate'])->name('resident_masterlist.template');
+
+            // Legacy route aliases for backward compatibility
+            Route::post('/census', [AdminDashboardController::class, 'storeResidentMasterlist'])->name('census.store');
+            Route::post('/census/{id}/update', [AdminDashboardController::class, 'updateResidentMasterlist'])->name('census.update');
+            Route::delete('/census/{id}', [AdminDashboardController::class, 'deleteResidentMasterlist'])->name('census.destroy');
+            Route::post('/census/batch-delete', [AdminDashboardController::class, 'deleteResidentMasterlistBatch'])->name('census.batch_destroy');
+            Route::post('/census/import', [AdminDashboardController::class, 'importResidentMasterlist'])->name('census.import');
+            Route::get('/census/template', [AdminDashboardController::class, 'downloadResidentMasterlistTemplate'])->name('census.template');
 
             // MANAGE ACCOUNTS ROUTES
             Route::post('/accounts/{id}/suspend', [AdminDashboardController::class, 'suspendAccount'])->name('accounts.suspend');

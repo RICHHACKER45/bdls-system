@@ -19,7 +19,7 @@ This document serves as the primary master guideline for all system modification
 ---
 
 ## 2. Backend & Security Policies (The Laravel Way)
-- **Zero-Retention Policy (Automated ID Verification):** Resident signups capture a Valid ID. Google Cloud Vision OCR API is used to extract the name and match it against the Census Masterlist (`census_records`). Selfie/ID photos must be processed IN-MEMORY only and immediately discarded—NEVER store ID/selfie files in public directories or save file paths in the database.
+- **Zero-Retention Policy (Automated ID Verification):** Resident signups capture a Valid ID. Google Cloud Vision OCR API is used to extract the name and match it against the Resident Masterlist (`resident_masterlist`). Selfie/ID photos must be processed IN-MEMORY only and immediately discarded—NEVER store ID/selfie files in public directories or save file paths in the database.
 - **Strict Password Policy:** Simple passwords are not allowed. All passwords (during registration or updates) must contain a minimum of 8 characters, including at least one uppercase letter, one lowercase letter, one number, and one symbol (e.g., `Juan!1234`).
 - **Secure File Storage:** Private document attachments (GCash receipts, clearance requirements) must be stored strictly in the private storage directory (`storage/app/private/`). Public access is blocked; files must be streamed securely through `FileController@serveSecureFile` with directory traversal protection and strict ownership/admin authorization checks.
 

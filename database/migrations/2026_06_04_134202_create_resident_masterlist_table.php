@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('census_records', function (Blueprint $table) {
+        Schema::create('resident_masterlist', function (Blueprint $table) {
             $table->id();
             $table->string('first_name');
             $table->string('middle_name')->nullable();
@@ -20,11 +20,11 @@ return new class extends Migration
             $table->string('sex', 10);
             $table->date('date_of_birth');
             $table->string('address');
-            $table->boolean('is_alive')->default(true); // Para alam kung active resident pa
+            $table->boolean('is_alive')->default(true); // Flag to check if resident is still active
             $table->timestamps();
 
-            // THE FIX: Added unique constraint to support modern Laravel upsert() bulk insertion
-            $table->unique(['first_name', 'last_name', 'date_of_birth'], 'census_records_unique_index');
+            // Added unique constraint to support modern Laravel upsert() bulk insertion
+            $table->unique(['first_name', 'last_name', 'date_of_birth'], 'resident_masterlist_unique_index');
         });
     }
 
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('census_records');
+        Schema::dropIfExists('resident_masterlist');
     }
 };
