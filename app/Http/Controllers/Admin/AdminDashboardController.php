@@ -166,21 +166,22 @@ class AdminDashboardController extends Controller
             'released' => (clone $analyticsQuery)->whereIn('status', ['released', 'received'])->count(),
             'rejected' => (clone $analyticsQuery)->whereIn('status', ['rejected', 'canceled'])->count(),
             'total_registered' => User::where('role', 'resident')->count(),
-            'total_census' => DB::table('census_records')->count(),
+            'total_residents' => DB::table('resident_masterlist')->count(),
+            'total_census' => DB::table('resident_masterlist')->count(),
         ];
 
-        // CENSUS / RESIDENT MASTERLIST LOGIC
+        // RESIDENT MASTERLIST LOGIC
         $residentSearch = $request->get('resident_search', '');
-        $censusQuery = DB::table('census_records')->orderBy('last_name', 'asc');
+        $masterlistQuery = DB::table('resident_masterlist')->orderBy('last_name', 'asc');
 
         if (! empty($residentSearch)) {
-            $censusQuery->where(function ($q) use ($residentSearch) {
+            $masterlistQuery->where(function ($q) use ($residentSearch) {
                 $q->where('first_name', 'like', "%{$residentSearch}%")
                     ->orWhere('last_name', 'like', "%{$residentSearch}%")
                     ->orWhere('address', 'like', "%{$residentSearch}%");
             });
         }
-        $censusRecords = $censusQuery->paginate(15, ['*'], 'census_page')->withQueryString();
+        $residentMasterlist = $masterlistQuery->paginate(15, ['*'], 'resident_page')->withQueryString();
 
         // PHASE 2.2: PENDING REGISTRATIONS (Failed OCR) - Sub-Task 4.1 Index-aware column projection
         $pendingUsers = User::where('role', 'resident')
@@ -205,7 +206,8 @@ class AdminDashboardController extends Controller
             'auditLogs' => $auditLogs,
             'auditFilter' => $auditActionFilter, // Sub-Task 4.2: active audit filter state
             'analyticsSummary' => $analyticsSummary,
-            'censusRecords' => $censusRecords,
+            'residentMasterlist' => $residentMasterlist,
+            'censusRecords' => $residentMasterlist, // Backward compatibility alias
             'residentAccounts' => $residentAccounts,
             'pendingUsers' => $pendingUsers,
             'paymentSettings' => $paymentSettings,
@@ -763,7 +765,7 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function storeCensus(Request $request)
+    public function storeResidentMasterlist(Request $request)
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -778,13 +780,18 @@ class AdminDashboardController extends Controller
         $validated['created_at'] = now();
         $validated['updated_at'] = now();
 
-        DB::table('census_records')->insert($validated);
+        DB::table('resident_masterlist')->insert($validated);
         event(new AdminDashboardUpdated);
 
-        return back()->with(['success_message' => 'Bagong residente ay matagumpay na naidagdag.', 'active_tab' => 'residents']);
+        return back()->with(['success_message' => 'Bagong residente ay matagumpay na naidagdag sa masterlist.', 'active_tab' => 'residents']);
     }
 
-    public function updateCensus(Request $request, $id)
+    public function storeCensus(Request $request)
+    {
+        return $this->storeResidentMasterlist($request);
+    }
+
+    public function updateResidentMasterlist(Request $request, $id)
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -797,34 +804,49 @@ class AdminDashboardController extends Controller
         ]);
         $validated['updated_at'] = now();
 
-        DB::table('census_records')->where('id', $id)->update($validated);
+        DB::table('resident_masterlist')->where('id', $id)->update($validated);
         event(new AdminDashboardUpdated);
 
-        return back()->with(['success_message' => 'Impormasyon ng residente ay nai-update.', 'active_tab' => 'residents']);
+        return back()->with(['success_message' => 'Impormasyon ng residente ay nai-update sa masterlist.', 'active_tab' => 'residents']);
     }
 
-    public function deleteCensus($id)
+    public function updateCensus(Request $request, $id)
     {
-        DB::table('census_records')->where('id', $id)->delete();
+        return $this->updateResidentMasterlist($request, $id);
+    }
+
+    public function deleteResidentMasterlist($id)
+    {
+        DB::table('resident_masterlist')->where('id', $id)->delete();
         event(new AdminDashboardUpdated);
 
         return back()->with(['success_message' => 'Residente ay tinanggal sa masterlist.', 'active_tab' => 'residents']);
     }
 
-    public function deleteCensusBatch(Request $request)
+    public function deleteCensus($id)
+    {
+        return $this->deleteResidentMasterlist($id);
+    }
+
+    public function deleteResidentMasterlistBatch(Request $request)
     {
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
         ]);
 
-        DB::table('census_records')->whereIn('id', $request->ids)->delete();
+        DB::table('resident_masterlist')->whereIn('id', $request->ids)->delete();
         event(new AdminDashboardUpdated);
 
         return back()->with(['success_message' => count($request->ids).' residente ay sabay-sabay na tinanggal sa masterlist.', 'active_tab' => 'residents']);
     }
 
-    public function importCensus(Request $request)
+    public function deleteCensusBatch(Request $request)
+    {
+        return $this->deleteResidentMasterlistBatch($request);
+    }
+
+    public function importResidentMasterlist(Request $request)
     {
         $request->validate([
             'import_file' => 'required|file|mimes:csv,txt|max:5120',
@@ -849,7 +871,7 @@ class AdminDashboardController extends Controller
                 continue;
             }
 
-            // THE FIX: Prepare bulk array for UPSERT
+            // Prepare bulk array for UPSERT
             $bulkData[] = [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
@@ -865,9 +887,9 @@ class AdminDashboardController extends Controller
         }
         fclose($handle);
 
-        // Chunking para hindi sumabog ang RAM/Query limit sa napakalaking CSV
+        // Chunking to prevent memory overload during large CSV uploads
         foreach (array_chunk($bulkData, 500) as $chunk) {
-            DB::table('census_records')->upsert(
+            DB::table('resident_masterlist')->upsert(
                 $chunk,
                 ['first_name', 'last_name', 'date_of_birth'], // Unique columns
                 ['middle_name', 'suffix', 'sex', 'address', 'is_alive', 'updated_at'] // Update columns
@@ -875,7 +897,12 @@ class AdminDashboardController extends Controller
         }
         event(new AdminDashboardUpdated);
 
-        return back()->with(['success_message' => 'Import tapos na! Na-proseso ang '.count($bulkData).' census records gamit ang bulk Upsert.', 'active_tab' => 'residents']);
+        return back()->with(['success_message' => 'Import tapos na! Na-proseso ang '.count($bulkData).' resident masterlist records gamit ang bulk Upsert.', 'active_tab' => 'residents']);
+    }
+
+    public function importCensus(Request $request)
+    {
+        return $this->importResidentMasterlist($request);
     }
 
     public function suspendAccount($id)
@@ -964,11 +991,11 @@ class AdminDashboardController extends Controller
         return back()->with(['success_message' => "Ang registration ni {$name} ay nai-reject at inalis.", 'active_tab' => 'pending']);
     }
 
-    public function downloadCensusTemplate()
+    public function downloadResidentMasterlistTemplate()
     {
         $headers = [
             'Content-type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename=BDLS_Census_Template.csv',
+            'Content-Disposition' => 'attachment; filename=BDLS_Resident_Masterlist_Template.csv',
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0',
@@ -982,6 +1009,11 @@ class AdminDashboardController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function downloadCensusTemplate()
+    {
+        return $this->downloadResidentMasterlistTemplate();
     }
 
     /**

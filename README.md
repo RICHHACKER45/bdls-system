@@ -45,7 +45,7 @@ flowchart TD
     end
 
     subgraph DataStorage["Shared Infrastructure Tier"]
-        MySQL[("Managed MySQL<br/>Users, Requests, Census, Logs")]
+        MySQL[("Managed MySQL<br/>Users, Requests, Resident Masterlist, Logs")]
         Redis[("Managed Redis<br/>Cache, Sessions, Queues, Pub/Sub")]
     end
 
@@ -136,7 +136,7 @@ To protect citizen privacy under Philippine Data Privacy laws:
 
 - Resident sign-ups require uploading a valid Philippine Government ID and selfie.
 - Uploaded media is processed **strictly in-memory** and streamed to the **Google Cloud Vision API** for Optical Character Recognition (OCR).
-- Extracted names and dates of birth are cross-referenced against the local Barangay Census Masterlist (`census_records`).
+- Extracted names and dates of birth are cross-referenced against the local Barangay Resident Masterlist (`resident_masterlist`).
 - **Zero-Retention Guarantee:** Photos are purged from RAM immediately after verification; ID images are **never stored on disk or in the database**.
 
 ### 2. Dual-Engine Telco SMS Gateway with Auto-Failover
@@ -271,7 +271,7 @@ GOOGLE_CREDENTIALS_PATH=app/private/google-credentials.json
 
 ### 4. Database Setup & Seeding
 
-Run migrations and populate the 13 official barangay document types, census records, and administrative test accounts:
+Run migrations and populate the 13 official barangay document types, resident masterlist records, and administrative test accounts:
 
 ```bash
 npm run dbreset

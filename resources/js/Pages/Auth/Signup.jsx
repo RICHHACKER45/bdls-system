@@ -48,7 +48,7 @@ export default function Signup() {
     const loadingMessages = [
         'Ina-upload ang iyong impormasyon at Valid ID...',
         'Ina-analyze ang ID gamit ang AI (Optical Character Recognition)...',
-        'Kino-krus-tsek ang pangalan sa Barangay Census Records...',
+        'Kino-krus-tsek ang pangalan sa Barangay Resident Masterlist...',
         'Pina-finalize ang iyong account. Mangyaring maghintay...',
     ];
 

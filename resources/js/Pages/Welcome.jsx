@@ -266,7 +266,7 @@ export default function Welcome() {
                             </h3>
                             <p className="text-sm leading-relaxed font-medium text-slate-600">
                                 Mabilis na pag-verify ng iyong account gamit ang aming AI-powered ID
-                                scanner na direktang nakakonekta sa census.
+                                scanner na direktang nakakonekta sa resident masterlist.
                             </p>
                         </div>
                     </div>

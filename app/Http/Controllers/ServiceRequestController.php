@@ -271,18 +271,18 @@ class ServiceRequestController extends Controller
                             $lastName = strtoupper($user->last_name);
 
                             if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
-                                $inCensus = DB::table('census_records')
+                                $inMasterlist = DB::table('resident_masterlist')
                                     ->where('first_name', $user->first_name)
                                     ->where('last_name', $user->last_name)
                                     ->where('is_alive', 1)
                                     ->exists();
 
-                                if ($inCensus) {
+                                if ($inMasterlist) {
                                     $isAutoApproved = true;
-                                    Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                                    Log::info("AUTO-ID SUCCESS: ID and Resident Masterlist matched for {$firstName} {$lastName}!");
                                 } else {
-                                    $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Census.';
-                                    Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                                    $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Resident Masterlist.';
+                                    Log::warning("OCR: Valid on ID but NOT IN RESIDENT MASTERLIST: {$firstName} {$lastName}");
                                 }
                             } else {
                                 $ocrErrorMessage = 'Hindi malinaw ang pangalan sa ID.';

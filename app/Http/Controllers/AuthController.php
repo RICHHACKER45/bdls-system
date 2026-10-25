@@ -151,22 +151,22 @@ class AuthController extends Controller
                             $firstName = strtoupper($validatedData['first_name']);
                             $lastName = strtoupper($validatedData['last_name']);
 
-                            // TINGNAN KUNG NASA ID ANG PANGALAN
+                            // Verify name presence on the scanned ID document
                             if (str_contains($scannedText, $firstName) && str_contains($scannedText, $lastName)) {
 
-                                // TINGNAN KUNG NASA CENSUS
-                                $inCensus = DB::table('census_records')
+                                // Cross-check against the official Resident Masterlist
+                                $inMasterlist = DB::table('resident_masterlist')
                                     ->where('first_name', $validatedData['first_name'])
                                     ->where('last_name', $validatedData['last_name'])
                                     ->where('is_alive', 1)
                                     ->exists();
 
-                                if ($inCensus) {
+                                if ($inMasterlist) {
                                     $isAutoApproved = true;
-                                    Log::info("AUTO-ID SUCCESS: Nag-match ang ID at Census ni {$firstName} {$lastName}!");
+                                    Log::info("AUTO-ID SUCCESS: ID and Resident Masterlist matched for {$firstName} {$lastName}!");
                                 } else {
-                                    $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Census.';
-                                    Log::warning("OCR: Nabasa sa ID pero WALA SA CENSUS si {$firstName} {$lastName}");
+                                    $ocrErrorMessage = 'Hindi tumugma ang pangalan sa ID at sa Resident Masterlist.';
+                                    Log::warning("OCR: Valid on ID but NOT IN RESIDENT MASTERLIST: {$firstName} {$lastName}");
                                 }
                             } else {
                                 $ocrErrorMessage = 'Hindi malinaw ang pangalan sa ID.';
